@@ -98,6 +98,19 @@ def render_experiment_log_entry(
         lines.append(f"- Burn-in/thinning: `{config.get('burn_in')}` / `{config.get('thinning')}`")
     if "mcmc_steps_per_level" in summary:
         lines.append(f"- MCMC steps per level: `{summary.get('mcmc_steps_per_level')}`")
+    if algorithm == "masked_barker_smc":
+        lines.extend(
+            [
+                f"- ESS threshold / resampling: `{config.get('ess_threshold')}` / "
+                f"`{config.get('resampling_method') if config.get('resampling') else 'disabled'}`",
+                f"- Mask mode / policy: `{config.get('mask_mode')}` / `{config.get('mask_policy')}`",
+                f"- Mask sizes: `{config.get('mask_sizes')}`",
+                f"- Mask rho schedule: `{config.get('mask_rho_schedule')}`",
+                f"- Deterministic mask-size schedule: "
+                f"`{config.get('deterministic_mask_size_schedule')}`",
+                f"- Proposal temperature: `{config.get('proposal_temperature')}`",
+            ]
+        )
     lines.extend(
         [
             f"- Runtime seconds: `{summary.get('runtime_total_seconds', summary.get('total_runtime_seconds', ''))}`",

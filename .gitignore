@@ -16,6 +16,7 @@ data/
 outputs/
 full_sequence_smc_experiment/results/
 mixture_mcmc_experiment/results/
+masked_barker_smc_experiment/results/
 **/results/tmp*/
 **/results/raw*/
 **/samples.jsonl
