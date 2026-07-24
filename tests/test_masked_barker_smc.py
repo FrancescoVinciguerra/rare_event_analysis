@@ -12,6 +12,7 @@ from masked_barker_smc_experiment.smc_sampler import (
     completion_log_probabilities,
     generate_masked_proposal,
     masked_transition_log_probabilities,
+    render_report,
     run_masked_barker_smc,
     sample_masks,
     symmetrization_log_acceptance,
@@ -263,6 +264,7 @@ def test_incremental_weight_matches_lambda_update_without_resampling() -> None:
         mask_sizes=(1,),
         batch_size=6,
         seed=11,
+        tail_thresholds=(3.0, 5.0),
     )
     result = run_masked_barker_smc(
         PrefixDependentTinyModel(),
@@ -276,6 +278,28 @@ def test_incremental_weight_matches_lambda_update_without_resampling() -> None:
     expected /= expected.sum()
     actual = np.asarray([row["normalized_weight"] for row in result.samples])
     assert np.allclose(actual, expected)
+    assert "mean_ari" not in result.summary
+    assert np.isclose(result.summary["unweighted_mean_ari"], phi.mean())
+    assert np.isclose(result.summary["weighted_mean_ari"], np.sum(expected * phi))
+    assert result.summary["tail_counts"]["ari_ge_5"] == int(np.sum(phi >= 5.0))
+    assert np.isclose(
+        result.summary["tail_proportions"]["ari_ge_5"],
+        np.mean(phi >= 5.0),
+    )
+    assert np.isclose(
+        result.summary["weighted_tail_probabilities"]["ari_ge_5"],
+        np.sum(expected[phi >= 5.0]),
+    )
+
+    final_level = result.diagnostics["level_diagnostics"][-1]
+    assert np.isclose(
+        final_level["weighted_mean_ari_before_resampling"],
+        result.summary["weighted_mean_ari"],
+    )
+    assert np.isclose(
+        final_level["unweighted_mean_ari_after_resampling"],
+        result.summary["unweighted_mean_ari"],
+    )
 
 
 def test_low_ess_triggers_systematic_resampling_and_resets_weights() -> None:
@@ -301,6 +325,54 @@ def test_low_ess_triggers_systematic_resampling_and_resets_weights() -> None:
     assert np.isclose(result.summary["final_ess_over_n"], 1.0)
     assert result.summary["min_ess_over_n"] < config.ess_threshold
     assert all(np.isclose(row["normalized_weight"], 1.0 / 12) for row in result.samples)
+    assert np.isclose(
+        result.summary["weighted_mean_ari"],
+        result.summary["unweighted_mean_ari"],
+    )
+    final_level = result.diagnostics["level_diagnostics"][-1]
+    assert final_level["resampled"]
+    assert np.isclose(
+        final_level["unweighted_mean_ari_after_resampling"],
+        result.summary["unweighted_mean_ari"],
+    )
+
+
+def test_report_labels_weighted_and_unweighted_statistics() -> None:
+    summary = {
+        "runtime_total_seconds": 1.0,
+        "runtime_seconds_per_final_particle": 0.25,
+        "final_ess_over_n": 0.8,
+        "min_ess_over_n": 0.5,
+        "mean_mcmc_acceptance_rate": 0.3,
+        "resampling_steps": 1,
+        "unweighted_mean_ari": 7.0,
+        "weighted_mean_ari": 8.0,
+        "min_ari": 2.0,
+        "max_ari": 12.0,
+        "tail_counts": {"ari_ge_8": 2},
+        "tail_proportions": {"ari_ge_8": 0.5},
+        "weighted_tail_probabilities": {"ari_ge_8": 0.75},
+    }
+    diagnostics = {
+        "level_diagnostics": [
+            {
+                "level": 0,
+                "lambda": 0.0,
+                "mutation_target_lambda": None,
+                "ess_over_n_before_resampling": 1.0,
+                "ess_over_n_after_resampling": 1.0,
+                "resampled": False,
+                "acceptance_rate": None,
+                "weighted_mean_ari_before_resampling": 7.0,
+                "unweighted_mean_ari_after_resampling": 7.0,
+            }
+        ]
+    }
+    report = render_report(summary, diagnostics)
+    assert "Unweighted mean raw ARI" in report
+    assert "Weighted mean raw ARI under final target" in report
+    assert "weighted probability" in report
+    assert "weighted mean ARI pre" in report
 
 
 def test_cli_exposes_masked_barker_configuration() -> None:

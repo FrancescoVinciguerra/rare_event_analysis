@@ -83,6 +83,30 @@ These statements establish correctness, stationarity, and the usual SMC
 consistency conditions. They do not imply a high acceptance rate, rapid
 mixing, or guaranteed rare-event discovery.
 
+## Weighted reporting
+
+The SMC potential remains capped ARI, while final completion quality is
+reported with raw ARI. When final weights are non-uniform, the target
+expectation and tail probabilities are computed as
+
+\[
+\widehat{\mathbb E}_{\pi_L}[\mathrm{raw\ ARI}]
+=\sum_i W_L^{(i)}\mathrm{raw\ ARI}(X_L^{(i)})
+\]
+
+and
+
+\[
+\widehat P_{\pi_L}(\mathrm{raw\ ARI}\geq a)
+=\sum_i W_L^{(i)}
+\mathbf 1\{\mathrm{raw\ ARI}(X_L^{(i)})\geq a\}.
+\]
+
+The report keeps these estimates separate from the unweighted particle mean,
+raw tail count, and raw tail proportion. At every SMC level it also records
+the weighted raw-ARI mean before resampling and the unweighted raw-ARI mean
+after resampling. This makes the selection effect of resampling visible.
+
 ## Run
 
 ```bash
@@ -116,3 +140,6 @@ The exact `textstat` ARI requires decoded text. Consequently, each batched
 proposal step has one explicit device-to-CPU boundary for ARI evaluation.
 All model scoring, mask operations, proposal probabilities, acceptance
 probabilities, weights, ESS, and resampling remain on the model device.
+
+For independent multi-seed runs with resumable Drive outputs and aggregate
+tables, use `notebooks/REA_Colab_Quickstart.ipynb`.

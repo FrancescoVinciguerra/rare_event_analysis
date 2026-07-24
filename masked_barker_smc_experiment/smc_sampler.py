@@ -149,6 +149,7 @@ class MaskBatch:
 class ParticleBatch:
     completion_token_ids: torch.Tensor
     phi: torch.Tensor
+    raw_ari: torch.Tensor
     log_p_model: torch.Tensor
     root_ancestors: torch.Tensor
 
@@ -506,7 +507,7 @@ def score_observable(
     prompt: str,
     prompt_ids: torch.Tensor,
     completions: torch.Tensor,
-) -> tuple[torch.Tensor, list[Any]]:
+) -> tuple[torch.Tensor, torch.Tensor, list[Any]]:
     """Evaluate the exact text observable in one batched device-to-CPU boundary."""
     full_ids = _full_inputs(prompt_ids, completions).detach().cpu().tolist()
     score_batch = getattr(observable, "score_token_sequences", None)
@@ -526,9 +527,14 @@ def score_observable(
         dtype=torch.float32,
         device=completions.device,
     )
-    if not bool(torch.isfinite(phi).all().item()):
+    raw_ari = torch.tensor(
+        [float(score.metadata["raw_ari"]) for score in scores],
+        dtype=torch.float32,
+        device=completions.device,
+    )
+    if not bool(torch.isfinite(phi).all().item()) or not bool(torch.isfinite(raw_ari).all().item()):
         raise ValueError("Observable returned a non-finite value")
-    return phi, scores
+    return phi, raw_ari, scores
 
 
 def generate_base_completions(
@@ -653,7 +659,7 @@ def apply_masked_barker_mutation(
             temperature=config.proposal_temperature,
             batch_size=config.batch_size,
         )
-        proposal_phi, _ = score_observable(
+        proposal_phi, proposal_raw_ari, _ = score_observable(
             tokenizer,
             observable,
             prompt=prompt,
@@ -693,6 +699,7 @@ def apply_masked_barker_mutation(
                 particles.completion_token_ids,
             ),
             phi=torch.where(accepted, proposal_phi, particles.phi),
+            raw_ari=torch.where(accepted, proposal_raw_ari, particles.raw_ari),
             log_p_model=torch.where(accepted, proposal_log_p, particles.log_p_model),
             root_ancestors=particles.root_ancestors,
         )
@@ -731,7 +738,7 @@ def _final_samples(
     particles: ParticleBatch,
     normalized_log_weights: torch.Tensor,
 ) -> list[dict[str, Any]]:
-    _, scores = score_observable(
+    _, _, scores = score_observable(
         tokenizer,
         observable,
         prompt=prompt,
@@ -795,7 +802,7 @@ def run_masked_barker_smc(
             generator=generator,
             pad_token_id=pad_token_id,
         )
-        phi, _ = score_observable(
+        phi, raw_ari, _ = score_observable(
             tokenizer,
             observable,
             prompt=prompt,
@@ -812,6 +819,7 @@ def run_masked_barker_smc(
         particles = ParticleBatch(
             completion_token_ids=completion_tokens,
             phi=phi,
+            raw_ari=raw_ari,
             log_p_model=log_p_model,
             root_ancestors=torch.arange(config.num_particles, device=device),
         )
@@ -834,7 +842,8 @@ def run_masked_barker_smc(
                 "acceptance_rate": None,
                 "mean_symmetrization_probability": None,
                 "mean_barker_probability": None,
-                "mean_ari": float(phi.mean().item()),
+                "weighted_mean_ari_before_resampling": float(raw_ari.mean().item()),
+                "unweighted_mean_ari_after_resampling": float(raw_ari.mean().item()),
             }
         ]
         total_accepted = 0
@@ -866,6 +875,12 @@ def run_masked_barker_smc(
             log_weights = normalize_log_weights(log_weights)
             ess = ess_from_normalized_log_weights(log_weights)
             ess_over_n_before = float((ess / config.num_particles).item())
+            normalized_weights_before = torch.exp(log_weights)
+            weighted_mean_ari_before = float(
+                torch.sum(
+                    normalized_weights_before * particles.raw_ari.to(torch.float64)
+                ).item()
+            )
             min_ess_over_n = min(min_ess_over_n, ess_over_n_before)
             resampled = bool(
                 config.resampling
@@ -876,6 +891,7 @@ def run_masked_barker_smc(
                 particles = ParticleBatch(
                     completion_token_ids=particles.completion_token_ids.index_select(0, indices),
                     phi=particles.phi.index_select(0, indices),
+                    raw_ari=particles.raw_ari.index_select(0, indices),
                     log_p_model=particles.log_p_model.index_select(0, indices),
                     root_ancestors=particles.root_ancestors.index_select(0, indices),
                 )
@@ -898,7 +914,8 @@ def run_masked_barker_smc(
                 ),
                 "mean_symmetrization_probability": mutation.mean_symmetrization_probability,
                 "mean_barker_probability": mutation.mean_barker_probability,
-                "mean_ari": float(particles.phi.mean().item()),
+                "weighted_mean_ari_before_resampling": weighted_mean_ari_before,
+                "unweighted_mean_ari_after_resampling": float(particles.raw_ari.mean().item()),
             }
             level_diagnostics.append(row)
             if progress_callback is not None:
@@ -918,12 +935,22 @@ def run_masked_barker_smc(
     final_ess = ess_from_normalized_log_weights(log_weights)
     final_ess_over_n = float((final_ess / config.num_particles).item())
     raw_ari = np.asarray([float(row["raw_ari"]) for row in samples], dtype=np.float64)
+    normalized_weights = np.asarray(
+        [float(row["normalized_weight"]) for row in samples],
+        dtype=np.float64,
+    )
     tail_counts = {
         f"ari_ge_{threshold:g}": int(np.sum(raw_ari >= threshold))
         for threshold in config.tail_thresholds
     }
     tail_proportions = {
         key: float(count / config.num_particles) for key, count in tail_counts.items()
+    }
+    weighted_tail_probabilities = {
+        f"ari_ge_{threshold:g}": float(
+            np.sum(normalized_weights[raw_ari >= threshold])
+        )
+        for threshold in config.tail_thresholds
     }
     acceptance_rate = total_accepted / total_proposals if total_proposals else 0.0
     summary = {
@@ -943,11 +970,13 @@ def run_masked_barker_smc(
         "final_ess_over_n": final_ess_over_n,
         "min_ess_over_n": float(min_ess_over_n),
         "mean_mcmc_acceptance_rate": float(acceptance_rate),
-        "mean_ari": float(np.mean(raw_ari)),
+        "unweighted_mean_ari": float(np.mean(raw_ari)),
+        "weighted_mean_ari": float(np.sum(normalized_weights * raw_ari)),
         "min_ari": float(np.min(raw_ari)),
         "max_ari": float(np.max(raw_ari)),
         "tail_counts": tail_counts,
         "tail_proportions": tail_proportions,
+        "weighted_tail_probabilities": weighted_tail_probabilities,
         "final_distinct_root_ancestors": len(set(int(row["root_ancestor"]) for row in samples)),
     }
     diagnostics = {
@@ -997,26 +1026,28 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         f"- Minimum pre-resampling ESS/N: {summary['min_ess_over_n']:.6g}",
         f"- Total MCMC acceptance rate: {summary['mean_mcmc_acceptance_rate']:.6g}",
         f"- Resampling steps: {summary['resampling_steps']}",
-        f"- Mean/min/max raw ARI: {summary['mean_ari']:.6g} / "
-        f"{summary['min_ari']:.6g} / {summary['max_ari']:.6g}",
+        f"- Unweighted mean raw ARI: {summary['unweighted_mean_ari']:.6g}",
+        f"- Weighted mean raw ARI under final target: {summary['weighted_mean_ari']:.6g}",
+        f"- Observed min/max raw ARI: {summary['min_ari']:.6g} / {summary['max_ari']:.6g}",
         "",
         "## ARI tails",
         "",
-        "| threshold | count | proportion |",
-        "| ---: | ---: | ---: |",
+        "| threshold | raw count | raw proportion | weighted probability |",
+        "| ---: | ---: | ---: | ---: |",
     ]
     for key, count in summary["tail_counts"].items():
         lines.append(
             f"| {key.replace('ari_ge_', 'ARI >= ')} | {count} | "
-            f"{summary['tail_proportions'][key]:.6g} |"
+            f"{summary['tail_proportions'][key]:.6g} | "
+            f"{summary['weighted_tail_probabilities'][key]:.6g} |"
         )
     lines.extend(
         [
             "",
             "## Schedule",
             "",
-            "| level | lambda | mutation target | ESS/N pre | ESS/N post | resampled | acceptance | mean ARI |",
-            "| ---: | ---: | ---: | ---: | ---: | :---: | ---: | ---: |",
+            "| level | lambda | mutation target | ESS/N pre | ESS/N post | resampled | acceptance | weighted mean ARI pre | unweighted mean ARI post |",
+            "| ---: | ---: | ---: | ---: | ---: | :---: | ---: | ---: | ---: |",
         ]
     )
     for row in diagnostics["level_diagnostics"]:
@@ -1024,7 +1055,7 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         acceptance = row["acceptance_rate"]
         lines.append(
             "| {level} | {lam:.6g} | {target} | {pre:.6g} | {post:.6g} | {resampled} | "
-            "{acceptance} | {mean:.6g} |".format(
+            "{acceptance} | {weighted_mean:.6g} | {unweighted_mean:.6g} |".format(
                 level=row["level"],
                 lam=row["lambda"],
                 target="" if target is None else f"{target:.6g}",
@@ -1032,7 +1063,8 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
                 post=row["ess_over_n_after_resampling"],
                 resampled="yes" if row["resampled"] else "no",
                 acceptance="" if acceptance is None else f"{acceptance:.6g}",
-                mean=row["mean_ari"],
+                weighted_mean=row["weighted_mean_ari_before_resampling"],
+                unweighted_mean=row["unweighted_mean_ari_after_resampling"],
             )
         )
     return "\n".join(lines) + "\n"

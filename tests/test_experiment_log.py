@@ -36,6 +36,28 @@ def test_append_log_entry(tmp_path) -> None:
     assert "mixture_mcmc" in text
 
 
+def test_masked_barker_log_distinguishes_weighted_statistics() -> None:
+    entry = render_experiment_log_entry(
+        run_name="weighted_smc",
+        algorithm="masked_barker_smc",
+        summary={
+            "ari_tail_summary": {
+                "unweighted_mean_ari": 7.0,
+                "weighted_mean_ari": 8.0,
+                "min_ari": 1.0,
+                "max_ari": 12.0,
+                "tail_counts": {"ari_ge_8": 2},
+                "raw_tail_proportions": {"ari_ge_8": 0.5},
+                "weighted_tail_probabilities": {"ari_ge_8": 0.75},
+            }
+        },
+        config={"model_name": "model", "tokenizer_name": "tok", "prompt": "prompt"},
+    )
+    assert "Unweighted mean/min/max raw ARI" in entry
+    assert "Weighted mean raw ARI" in entry
+    assert "| ARI >= 8 | 2 | 0.5 | 0.75 |" in entry
+
+
 def test_create_samples_preview_from_jsonl(tmp_path) -> None:
     source = tmp_path / "samples.jsonl"
     source.write_text("\n".join(json.dumps({"raw_ari": i}) for i in range(3)) + "\n", encoding="utf-8")

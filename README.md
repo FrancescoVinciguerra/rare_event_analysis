@@ -64,7 +64,7 @@ Upload or clone the repository in Colab, then run:
 pip install -r requirements-colab.txt
 ```
 
-Open `notebooks/REA_Colab_Quickstart.ipynb` for a clean end-to-end notebook with GPU checks, a substantial masked Barker SMC run, validation plots, Drive output paths, and selected-result publishing instructions.
+Open `notebooks/REA_Colab_Quickstart.ipynb` for a clean end-to-end notebook with GPU checks, independent multi-seed masked Barker SMC runs, weighted target statistics, validation plots, resumable Drive output paths, and selected-result publishing instructions.
 
 The quickstart uses an `ALGORITHMS_TO_RUN` list and defaults to
 `["masked_barker_smc"]`, so the new pipeline can run by itself.

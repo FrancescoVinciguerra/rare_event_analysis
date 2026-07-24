@@ -76,7 +76,22 @@ def render_experiment_log_entry(
 ) -> str:
     tail = summary.get("ari_tail_summary", {})
     counts = tail.get("tail_counts", {}) if isinstance(tail, dict) else {}
-    probs = tail.get("tail_probabilities", {}) if isinstance(tail, dict) else {}
+    probs = (
+        tail.get("raw_tail_proportions", tail.get("tail_probabilities", {}))
+        if isinstance(tail, dict)
+        else {}
+    )
+    weighted_probs = (
+        tail.get("weighted_tail_probabilities", {})
+        if isinstance(tail, dict)
+        else {}
+    )
+    unweighted_mean = (
+        tail.get("unweighted_mean_ari", tail.get("mean_ari"))
+        if isinstance(tail, dict)
+        else None
+    )
+    weighted_mean = tail.get("weighted_mean_ari") if isinstance(tail, dict) else None
     lines = [
         f"## {run_name}",
         "",
@@ -116,15 +131,36 @@ def render_experiment_log_entry(
             f"- Runtime seconds: `{summary.get('runtime_total_seconds', summary.get('total_runtime_seconds', ''))}`",
             f"- ESS/N: `{summary.get('final_ess_over_n', summary.get('importance_ess_over_n', ''))}`",
             f"- Acceptance rate: `{summary.get('mean_mcmc_acceptance_rate', summary.get('acceptance_rate', ''))}`",
-            f"- Mean/min/max raw ARI: `{tail.get('mean_ari')}` / `{tail.get('min_ari')}` / `{tail.get('max_ari')}`",
+            f"- Unweighted mean/min/max raw ARI: `{unweighted_mean}` / "
+            f"`{tail.get('min_ari')}` / `{tail.get('max_ari')}`",
+        ]
+    )
+    if weighted_mean is not None:
+        lines.append(f"- Weighted mean raw ARI: `{weighted_mean}`")
+    lines.extend(
+        [
             "",
-            "| Threshold | Count | Probability |",
-            "| ---: | ---: | ---: |",
+            (
+                "| Threshold | Raw count | Raw proportion | Weighted probability |"
+                if weighted_probs
+                else "| Threshold | Count | Probability |"
+            ),
+            (
+                "| ---: | ---: | ---: | ---: |"
+                if weighted_probs
+                else "| ---: | ---: | ---: |"
+            ),
         ]
     )
     for key in counts:
         threshold = key.replace("ari_ge_", "ARI >= ").replace("p", ".")
-        lines.append(f"| {threshold} | {counts[key]} | {probs.get(key)} |")
+        if weighted_probs:
+            lines.append(
+                f"| {threshold} | {counts[key]} | {probs.get(key)} | "
+                f"{weighted_probs.get(key)} |"
+            )
+        else:
+            lines.append(f"| {threshold} | {counts[key]} | {probs.get(key)} |")
     if notes:
         lines.extend(["", f"Notes: {notes}"])
     return "\n".join(lines) + "\n"

@@ -108,7 +108,8 @@ def _progress(row: dict) -> None:
         f"level {row['level']}: lambda={row['lambda']:g}, "
         f"ESS/N={row['ess_over_n_before_resampling']:.3f}, "
         f"resampled={row['resampled']}, acceptance={acceptance_text}, "
-        f"mean ARI={row['mean_ari']:.3f}",
+        f"weighted ARI pre={row['weighted_mean_ari_before_resampling']:.3f}, "
+        f"unweighted ARI post={row['unweighted_mean_ari_after_resampling']:.3f}",
         flush=True,
     )
 
@@ -185,14 +186,21 @@ def main() -> None:
         "ari_cap": args.ari_cap,
         "observable_backend": args.observable_backend,
     }
+    ari_tail_summary = compute_ari_tail_summary(
+        result.samples,
+        thresholds=config.tail_thresholds,
+    )
+    ari_tail_summary["unweighted_mean_ari"] = ari_tail_summary.pop("mean_ari")
+    ari_tail_summary["weighted_mean_ari"] = result.summary["weighted_mean_ari"]
+    ari_tail_summary["raw_tail_proportions"] = ari_tail_summary.pop("tail_probabilities")
+    ari_tail_summary["weighted_tail_probabilities"] = result.summary[
+        "weighted_tail_probabilities"
+    ]
     enriched_summary = {
         **result.summary,
         "run_name": run_name,
         "algorithm": "masked_barker_smc",
-        "ari_tail_summary": compute_ari_tail_summary(
-            result.samples,
-            thresholds=config.tail_thresholds,
-        ),
+        "ari_tail_summary": ari_tail_summary,
     }
     write_json(
         args.output_dir / "summary.json",
