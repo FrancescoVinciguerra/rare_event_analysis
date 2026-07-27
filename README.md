@@ -1,6 +1,6 @@
 # REA of LLMs - Minimal Research Workspace
 
-This repository contains a small, readable workspace for rare-event experiments with language-model completions. It is intentionally limited to the code needed to run and document three experimental samplers, plus selected results that are suitable for review.
+This repository contains a small, readable workspace for rare-event experiments with language-model completions. It is intentionally limited to the code needed to run and document the experimental samplers, plus selected results that are suitable for review.
 
 Default model setup:
 
@@ -43,6 +43,26 @@ full-sequence SMC pipeline. See
 `masked_barker_smc_experiment/README.md` for the detailed-balance argument and
 mask schedule syntax.
 
+### Suffix-balanced full-sequence SMC
+
+`suffix_balanced_smc_experiment/` adds a separately selectable SMC pipeline
+whose mutation keeps a completion prefix fixed and regenerates an exact
+language-model suffix. It evaluates forward and reverse suffix probabilities
+by batched teacher forcing, symmetrizes the proposal, and supports Barker,
+Metropolis, and safely scaled square-root balancing functions.
+
+Unlike the masked sampler, which may update arbitrary non-contiguous token
+positions, this proposal changes one contiguous suffix and preserves every
+earlier completion token.
+
+The parallel implementation groups particles by suffix length and is the
+default in its dedicated Colab notebook. It mutates at the previous lambda,
+then performs the incremental SMC weight update, ESS check, and optional
+systematic resampling. It never resamples after the final level and does not
+depend on direct sampling, mixture MCMC, TPS, MBAR, or either earlier SMC
+pipeline. See `suffix_balanced_smc_experiment/README.md` for the formulas,
+schedule syntax, square-root limits, and output schema.
+
 ## Repository Map
 
 - `rea_llms/models.py`: model/tokenizer loading and device selection.
@@ -50,8 +70,11 @@ mask schedule syntax.
 - `rea_llms/experiment_log.py`: shared result logging, ARI tail summaries, and selected-result publishing.
 - `full_sequence_smc_experiment/run_smc_sampler.py`: CLI for full-sequence SMC.
 - `masked_barker_smc_experiment/run_experiment.py`: CLI for masked Barker SMC.
+- `suffix_balanced_smc_experiment/run_experiment.py`: CLI for suffix-balanced SMC.
+- `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel benchmark.
 - `mixture_mcmc_experiment/run_experiment.py`: CLI for mixture MCMC.
 - `notebooks/REA_Colab_Quickstart.ipynb`: Colab quickstart.
+- `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`: standalone suffix-balanced SMC Colab quickstart.
 - `results/EXPERIMENT_LOG.md`: cumulative log of selected runs.
 - `results/selected_runs/`: only curated run summaries and small sample previews.
 - `tests/`: lightweight unit tests.
@@ -117,6 +140,22 @@ python masked_barker_smc_experiment/run_experiment.py \
   --mask-sizes 1 \
   --deterministic-mask-size-schedule 1 \
   --output-dir outputs/masked_barker_smoke
+```
+
+Suffix-balanced SMC:
+
+```bash
+python suffix_balanced_smc_experiment/run_experiment.py \
+  --device auto \
+  --num-particles 4 \
+  --max-new-tokens 4 \
+  --lambdas 0,0 \
+  --mcmc-steps-per-level 1 \
+  --suffix-mode deterministic \
+  --suffix-sizes 4 \
+  --suffix-size-schedule 4 \
+  --balancing-function barker \
+  --output-dir outputs/suffix_balanced_smoke
 ```
 
 ## Logging and Selected Results
