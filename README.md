@@ -48,8 +48,9 @@ mask schedule syntax.
 `suffix_balanced_smc_experiment/` adds a separately selectable SMC pipeline
 whose mutation keeps a completion prefix fixed and regenerates an exact
 language-model suffix. It evaluates forward and reverse suffix probabilities
-by batched teacher forcing, symmetrizes the proposal, and supports Barker,
-Metropolis, and safely scaled square-root balancing functions.
+by batched teacher forcing when needed and supports Barker, direct Metropolis,
+and safely scaled square-root balancing functions. Direct Metropolis uses the
+exact suffix cancellation and skips all forward/reverse proposal scoring.
 
 Unlike the masked sampler, which may update arbitrary non-contiguous token
 positions, this proposal changes one contiguous suffix and preserves every
@@ -71,7 +72,7 @@ schedule syntax, square-root limits, and output schema.
 - `full_sequence_smc_experiment/run_smc_sampler.py`: CLI for full-sequence SMC.
 - `masked_barker_smc_experiment/run_experiment.py`: CLI for masked Barker SMC.
 - `suffix_balanced_smc_experiment/run_experiment.py`: CLI for suffix-balanced SMC.
-- `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel benchmark.
+- `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel and direct-MH fast-path benchmarks.
 - `mixture_mcmc_experiment/run_experiment.py`: CLI for mixture MCMC.
 - `notebooks/REA_Colab_Quickstart.ipynb`: Colab quickstart.
 - `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`: standalone suffix-balanced SMC Colab quickstart.

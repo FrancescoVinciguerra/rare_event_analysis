@@ -18,7 +18,8 @@ exactly \(m\) new tokens from the language model:
 y=(u,s_y), \qquad R_m(x,y)=p_M(s_y\mid c,u).
 \]
 
-The reverse probability is evaluated exactly by teacher forcing:
+For Barker and square-root balancing, the reverse probability is evaluated
+exactly by teacher forcing:
 
 \[
 R_m(y,x)=p_M(s_x\mid c,u).
@@ -36,7 +37,36 @@ z=\log\frac{\pi_{k-1}(y)}{\pi_{k-1}(x)}
 Other proposal temperatures are rejected explicitly because this cancellation
 would no longer be exact.
 
-## Balanced acceptance
+## Direct Metropolis fast path
+
+With `--balancing-function metropolis`, proposal temperature one, fixed
+completion length, and state-independent suffix-size selection, the direct MH
+ratio is
+
+\[
+\frac{\pi_{k-1}(y)R_m(y,x)}{\pi_{k-1}(x)R_m(x,y)}
+=\exp\{-\lambda_{k-1}[\phi(y)-\phi(x)]\}.
+\]
+
+Both suffix LM probabilities and the equal forward/reverse suffix-size
+selection probabilities cancel. The implementation therefore uses
+
+\[
+\log A_{\mathrm{MH}}=
+\min\{0,-\lambda_{k-1}[\phi(y)-\phi(x)]\}.
+\]
+
+This fast path generates the proposal and evaluates only \(\phi(y)\), reusing
+the cached \(\phi(x)\). It does not evaluate full-completion probabilities,
+forward or reverse suffix probabilities, teacher forcing, `a_sym`, or an LM
+ratio. In particular, it does **not** use the lower-acceptance two-stage rule
+`a_sym * min(1, pi(y)/pi(x))`.
+
+`--disable-metropolis-fast-path` computes the algebraically equivalent full
+direct-MH ratio for validation and benchmarking. It still performs one direct
+MH decision; it does not restore the old two-stage kernel.
+
+## Barker and square-root acceptance
 
 The proposal is first symmetrized with
 
@@ -48,7 +78,6 @@ The proposal is first symmetrized with
 The configured balancing component is then added:
 
 - Barker: \(\log g(e^z)=\log\sigma(z)\);
-- Metropolis: \(\log g(e^z)=\min(0,z)\);
 - square root: \(\log g_\delta(e^z)=\log\delta_k+z/2\).
 
 The total log acceptance is
@@ -72,8 +101,9 @@ acceptance is at most one without estimating a bound from observed samples.
 An explicit `--sqrt-scale` may only reduce this certified scale. The invalid
 construction `min(1, sqrt(t))` is never used.
 
-All three choices satisfy \(g(t)=t g(1/t)\), so the resulting mutation kernel
-satisfies detailed balance with the current tilted target.
+Barker and scaled square root satisfy \(g(t)=t g(1/t)\) in the symmetrized
+construction. Direct Metropolis satisfies detailed balance through the usual
+MH proposal-ratio correction, which cancels exactly in this suffix setting.
 
 ## SMC order and resampling
 
@@ -106,7 +136,8 @@ only for deliberate local-kernel studies.
 
 `--implementation parallel` is the default. It draws all suffix sizes on the
 model device, groups particles by suffix length, regenerates each group in GPU
-batches, and teacher-forces forward and reverse suffix probabilities together.
+batches, and, when required, teacher-forces forward and reverse suffix
+probabilities together. Metropolis skips that scoring pass entirely.
 Acceptance, weight updates, ESS, and resampling are vectorized. Exact textstat
 ARI remains one explicit batched CPU boundary per mutation step.
 
@@ -149,6 +180,16 @@ python suffix_balanced_smc_experiment/run_benchmark.py --device cuda
 
 It reports only total runtime, particles per second, mean time per level, peak
 GPU memory, and speedup over the reference implementation.
+
+The focused direct-MH fast-path benchmark is:
+
+```bash
+python suffix_balanced_smc_experiment/run_benchmark.py \
+  --benchmark-mode metropolis-fast-path --device cuda
+```
+
+Both paths are warmed before timing. The benchmark also requires identical
+final token particles at the shared seed before reporting the speedup.
 
 For resumable independent multi-seed Colab runs, open
 `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`.

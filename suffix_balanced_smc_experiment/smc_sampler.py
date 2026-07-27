@@ -38,6 +38,7 @@ class SuffixBalancedSMCConfig:
     suffix_rho_schedule: tuple[tuple[float, ...], ...] | None = None
     require_global_irreducibility: bool = True
     balancing_function: str = "barker"
+    metropolis_fast_path: bool = True
     phi_min: float | None = None
     phi_max: float | None = None
     sqrt_scale: float | None = None
@@ -214,10 +215,11 @@ class KernelComponents:
 class MutationDiagnostics:
     accepted: int
     proposals: int
-    mean_symmetrization_probability: float
+    mean_symmetrization_probability: float | None
     mean_balancing_component: float
     mean_total_acceptance_probability: float
     suffix_size_counts: dict[str, int]
+    metropolis_fast_path: bool
 
 
 @dataclass
@@ -522,11 +524,16 @@ def propose_suffixes_parallel(
     batch_size: int,
     token_chunk_size: int,
     generator: torch.Generator,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Regenerate and score all suffixes in equal-length GPU groups."""
+    score_probabilities: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
+    """Regenerate suffixes in GPU groups and optionally teacher-force R_f/R_r."""
     proposals = current.clone()
-    log_forward = torch.empty(current.shape[0], dtype=torch.float32, device=current.device)
-    log_reverse = torch.empty_like(log_forward)
+    log_forward = (
+        torch.empty(current.shape[0], dtype=torch.float32, device=current.device)
+        if score_probabilities
+        else None
+    )
+    log_reverse = torch.empty_like(log_forward) if log_forward is not None else None
     for suffix_size in torch.unique(suffix_sizes, sorted=True).detach().cpu().tolist():
         indices = torch.nonzero(suffix_sizes == suffix_size, as_tuple=False).flatten()
         prefix_size = current.shape[1] - int(suffix_size)
@@ -542,16 +549,18 @@ def propose_suffixes_parallel(
         )
         proposal_group = torch.cat((current_group[:, :prefix_size], proposed_suffix), dim=1)
         proposals.index_copy_(0, indices, proposal_group)
-        forward, reverse = paired_suffix_log_probabilities(
-            model,
-            context,
-            proposed_suffix,
-            current_group[:, prefix_size:],
-            batch_size=batch_size,
-            token_chunk_size=token_chunk_size,
-        )
-        log_forward.index_copy_(0, indices, forward)
-        log_reverse.index_copy_(0, indices, reverse)
+        if score_probabilities:
+            forward, reverse = paired_suffix_log_probabilities(
+                model,
+                context,
+                proposed_suffix,
+                current_group[:, prefix_size:],
+                batch_size=batch_size,
+                token_chunk_size=token_chunk_size,
+            )
+            assert log_forward is not None and log_reverse is not None
+            log_forward.index_copy_(0, indices, forward)
+            log_reverse.index_copy_(0, indices, reverse)
     return proposals, log_forward, log_reverse
 
 
@@ -563,7 +572,8 @@ def propose_suffixes_reference(
     *,
     token_chunk_size: int,
     generator: torch.Generator,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    score_probabilities: bool = True,
+) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
     """Clear per-particle reference implementation of the same suffix proposal."""
     proposals: list[torch.Tensor] = []
     forward: list[torch.Tensor] = []
@@ -580,16 +590,19 @@ def propose_suffixes_reference(
             generator=generator,
         )
         proposal = torch.cat((state[:, :prefix_size], proposed_suffix), dim=1)
-        log_forward, log_reverse = _paired_suffix_log_probabilities_chunk(
-            model,
-            context,
-            proposed_suffix,
-            state[:, prefix_size:],
-            token_chunk_size=token_chunk_size,
-        )
         proposals.append(proposal)
-        forward.append(log_forward)
-        reverse.append(log_reverse)
+        if score_probabilities:
+            log_forward, log_reverse = _paired_suffix_log_probabilities_chunk(
+                model,
+                context,
+                proposed_suffix,
+                state[:, prefix_size:],
+                token_chunk_size=token_chunk_size,
+            )
+            forward.append(log_forward)
+            reverse.append(log_reverse)
+    if not score_probabilities:
+        return torch.cat(proposals), None, None
     return torch.cat(proposals), torch.cat(forward), torch.cat(reverse)
 
 
@@ -603,6 +616,52 @@ def safe_sqrt_scale(target_lambda: float, phi_min: float, phi_max: float) -> flo
 
 
 # Exact symmetrized and locally balanced mutation kernel
+
+
+def metropolis_fast_path_enabled(config: SuffixBalancedSMCConfig) -> bool:
+    """Whether exact suffix-MH cancellation applies to this run.
+
+    Suffix selection is state-independent by construction, every completion
+    has fixed length T, and forward/reverse use the same suffix-size support.
+    """
+    return bool(
+        config.metropolis_fast_path
+        and config.balancing_function == "metropolis"
+        and math.isclose(config.proposal_temperature, 1.0, rel_tol=0.0, abs_tol=1e-12)
+    )
+
+
+def metropolis_log_acceptance_fast(
+    current_phi: torch.Tensor,
+    proposal_phi: torch.Tensor,
+    *,
+    target_lambda: float,
+) -> torch.Tensor:
+    """Direct suffix-MH acceptance after exact cancellation of all LM terms."""
+    log_ratio = -target_lambda * (proposal_phi - current_phi)
+    if not bool(torch.isfinite(log_ratio).all().item()):
+        raise ValueError("Non-finite direct Metropolis log-acceptance ratio")
+    return torch.minimum(torch.zeros_like(log_ratio), log_ratio)
+
+
+def metropolis_log_acceptance_full(
+    log_r_forward: torch.Tensor,
+    log_r_reverse: torch.Tensor,
+    current_phi: torch.Tensor,
+    proposal_phi: torch.Tensor,
+    *,
+    target_lambda: float,
+) -> torch.Tensor:
+    """Direct MH ratio before algebraic cancellation, used as a reference path."""
+    log_target_ratio = (
+        log_r_forward
+        - log_r_reverse
+        - target_lambda * (proposal_phi - current_phi)
+    )
+    log_mh_ratio = log_target_ratio + log_r_reverse - log_r_forward
+    if not bool(torch.isfinite(log_mh_ratio).all().item()):
+        raise ValueError("Non-finite full Metropolis log-acceptance ratio")
+    return torch.minimum(torch.zeros_like(log_mh_ratio), log_mh_ratio)
 
 
 def kernel_components(
@@ -630,8 +689,6 @@ def kernel_components(
     selected_scale: float | None = None
     if balancing_function == "barker":
         log_balancing = F.logsigmoid(log_target_ratio)
-    elif balancing_function == "metropolis":
-        log_balancing = torch.minimum(torch.zeros_like(log_target_ratio), log_target_ratio)
     elif balancing_function == "sqrt":
         if phi_min is None or phi_max is None:
             raise ValueError("sqrt balancing requires certified phi_min and phi_max")
@@ -643,7 +700,10 @@ def kernel_components(
             )
         log_balancing = math.log(selected_scale) + 0.5 * log_target_ratio
     else:
-        raise ValueError(f"Unknown balancing function: {balancing_function!r}")
+        raise ValueError(
+            "kernel_components supports only {'barker', 'sqrt'}; Metropolis uses "
+            "the direct MH kernel instead of the symmetrized two-stage kernel"
+        )
 
     log_acceptance = log_symmetrization + log_balancing
     tensors = (
@@ -823,6 +883,8 @@ def apply_suffix_balanced_mutation(
         if config.implementation == "parallel"
         else propose_suffixes_reference
     )
+    use_metropolis_fast_path = metropolis_fast_path_enabled(config)
+    compute_proposal_probabilities = not use_metropolis_fast_path
 
     for step_index in range(config.mcmc_steps_per_level):
         suffix_sizes = sample_suffix_sizes(
@@ -841,6 +903,7 @@ def apply_suffix_balanced_mutation(
                 batch_size=config.batch_size,
                 token_chunk_size=config.score_token_chunk_size,
                 generator=generator,
+                score_probabilities=compute_proposal_probabilities,
             )
         else:
             proposal_tokens, log_r_forward, log_r_reverse = proposal_function(
@@ -850,6 +913,7 @@ def apply_suffix_balanced_mutation(
                 suffix_sizes,
                 token_chunk_size=config.score_token_chunk_size,
                 generator=generator,
+                score_probabilities=compute_proposal_probabilities,
             )
         proposal_phi, proposal_raw_ari, _ = score_observable(
             tokenizer,
@@ -858,26 +922,52 @@ def apply_suffix_balanced_mutation(
             prompt_ids=prompt_ids,
             completions=proposal_tokens,
         )
-        components = kernel_components(
-            log_r_forward,
-            log_r_reverse,
-            particles.phi,
-            proposal_phi,
-            target_lambda=target_lambda,
-            balancing_function=config.balancing_function,
-            phi_min=config.phi_min,
-            phi_max=config.phi_max,
-            sqrt_scale=config.sqrt_scale,
-        )
+        if use_metropolis_fast_path:
+            # Exact direct MH: p_M and suffix-selection factors cancel completely.
+            log_acceptance = metropolis_log_acceptance_fast(
+                particles.phi,
+                proposal_phi,
+                target_lambda=target_lambda,
+            )
+            log_symmetrization = None
+            log_balancing = log_acceptance
+        elif config.balancing_function == "metropolis":
+            # Reference direct-MH path: evaluate the full ratio, then cancel numerically.
+            assert log_r_forward is not None and log_r_reverse is not None
+            log_acceptance = metropolis_log_acceptance_full(
+                log_r_forward,
+                log_r_reverse,
+                particles.phi,
+                proposal_phi,
+                target_lambda=target_lambda,
+            )
+            log_symmetrization = None
+            log_balancing = log_acceptance
+        else:
+            assert log_r_forward is not None and log_r_reverse is not None
+            components = kernel_components(
+                log_r_forward,
+                log_r_reverse,
+                particles.phi,
+                proposal_phi,
+                target_lambda=target_lambda,
+                balancing_function=config.balancing_function,
+                phi_min=config.phi_min,
+                phi_max=config.phi_max,
+                sqrt_scale=config.sqrt_scale,
+            )
+            log_acceptance = components.log_acceptance
+            log_symmetrization = components.log_symmetrization
+            log_balancing = components.log_balancing
         log_uniform = torch.log(
             torch.rand(
                 config.num_particles,
-                dtype=components.log_acceptance.dtype,
+                dtype=log_acceptance.dtype,
                 device=device,
                 generator=generator,
             )
         )
-        accepted = log_uniform < components.log_acceptance
+        accepted = log_uniform < log_acceptance
         particles = ParticleBatch(
             completion_token_ids=torch.where(
                 accepted.unsqueeze(1),
@@ -890,9 +980,10 @@ def apply_suffix_balanced_mutation(
             last_suffix_sizes=suffix_sizes,
         )
         accepted_total += accepted.sum()
-        sym_sum += torch.exp(components.log_symmetrization).to(torch.float64).sum()
-        balancing_sum += torch.exp(components.log_balancing).to(torch.float64).sum()
-        total_probability_sum += torch.exp(components.log_acceptance).to(torch.float64).sum()
+        if log_symmetrization is not None:
+            sym_sum += torch.exp(log_symmetrization).to(torch.float64).sum()
+        balancing_sum += torch.exp(log_balancing).to(torch.float64).sum()
+        total_probability_sum += torch.exp(log_acceptance).to(torch.float64).sum()
         size_counts += torch.bincount(suffix_sizes, minlength=config.max_new_tokens + 1)
 
     denominator = max(1, proposals_total)
@@ -905,10 +996,15 @@ def apply_suffix_balanced_mutation(
     return particles, MutationDiagnostics(
         accepted=int(accepted_total.item()),
         proposals=proposals_total,
-        mean_symmetrization_probability=float((sym_sum / denominator).item()),
+        mean_symmetrization_probability=(
+            None
+            if config.balancing_function == "metropolis"
+            else float((sym_sum / denominator).item())
+        ),
         mean_balancing_component=float((balancing_sum / denominator).item()),
         mean_total_acceptance_probability=float((total_probability_sum / denominator).item()),
         suffix_size_counts=suffix_count_rows,
+        metropolis_fast_path=use_metropolis_fast_path,
     )
 
 
@@ -1040,6 +1136,7 @@ def run_suffix_balanced_smc(
                 "mean_symmetrization_probability": None,
                 "mean_balancing_component": None,
                 "mean_total_acceptance_probability": None,
+                "metropolis_fast_path": metropolis_fast_path_enabled(config),
                 "weighted_mean_ari_before_resampling": initial_mean,
                 "unweighted_mean_ari_after_resampling": initial_mean,
                 "runtime_seconds": 0.0,
@@ -1125,6 +1222,7 @@ def run_suffix_balanced_smc(
                 "mean_symmetrization_probability": mutation.mean_symmetrization_probability,
                 "mean_balancing_component": mutation.mean_balancing_component,
                 "mean_total_acceptance_probability": mutation.mean_total_acceptance_probability,
+                "metropolis_fast_path": mutation.metropolis_fast_path,
                 "weighted_mean_ari_before_resampling": weighted_mean_before,
                 "unweighted_mean_ari_after_resampling": float(particles.raw_ari.mean().item()),
                 "runtime_seconds": float(time.perf_counter() - level_start),
@@ -1182,6 +1280,7 @@ def run_suffix_balanced_smc(
         "target_lambda": float(config.lambdas[-1]),
         "mcmc_steps_per_level": config.mcmc_steps_per_level,
         "balancing_function": config.balancing_function,
+        "metropolis_fast_path": metropolis_fast_path_enabled(config),
         "ess_threshold": config.ess_threshold,
         "resampling": config.resampling,
         "resampling_method": config.resampling_method,
@@ -1211,12 +1310,14 @@ def run_suffix_balanced_smc(
         "level_diagnostics": level_diagnostics,
         "total_mcmc_accepted": total_accepted,
         "total_mcmc_proposals": total_proposals,
+        "metropolis_fast_path": metropolis_fast_path_enabled(config),
         "resampling_steps": resampling_steps,
         "final_distinct_root_ancestors": summary["final_distinct_root_ancestors"],
         "observable_device_boundary": (
             "Exact textstat ARI is decoded and evaluated on CPU once per batched proposal "
-            "step; proposal generation, teacher forcing, acceptance, weights, ESS, and "
-            "resampling remain on the model device."
+            "step. Proposal generation, acceptance, weights, ESS, and resampling remain "
+            "on the model device. The Metropolis fast path skips suffix-probability "
+            "teacher forcing; other balancing functions score forward/reverse on device."
         ),
         "batching_reproducibility": (
             "The reference and parallel implementations use the same transition kernel. "
@@ -1245,17 +1346,26 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
+    metropolis_fast_path = bool(summary.get("metropolis_fast_path", False))
+    mutation_description = (
+        "uses the exact direct-MH suffix cancellation and scores only the proposed "
+        "observable"
+        if metropolis_fast_path
+        else "symmetrizes exact forward/reverse suffix probabilities and applies the "
+        "configured balancing function"
+    )
     lines = [
         "# Suffix-Balanced Full-Sequence SMC",
         "",
         "Particles are complete fixed-length LM completions. Mutation regenerates a "
-        "state-independent suffix, symmetrizes the exact forward/reverse proposal, and "
-        "applies the configured balancing function. No target normalizer is evaluated.",
+        f"state-independent suffix and {mutation_description}. No target normalizer "
+        "is evaluated.",
         "",
         "## Summary",
         "",
         f"- Implementation: `{summary['implementation']}`",
         f"- Balancing function: `{summary['balancing_function']}`",
+        f"- `metropolis_fast_path: {str(metropolis_fast_path).lower()}`",
         f"- Runtime: {summary['runtime_total_seconds']:.3f} s",
         f"- Seconds per final particle: {summary['runtime_seconds_per_final_particle']:.6f}",
         f"- Final ESS/N: {summary['final_ess_over_n']:.4f}",

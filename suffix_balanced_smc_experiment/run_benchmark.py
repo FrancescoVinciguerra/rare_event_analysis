@@ -26,7 +26,12 @@ from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Benchmark reference versus parallel suffix-balanced SMC only."
+        description="Benchmark two implementations of the same suffix-balanced SMC kernel."
+    )
+    parser.add_argument(
+        "--benchmark-mode",
+        choices=["parallelization", "metropolis-fast-path"],
+        default="parallelization",
     )
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument("--tokenizer-name", default=DEFAULT_TOKENIZER_NAME)
@@ -64,6 +69,82 @@ def main() -> None:
         batch_size=args.batch_size,
         seed=args.seed,
     )
+    if args.benchmark_mode == "metropolis-fast-path":
+        warmup_config = replace(
+            base_config,
+            num_particles=min(2, args.num_particles),
+            mcmc_steps_per_level=min(1, args.mcmc_steps_per_level),
+            batch_size=min(2, args.batch_size),
+            balancing_function="metropolis",
+            implementation="parallel",
+        )
+        run_suffix_balanced_smc(
+            model,
+            tokenizer,
+            observable,
+            prompt=args.prompt,
+            config=replace(warmup_config, metropolis_fast_path=True),
+        )
+        run_suffix_balanced_smc(
+            model,
+            tokenizer,
+            observable,
+            prompt=args.prompt,
+            config=replace(warmup_config, metropolis_fast_path=False),
+        )
+        general = run_suffix_balanced_smc(
+            model,
+            tokenizer,
+            observable,
+            prompt=args.prompt,
+            config=replace(
+                base_config,
+                balancing_function="metropolis",
+                implementation="parallel",
+                metropolis_fast_path=False,
+            ),
+        )
+        fast = run_suffix_balanced_smc(
+            model,
+            tokenizer,
+            observable,
+            prompt=args.prompt,
+            config=replace(
+                base_config,
+                balancing_function="metropolis",
+                implementation="parallel",
+                metropolis_fast_path=True,
+            ),
+        )
+        general_runtime = general.summary["runtime_total_seconds"]
+        fast_runtime = fast.summary["runtime_total_seconds"]
+        general_particles = [row["completion_token_ids"] for row in general.samples]
+        fast_particles = [row["completion_token_ids"] for row in fast.samples]
+        if general_particles != fast_particles:
+            raise RuntimeError(
+                "Fast and full direct-MH paths diverged at the same seed; benchmark aborted"
+            )
+        print(
+            json.dumps(
+                {
+                    "runtime_total_seconds": {
+                        "general_direct_mh": general_runtime,
+                        "metropolis_fast_path": fast_runtime,
+                    },
+                    "particles_per_second": fast.summary["particles_per_second"],
+                    "mean_seconds_per_level": fast.summary[
+                        "mean_runtime_seconds_per_level"
+                    ],
+                    "cuda_peak_memory_bytes": fast.summary["cuda_peak_memory_bytes"],
+                    "speedup_vs_general_direct_mh": general_runtime / fast_runtime,
+                    "metropolis_fast_path": fast.summary["metropolis_fast_path"],
+                    "matched_final_particles": True,
+                },
+                indent=2,
+            )
+        )
+        return
+
     reference = run_suffix_balanced_smc(
         model,
         tokenizer,

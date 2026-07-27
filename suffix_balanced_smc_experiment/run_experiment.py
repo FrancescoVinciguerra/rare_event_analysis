@@ -98,6 +98,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=["barker", "metropolis", "sqrt"],
         default="barker",
     )
+    parser.add_argument(
+        "--disable-metropolis-fast-path",
+        action="store_true",
+        help=(
+            "Evaluate the algebraically equivalent full suffix-MH ratio. "
+            "Intended only for validation and benchmarking."
+        ),
+    )
     parser.add_argument("--phi-min", type=float, default=None)
     parser.add_argument("--phi-max", type=float, default=None)
     parser.add_argument("--sqrt-scale", type=float, default=None)
@@ -163,6 +171,7 @@ def main() -> None:
         ),
         require_global_irreducibility=not args.allow_local_suffix_support,
         balancing_function=args.balancing_function,
+        metropolis_fast_path=not args.disable_metropolis_fast_path,
         phi_min=args.phi_min,
         phi_max=args.phi_max,
         sqrt_scale=args.sqrt_scale,

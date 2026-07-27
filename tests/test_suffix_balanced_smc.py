@@ -9,11 +9,14 @@ import torch
 import torch.nn.functional as F
 
 from rea_llms.observables.base import ObservableScore
+import suffix_balanced_smc_experiment.smc_sampler as suffix_sampler
 from suffix_balanced_smc_experiment.run_experiment import parse_args
 from suffix_balanced_smc_experiment.smc_sampler import (
     SuffixBalancedSMCConfig,
     incremental_log_weight_update,
     kernel_components,
+    metropolis_log_acceptance_fast,
+    metropolis_log_acceptance_full,
     paired_suffix_log_probabilities,
     propose_suffixes_parallel,
     run_suffix_balanced_smc,
@@ -224,7 +227,7 @@ def test_parallel_scoring_matches_particlewise_reference_values() -> None:
     assert torch.allclose(parallel_reverse, torch.tensor(reference_reverse), atol=1e-6)
 
 
-@pytest.mark.parametrize("balancing", ["barker", "metropolis", "sqrt"])
+@pytest.mark.parametrize("balancing", ["barker", "sqrt"])
 def test_symmetrized_balancing_satisfies_detailed_balance(balancing: str) -> None:
     log_r_xy = torch.tensor([-1.2])
     log_r_yx = torch.tensor([-2.0])
@@ -260,13 +263,73 @@ def test_symmetrized_balancing_satisfies_detailed_balance(balancing: str) -> Non
     assert torch.allclose(log_flow_xy, log_flow_yx, atol=1e-6)
 
 
+def test_metropolis_fast_acceptance_matches_full_direct_mh_ratio() -> None:
+    log_r_xy = torch.tensor([-1.2, -4.0, -0.7])
+    log_r_yx = torch.tensor([-2.0, -1.5, -3.1])
+    phi_x = torch.tensor([1.0, 5.0, 3.0])
+    phi_y = torch.tensor([3.0, 2.0, 3.5])
+    target_lambda = -0.4
+    fast = metropolis_log_acceptance_fast(
+        phi_x,
+        phi_y,
+        target_lambda=target_lambda,
+    )
+    full = metropolis_log_acceptance_full(
+        log_r_xy,
+        log_r_yx,
+        phi_x,
+        phi_y,
+        target_lambda=target_lambda,
+    )
+    expected = torch.minimum(
+        torch.zeros_like(phi_x),
+        -target_lambda * (phi_y - phi_x),
+    )
+    log_common_prefix = torch.tensor([-3.2, -1.1, -5.0])
+    log_suffix_selection = math.log(0.2)
+    log_pi_x = log_common_prefix + log_r_yx - target_lambda * phi_x
+    log_pi_y = log_common_prefix + log_r_xy - target_lambda * phi_y
+    log_q_xy = log_suffix_selection + log_r_xy
+    log_q_yx = log_suffix_selection + log_r_yx
+    explicit_full_mh = torch.minimum(
+        torch.zeros_like(phi_x),
+        log_pi_y + log_q_yx - log_pi_x - log_q_xy,
+    )
+    assert torch.allclose(fast, full, atol=1e-7)
+    assert torch.allclose(fast, expected, atol=1e-7)
+    assert torch.allclose(fast, explicit_full_mh, atol=1e-6)
+
+
+def test_metropolis_fast_path_does_not_score_reverse_probability(monkeypatch) -> None:
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("reverse suffix probability must not be evaluated")
+
+    monkeypatch.setattr(suffix_sampler, "paired_suffix_log_probabilities", fail_if_called)
+    result = run_suffix_balanced_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        CompletionTokenSumObservable(),
+        prompt="Once",
+        config=_config(
+            balancing_function="metropolis",
+            lambdas=(0.0, -0.5, -1.0),
+            seed=41,
+        ),
+    )
+    assert result.summary["metropolis_fast_path"] is True
+    assert result.diagnostics["metropolis_fast_path"] is True
+    assert result.diagnostics["level_diagnostics"][1][
+        "mean_symmetrization_probability"
+    ] is None
+
+
 def test_acceptance_components_are_finite_probabilities() -> None:
     generator = _generator(29)
     log_forward = -8.0 * torch.rand(100, generator=generator)
     log_reverse = -8.0 * torch.rand(100, generator=generator)
     current_phi = 15.0 * torch.rand(100, generator=generator)
     proposal_phi = 15.0 * torch.rand(100, generator=generator)
-    for balancing in ("barker", "metropolis", "sqrt"):
+    for balancing in ("barker", "sqrt"):
         kwargs = {"phi_min": 0.0, "phi_max": 15.0} if balancing == "sqrt" else {}
         components = kernel_components(
             log_forward,
@@ -281,6 +344,15 @@ def test_acceptance_components_are_finite_probabilities() -> None:
         assert torch.isfinite(probabilities).all()
         assert torch.all(probabilities >= 0.0)
         assert torch.all(probabilities <= 1.0)
+    metropolis = torch.exp(
+        metropolis_log_acceptance_fast(
+            current_phi,
+            proposal_phi,
+            target_lambda=-2.0,
+        )
+    )
+    assert torch.isfinite(metropolis).all()
+    assert torch.all((metropolis >= 0.0) & (metropolis <= 1.0))
     assert safe_sqrt_scale(-2.0, 0.0, 15.0) == pytest.approx(math.exp(-15.0))
 
 
@@ -320,17 +392,25 @@ def test_tilted_distribution_is_stationary_on_enumerable_space(balancing: str) -
                 else:
                     r_forward = _sequence_probability(target_state)
                     r_reverse = _sequence_probability(source)
-                kwargs = {"phi_min": 0.0, "phi_max": 2.0} if balancing == "sqrt" else {}
-                components = kernel_components(
-                    torch.tensor([math.log(r_forward)]),
-                    torch.tensor([math.log(r_reverse)]),
-                    torch.tensor([phi[source_index]]),
-                    torch.tensor([phi[target_index]]),
-                    target_lambda=target_lambda,
-                    balancing_function=balancing,
-                    **kwargs,
-                )
-                probability += rho * r_forward * float(torch.exp(components.log_acceptance))
+                if balancing == "metropolis":
+                    log_acceptance = metropolis_log_acceptance_fast(
+                        torch.tensor([phi[source_index]]),
+                        torch.tensor([phi[target_index]]),
+                        target_lambda=target_lambda,
+                    )
+                else:
+                    kwargs = {"phi_min": 0.0, "phi_max": 2.0} if balancing == "sqrt" else {}
+                    components = kernel_components(
+                        torch.tensor([math.log(r_forward)]),
+                        torch.tensor([math.log(r_reverse)]),
+                        torch.tensor([phi[source_index]]),
+                        torch.tensor([phi[target_index]]),
+                        target_lambda=target_lambda,
+                        balancing_function=balancing,
+                        **kwargs,
+                    )
+                    log_acceptance = components.log_acceptance
+                probability += rho * r_forward * float(torch.exp(log_acceptance))
             transition[source_index, target_index] = probability
         transition[source_index, source_index] = 1.0 - transition[source_index].sum()
 
@@ -440,6 +520,7 @@ def test_cli_exposes_suffix_balanced_configuration() -> None:
             "0.4,0.3,0.2,0.1",
             "--balancing-function",
             "metropolis",
+            "--disable-metropolis-fast-path",
             "--batch-size",
             "16",
         ]
@@ -447,4 +528,5 @@ def test_cli_exposes_suffix_balanced_configuration() -> None:
     assert args.device == "cuda"
     assert args.suffix_sizes == "1,2,4,8"
     assert args.balancing_function == "metropolis"
+    assert args.disable_metropolis_fast_path
     assert args.batch_size == 16
