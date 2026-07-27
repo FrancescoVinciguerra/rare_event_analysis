@@ -119,6 +119,12 @@ Weights are normalized with `torch.logsumexp`. Systematic resampling occurs
 only below the configured ESS threshold. The final level is deliberately not
 resampled, preserving the final weighted particle approximation.
 
+The standalone CLI defaults to `--ari-mode capped` so existing experiments
+retain their original potential. Use `--ari-mode raw` to set
+\(\phi(x)=\operatorname{ARI}_{\mathrm{raw}}(x)\); in that mode `--ari-cap` is
+recorded for provenance but is not applied. The SMC/TPS comparison runner
+requires raw mode and rejects capped configurations.
+
 ## Suffix schedules and irreducibility
 
 The stochastic default adapts the multiscale support
@@ -153,6 +159,7 @@ are tested exactly.
 ```bash
 python suffix_balanced_smc_experiment/run_experiment.py \
   --device cuda \
+  --ari-mode raw \
   --num-particles 256 \
   --max-new-tokens 100 \
   --lambdas 0,-0.25,-0.5,-0.75,-1,-1.25,-1.5,-1.75,-2 \
@@ -170,7 +177,10 @@ Normal runs write only `summary.json`, `samples.jsonl`, and `report.md` under
 `outputs/<experiment-label>/seed_<seed>/`. A completed run is not overwritten
 unless `--overwrite` is explicit. The summary contains weighted and
 unweighted ARI statistics, tail summaries, ESS, acceptance components,
-resampling and ancestry diagnostics.
+resampling and ancestry diagnostics. It also reports the exact number of
+mutation proposals and regenerated proposal tokens, their throughputs, and
+peak CUDA memory. Initial particle generation is intentionally excluded from
+the proposal and regenerated-token counters for both benchmarked methods.
 
 The focused reference/parallel benchmark is:
 

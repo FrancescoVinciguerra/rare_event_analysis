@@ -220,6 +220,7 @@ class MutationDiagnostics:
     mean_total_acceptance_probability: float
     suffix_size_counts: dict[str, int]
     metropolis_fast_path: bool
+    regenerated_tokens: int
 
 
 @dataclass
@@ -869,6 +870,7 @@ def apply_suffix_balanced_mutation(
     transition_index: int,
     config: SuffixBalancedSMCConfig,
     generator: torch.Generator,
+    discovery_callback: Callable[[torch.Tensor, torch.Tensor, float], None] | None = None,
 ) -> tuple[ParticleBatch, MutationDiagnostics]:
     """Apply repeated M_{k-1} suffix moves targeting pi_{k-1}."""
     device = particles.completion_token_ids.device
@@ -877,6 +879,7 @@ def apply_suffix_balanced_mutation(
     balancing_sum = torch.zeros((), dtype=torch.float64, device=device)
     total_probability_sum = torch.zeros((), dtype=torch.float64, device=device)
     size_counts = torch.zeros(config.max_new_tokens + 1, dtype=torch.long, device=device)
+    regenerated_tokens = torch.zeros((), dtype=torch.long, device=device)
     proposals_total = config.num_particles * config.mcmc_steps_per_level
     proposal_function = (
         propose_suffixes_parallel
@@ -922,6 +925,8 @@ def apply_suffix_balanced_mutation(
             prompt_ids=prompt_ids,
             completions=proposal_tokens,
         )
+        if discovery_callback is not None:
+            discovery_callback(proposal_tokens, proposal_raw_ari, target_lambda)
         if use_metropolis_fast_path:
             # Exact direct MH: p_M and suffix-selection factors cancel completely.
             log_acceptance = metropolis_log_acceptance_fast(
@@ -985,6 +990,7 @@ def apply_suffix_balanced_mutation(
         balancing_sum += torch.exp(log_balancing).to(torch.float64).sum()
         total_probability_sum += torch.exp(log_acceptance).to(torch.float64).sum()
         size_counts += torch.bincount(suffix_sizes, minlength=config.max_new_tokens + 1)
+        regenerated_tokens += suffix_sizes.sum()
 
     denominator = max(1, proposals_total)
     counts_on_cpu = size_counts.detach().cpu().tolist()
@@ -1005,6 +1011,7 @@ def apply_suffix_balanced_mutation(
         mean_total_acceptance_probability=float((total_probability_sum / denominator).item()),
         suffix_size_counts=suffix_count_rows,
         metropolis_fast_path=use_metropolis_fast_path,
+        regenerated_tokens=int(regenerated_tokens.item()),
     )
 
 
@@ -1092,6 +1099,46 @@ def run_suffix_balanced_smc(
 
     _synchronize(device)
     start = time.perf_counter()
+    discovered_by_threshold = {
+        float(threshold): set() for threshold in config.tail_thresholds
+    }
+    first_tail_discovery: dict[float, dict[str, Any] | None] = {
+        float(threshold): None for threshold in config.tail_thresholds
+    }
+    best_discoveries: dict[str, dict[str, Any]] = {}
+
+    def track_discoveries(
+        token_batch: torch.Tensor,
+        raw_ari_batch: torch.Tensor,
+        lambda_value: float,
+    ) -> None:
+        completion_ids = token_batch.detach().cpu().tolist()
+        completion_texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+        raw_values = raw_ari_batch.detach().cpu().tolist()
+        elapsed_now = time.perf_counter() - start
+        for completion, raw_value in zip(completion_texts, raw_values):
+            value = float(raw_value)
+            previous = best_discoveries.get(completion)
+            if previous is None or value > float(previous["raw_ari"]):
+                best_discoveries[completion] = {
+                    "raw_ari": value,
+                    "lambda": float(lambda_value),
+                    "time_first_seen_seconds": float(elapsed_now),
+                    "completion": completion,
+                }
+            for threshold in config.tail_thresholds:
+                threshold_value = float(threshold)
+                if value < threshold_value:
+                    continue
+                discovered_by_threshold[threshold_value].add(completion)
+                if first_tail_discovery[threshold_value] is None:
+                    first_tail_discovery[threshold_value] = {
+                        "raw_ari": value,
+                        "lambda": float(lambda_value),
+                        "time_first_seen_seconds": float(elapsed_now),
+                        "completion": completion,
+                    }
+
     with torch.inference_mode():
         completion_tokens = generate_base_completions(
             model,
@@ -1108,6 +1155,7 @@ def run_suffix_balanced_smc(
             prompt_ids=prompt_ids,
             completions=completion_tokens,
         )
+        track_discoveries(completion_tokens, raw_ari, float(config.lambdas[0]))
         particles = ParticleBatch(
             completion_token_ids=completion_tokens,
             phi=phi,
@@ -1145,6 +1193,7 @@ def run_suffix_balanced_smc(
         ]
         total_accepted = 0
         total_proposals = 0
+        total_regenerated_tokens = 0
         resampling_steps = 0
         min_ess_over_n = 1.0
 
@@ -1166,9 +1215,11 @@ def run_suffix_balanced_smc(
                 transition_index=level - 1,
                 config=config,
                 generator=generator,
+                discovery_callback=track_discoveries,
             )
             total_accepted += mutation.accepted
             total_proposals += mutation.proposals
+            total_regenerated_tokens += mutation.regenerated_tokens
 
             # 2. Reweight the mutated particles from gamma_{k-1} to gamma_k.
             log_weights = incremental_log_weight_update(
@@ -1280,6 +1331,7 @@ def run_suffix_balanced_smc(
         "target_lambda": float(config.lambdas[-1]),
         "mcmc_steps_per_level": config.mcmc_steps_per_level,
         "balancing_function": config.balancing_function,
+        "ari_mode": getattr(observable, "mode", "unknown"),
         "metropolis_fast_path": metropolis_fast_path_enabled(config),
         "ess_threshold": config.ess_threshold,
         "resampling": config.resampling,
@@ -1294,6 +1346,12 @@ def run_suffix_balanced_smc(
         "final_ess_over_n": final_ess_over_n,
         "min_ess_over_n": float(min_ess_over_n),
         "mean_mcmc_acceptance_rate": float(acceptance_rate),
+        "total_proposals": int(total_proposals),
+        "total_regenerated_tokens": int(total_regenerated_tokens),
+        "proposals_per_second": float(total_proposals / elapsed) if total_proposals else 0.0,
+        "regenerated_tokens_per_second": (
+            float(total_regenerated_tokens / elapsed) if total_regenerated_tokens else 0.0
+        ),
         "unweighted_mean_ari": float(np.mean(raw_values)),
         "weighted_mean_ari": float(np.sum(normalized_weights * raw_values)),
         "min_ari": float(np.min(raw_values)),
@@ -1305,6 +1363,18 @@ def run_suffix_balanced_smc(
         "final_distinct_root_ancestors": len(
             {int(row["ancestor_id"]) for row in samples}
         ),
+        "tail_discovery": {
+            f"ari_ge_{threshold:g}": {
+                "first": first_tail_discovery[float(threshold)],
+                "unique_completions": len(discovered_by_threshold[float(threshold)]),
+            }
+            for threshold in config.tail_thresholds
+        },
+        "top_discovered_completions": sorted(
+            best_discoveries.values(),
+            key=lambda row: float(row["raw_ari"]),
+            reverse=True,
+        )[:20],
     }
     diagnostics = {
         "level_diagnostics": level_diagnostics,
@@ -1365,6 +1435,7 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         "",
         f"- Implementation: `{summary['implementation']}`",
         f"- Balancing function: `{summary['balancing_function']}`",
+        f"- ARI mode: `{summary.get('ari_mode', 'unknown')}`",
         f"- `metropolis_fast_path: {str(metropolis_fast_path).lower()}`",
         f"- Runtime: {summary['runtime_total_seconds']:.3f} s",
         f"- Seconds per final particle: {summary['runtime_seconds_per_final_particle']:.6f}",
@@ -1372,6 +1443,8 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         f"- Minimum pre-resampling ESS/N: {summary['min_ess_over_n']:.4f}",
         f"- Resampling steps: {summary['resampling_steps']} (never at the final level)",
         f"- Total MCMC acceptance rate: {summary['mean_mcmc_acceptance_rate']:.4f}",
+        f"- Total proposals: {summary.get('total_proposals', 0)}",
+        f"- Total regenerated proposal tokens: {summary.get('total_regenerated_tokens', 0)}",
         f"- Unweighted mean raw ARI: {summary['unweighted_mean_ari']:.4f}",
         f"- Weighted mean raw ARI: {summary['weighted_mean_ari']:.4f}",
         f"- Maximum raw ARI: {summary['max_ari']:.4f}",

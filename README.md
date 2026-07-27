@@ -64,6 +64,16 @@ depend on direct sampling, mixture MCMC, TPS, MBAR, or either earlier SMC
 pipeline. See `suffix_balanced_smc_experiment/README.md` for the formulas,
 schedule syntax, square-root limits, and output schema.
 
+### Raw-ARI SMC versus official annealed TPS
+
+`official_annealed_tps_experiment/` provides a minimal adapter for Algorithm 2
+from the pinned official notebook. `smc_tps_comparison/` runs it against the
+existing suffix direct-MH SMC on the same raw-ARI target, without direct
+sampling, MBAR, mixture MCMC, or another sampler. Each method can run alone.
+The comparison reports final-target estimators, separate temporal/weight ESS,
+full-schedule runtime and proposal-token accounting. See the package READMEs
+and `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`.
+
 ## Repository Map
 
 - `rea_llms/models.py`: model/tokenizer loading and device selection.
@@ -73,9 +83,12 @@ schedule syntax, square-root limits, and output schema.
 - `masked_barker_smc_experiment/run_experiment.py`: CLI for masked Barker SMC.
 - `suffix_balanced_smc_experiment/run_experiment.py`: CLI for suffix-balanced SMC.
 - `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel and direct-MH fast-path benchmarks.
+- `official_annealed_tps_experiment/run_experiment.py`: official Algorithm 2 TPS adapter.
+- `smc_tps_comparison/run_comparison.py`: raw-ARI multi-seed comparison runner.
 - `mixture_mcmc_experiment/run_experiment.py`: CLI for mixture MCMC.
 - `notebooks/REA_Colab_Quickstart.ipynb`: Colab quickstart.
 - `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`: standalone suffix-balanced SMC Colab quickstart.
+- `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`: SMC/TPS comparison and optional stability study.
 - `results/EXPERIMENT_LOG.md`: cumulative log of selected runs.
 - `results/selected_runs/`: only curated run summaries and small sample previews.
 - `tests/`: lightweight unit tests.

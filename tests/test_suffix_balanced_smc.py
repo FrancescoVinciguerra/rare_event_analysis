@@ -79,6 +79,22 @@ class CompletionTokenSumObservable:
         return rows
 
 
+class RawAboveCapObservable(CompletionTokenSumObservable):
+    mode = "raw"
+
+    def score_token_sequences(self, *, tokenizer, prompt, token_sequences, prompt_token_count):
+        rows = []
+        for ids in token_sequences:
+            raw = 20.0 + float(sum(ids[prompt_token_count:]))
+            rows.append(
+                ObservableScore(
+                    value=raw,
+                    metadata={"raw_ari": raw, "capped_ari": 15.0},
+                )
+            )
+        return rows
+
+
 def _generator(seed: int = 7) -> torch.Generator:
     return torch.Generator(device="cpu").manual_seed(seed)
 
@@ -446,6 +462,35 @@ def test_lambda_zero_keeps_uniform_weights_and_full_ess() -> None:
     assert all(
         row["normalized_weight"] == pytest.approx(1.0 / 8)
         for row in result.samples
+    )
+
+
+def test_smc_raw_observable_is_uncapped_and_proposal_accounting_is_exact() -> None:
+    config = _config(
+        num_particles=5,
+        lambdas=(0.0, -0.5, -1.0),
+        mcmc_steps_per_level=2,
+        balancing_function="metropolis",
+        seed=43,
+    )
+    result = run_suffix_balanced_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        RawAboveCapObservable(),
+        prompt="Once",
+        config=config,
+    )
+    expected_proposals = 5 * 2 * 2
+    assert result.summary["ari_mode"] == "raw"
+    assert min(row["phi"] for row in result.samples) > 15.0
+    assert result.summary["metropolis_fast_path"] is True
+    assert result.summary["total_proposals"] == expected_proposals
+    assert result.summary["total_regenerated_tokens"] == expected_proposals * 3
+    raw_ari = np.asarray([row["raw_ari"] for row in result.samples])
+    weights = np.asarray([row["normalized_weight"] for row in result.samples])
+    assert weights.sum() == pytest.approx(1.0)
+    assert result.summary["weighted_mean_ari"] == pytest.approx(
+        np.sum(weights * raw_ari)
     )
 
 

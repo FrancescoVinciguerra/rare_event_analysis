@@ -121,6 +121,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tail-thresholds", default="8,10,12")
 
     parser.add_argument("--ari-cap", type=float, default=15.0)
+    parser.add_argument("--ari-mode", choices=["raw", "capped"], default="capped")
     parser.add_argument("--observable-backend", default="exact_cached")
     parser.add_argument("--disable-score-cache", action="store_true")
     return parser.parse_args(argv)
@@ -184,7 +185,7 @@ def main() -> None:
     )
     observable = create_observable(
         "ari",
-        mode="capped",
+        mode=args.ari_mode,
         cap=args.ari_cap,
         backend=args.observable_backend,
         cache_enabled=not args.disable_score_cache,
@@ -230,7 +231,7 @@ def main() -> None:
         "prompt": args.prompt,
         "requested_device": args.device,
         "model_device": str(model_device),
-        "ari_mode": "capped",
+        "ari_mode": args.ari_mode,
         "ari_cap": args.ari_cap,
         "observable_backend": args.observable_backend,
     }
