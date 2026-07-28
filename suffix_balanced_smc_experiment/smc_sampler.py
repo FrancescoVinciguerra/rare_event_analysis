@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 import math
 import time
-from dataclasses import asdict, dataclass
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Sequence, TypeVar
 
@@ -22,7 +24,12 @@ ScheduleValue = TypeVar("ScheduleValue")
 
 @dataclass(frozen=True)
 class SuffixBalancedSMCConfig:
-    """Configuration for full-completion SMC with suffix-regeneration moves."""
+    """Configuration for full-completion SMC with suffix-regeneration moves.
+
+    Particles always contain exactly ``max_new_tokens`` completion tokens. The
+    suffix-size law is independent of the particle state, an assumption used
+    by the direct-MH cancellation below.
+    """
 
     num_particles: int = 64
     max_new_tokens: int = 100
@@ -239,6 +246,78 @@ class SuffixBalancedSMCResult:
         }
 
 
+@dataclass
+class _PhaseProfiler:
+    """Accumulate phase time without synchronizing every CUDA sub-call."""
+
+    device: torch.device
+    elapsed_seconds: dict[str, float] = field(default_factory=dict)
+    cuda_events: dict[str, list[tuple[Any, Any]]] = field(default_factory=dict)
+
+    @contextmanager
+    def measure(self, phase: str):
+        if self.device.type == "cuda":
+            started_event = torch.cuda.Event(enable_timing=True)
+            finished_event = torch.cuda.Event(enable_timing=True)
+            started_event.record()
+            try:
+                yield
+            finally:
+                finished_event.record()
+                self.cuda_events.setdefault(phase, []).append(
+                    (started_event, finished_event)
+                )
+            return
+
+        started = time.perf_counter()
+        try:
+            yield
+        finally:
+            self.elapsed_seconds[phase] = self.elapsed_seconds.get(phase, 0.0) + (
+                time.perf_counter() - started
+            )
+
+    def snapshot(self) -> dict[str, float]:
+        """Synchronize once, then combine CPU durations and CUDA-event times."""
+
+        values = dict(self.elapsed_seconds)
+        if self.cuda_events:
+            _synchronize(self.device)
+            for phase, event_pairs in self.cuda_events.items():
+                values[phase] = values.get(phase, 0.0) + sum(
+                    started.elapsed_time(finished) / 1000.0
+                    for started, finished in event_pairs
+                )
+        return dict(sorted(values.items()))
+
+
+_ACTIVE_PHASE_PROFILER: ContextVar[_PhaseProfiler | None] = ContextVar(
+    "suffix_balanced_smc_phase_profiler",
+    default=None,
+)
+
+
+@contextmanager
+def _activate_phase_profiler(profiler: _PhaseProfiler):
+    """Activate benchmark-only phase timing in the current execution context."""
+
+    token = _ACTIVE_PHASE_PROFILER.set(profiler)
+    try:
+        yield profiler
+    finally:
+        _ACTIVE_PHASE_PROFILER.reset(token)
+
+
+@contextmanager
+def _profile_phase(phase: str):
+    profiler = _ACTIVE_PHASE_PROFILER.get()
+    if profiler is None:
+        yield
+        return
+    with profiler.measure(phase):
+        yield
+
+
 def parse_float_list(value: str) -> tuple[float, ...]:
     try:
         parsed = tuple(float(part.strip()) for part in value.split(",") if part.strip())
@@ -317,9 +396,27 @@ def _generate_suffix_chunk(
     suffix_size: int,
     generator: torch.Generator,
 ) -> torch.Tensor:
-    """Generate a fixed-length suffix for one equal-context-length GPU batch."""
+    """Generate an exact fixed-length LM suffix for an equal-length batch.
+
+    Particles in the batch are sampled in parallel, but future tokens of one
+    completion remain sequential because every next-token distribution depends
+    on the tokens already sampled. For GPT-Neo, ``base_model`` exposes the KV
+    cache and the output head can be applied only to the latest hidden state.
+    The fallback is semantically equivalent but recomputes the growing prefix.
+
+    ``model.generate`` is not assumed equivalent or faster automatically. An
+    equivalent replacement would need unrestricted multinomial sampling at
+    temperature one, no EOS stopping, penalties, beams, top-k/top-p filtering,
+    or length normalization, plus validation of cache and RNG behavior.
+    """
     base_model, output_embeddings = _base_model_parts(model)
-    generated: list[torch.Tensor] = []
+    # Length is fixed, so write each autoregressive draw directly into its final
+    # column instead of retaining one allocation per token for a final cat.
+    generated = torch.empty(
+        (context_ids.shape[0], suffix_size),
+        dtype=context_ids.dtype,
+        device=context_ids.device,
+    )
     if base_model is not None:
         outputs = base_model(input_ids=context_ids, use_cache=True, return_dict=True)
         hidden = outputs.last_hidden_state[:, -1]
@@ -332,10 +429,12 @@ def _generate_suffix_chunk(
                 num_samples=1,
                 generator=generator,
             )
-            generated.append(token)
+            generated[:, step : step + 1].copy_(token)
             if step + 1 == suffix_size:
                 break
             if past is not None:
+                # Only the newly sampled token crosses the transformer when a
+                # model supplies a usable KV cache.
                 outputs = base_model(
                     input_ids=token,
                     past_key_values=past,
@@ -345,25 +444,28 @@ def _generate_suffix_chunk(
                 hidden = outputs.last_hidden_state[:, -1]
                 past = getattr(outputs, "past_key_values", None)
             else:
+                # Cache-less models must re-evaluate the growing context. This
+                # preserves the proposal distribution but is substantially
+                # more expensive for long suffixes.
                 work = torch.cat((work, token), dim=1)
                 hidden = base_model(
                     input_ids=work,
                     use_cache=False,
                     return_dict=True,
                 ).last_hidden_state[:, -1]
-        return torch.cat(generated, dim=1)
+        return generated
 
     work = context_ids
-    for _ in range(suffix_size):
+    for step in range(suffix_size):
         logits = _selected_next_token_logits(model, work)
         token = torch.multinomial(
             torch.softmax(logits, dim=-1),
             num_samples=1,
             generator=generator,
         )
-        generated.append(token)
+        generated[:, step : step + 1].copy_(token)
         work = torch.cat((work, token), dim=1)
-    return torch.cat(generated, dim=1)
+    return generated
 
 
 def _generate_suffix_with_backoff(
@@ -374,6 +476,11 @@ def _generate_suffix_with_backoff(
     batch_size: int,
     generator: torch.Generator,
 ) -> torch.Tensor:
+    """Generate in configurable chunks, retrying smaller chunks after CUDA OOM.
+
+    Chunking changes random-number consumption relative to particlewise code,
+    but every returned suffix is still sampled from the same LM proposal.
+    """
     chunks: list[torch.Tensor] = []
     start = 0
     active_batch_size = min(batch_size, context_ids.shape[0])
@@ -409,7 +516,12 @@ def _paired_suffix_log_probabilities_chunk(
     *,
     token_chunk_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Teacher-force forward and reverse suffix probabilities in one model batch."""
+    """Teacher-force forward and reverse suffix probabilities in one model batch.
+
+    The two directions share the same prompt and retained prefix. Stacking them
+    avoids two language-model calls; token chunks limit output-head vocabulary
+    memory without changing the selected-token log probabilities.
+    """
     batch_size, suffix_size = proposed_suffix.shape
     context_length = context_ids.shape[1]
     suffixes = torch.cat((proposed_suffix, old_suffix), dim=0)
@@ -527,7 +639,13 @@ def propose_suffixes_parallel(
     generator: torch.Generator,
     score_probabilities: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor | None, torch.Tensor | None]:
-    """Regenerate suffixes in GPU groups and optionally teacher-force R_f/R_r."""
+    """Regenerate suffixes by suffix-size group and optionally score R_f/R_r.
+
+    Particles with the same retained-prefix length form one GPU workload. The
+    small loop is over distinct suffix sizes, not particles; tokens inside each
+    suffix remain autoregressive. Direct Metropolis disables proposal scoring
+    because its forward and reverse LM factors cancel exactly.
+    """
     proposals = current.clone()
     log_forward = (
         torch.empty(current.shape[0], dtype=torch.float32, device=current.device)
@@ -541,24 +659,26 @@ def propose_suffixes_parallel(
         current_group = current.index_select(0, indices)
         prompt = prompt_ids.unsqueeze(0).expand(indices.numel(), -1)
         context = torch.cat((prompt, current_group[:, :prefix_size]), dim=1)
-        proposed_suffix = _generate_suffix_with_backoff(
-            model,
-            context,
-            suffix_size=int(suffix_size),
-            batch_size=batch_size,
-            generator=generator,
-        )
+        with _profile_phase("suffix_generation"):
+            proposed_suffix = _generate_suffix_with_backoff(
+                model,
+                context,
+                suffix_size=int(suffix_size),
+                batch_size=batch_size,
+                generator=generator,
+            )
         proposal_group = torch.cat((current_group[:, :prefix_size], proposed_suffix), dim=1)
         proposals.index_copy_(0, indices, proposal_group)
         if score_probabilities:
-            forward, reverse = paired_suffix_log_probabilities(
-                model,
-                context,
-                proposed_suffix,
-                current_group[:, prefix_size:],
-                batch_size=batch_size,
-                token_chunk_size=token_chunk_size,
-            )
+            with _profile_phase("suffix_probability_scoring"):
+                forward, reverse = paired_suffix_log_probabilities(
+                    model,
+                    context,
+                    proposed_suffix,
+                    current_group[:, prefix_size:],
+                    batch_size=batch_size,
+                    token_chunk_size=token_chunk_size,
+                )
             assert log_forward is not None and log_reverse is not None
             log_forward.index_copy_(0, indices, forward)
             log_reverse.index_copy_(0, indices, reverse)
@@ -584,22 +704,24 @@ def propose_suffixes_reference(
         prefix_size = current.shape[1] - suffix_size
         state = current[particle_index : particle_index + 1]
         context = torch.cat((prompt_ids.unsqueeze(0), state[:, :prefix_size]), dim=1)
-        proposed_suffix = _generate_suffix_chunk(
-            model,
-            context,
-            suffix_size=suffix_size,
-            generator=generator,
-        )
+        with _profile_phase("suffix_generation"):
+            proposed_suffix = _generate_suffix_chunk(
+                model,
+                context,
+                suffix_size=suffix_size,
+                generator=generator,
+            )
         proposal = torch.cat((state[:, :prefix_size], proposed_suffix), dim=1)
         proposals.append(proposal)
         if score_probabilities:
-            log_forward, log_reverse = _paired_suffix_log_probabilities_chunk(
-                model,
-                context,
-                proposed_suffix,
-                state[:, prefix_size:],
-                token_chunk_size=token_chunk_size,
-            )
+            with _profile_phase("suffix_probability_scoring"):
+                log_forward, log_reverse = _paired_suffix_log_probabilities_chunk(
+                    model,
+                    context,
+                    proposed_suffix,
+                    state[:, prefix_size:],
+                    token_chunk_size=token_chunk_size,
+                )
             forward.append(log_forward)
             reverse.append(log_reverse)
     if not score_probabilities:
@@ -624,6 +746,8 @@ def metropolis_fast_path_enabled(config: SuffixBalancedSMCConfig) -> bool:
 
     Suffix selection is state-independent by construction, every completion
     has fixed length T, and forward/reverse use the same suffix-size support.
+    Therefore both the suffix-selection law and conditional LM probabilities
+    cancel from the direct MH ratio.
     """
     return bool(
         config.metropolis_fast_path
@@ -638,7 +762,12 @@ def metropolis_log_acceptance_fast(
     *,
     target_lambda: float,
 ) -> torch.Tensor:
-    """Direct suffix-MH acceptance after exact cancellation of all LM terms."""
+    """Direct suffix-MH acceptance after exact cancellation of all LM terms.
+
+    At mutation level k-1, both target and proposal contain the same conditional
+    suffix probabilities. The remaining ratio is exactly
+    ``exp(-lambda * (phi_proposal - phi_current))``.
+    """
     log_ratio = -target_lambda * (proposal_phi - current_phi)
     if not bool(torch.isfinite(log_ratio).all().item()):
         raise ValueError("Non-finite direct Metropolis log-acceptance ratio")
@@ -743,32 +872,44 @@ def score_observable(
     prompt_ids: torch.Tensor,
     completions: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, list[Any]]:
-    """Evaluate exact text ARI at one explicit batched device-to-CPU boundary."""
-    full_ids = _full_inputs(prompt_ids, completions).detach().cpu().tolist()
-    score_batch = getattr(observable, "score_token_sequences", None)
-    if callable(score_batch):
-        scores = score_batch(
-            tokenizer=tokenizer,
-            prompt=prompt,
-            token_sequences=full_ids,
-            prompt_token_count=int(prompt_ids.numel()),
+    """Evaluate exact text ARI at this function's batched GPU-to-CPU boundary.
+
+    Full token sequences are transferred together, then completion tokens are
+    decoded with the repository observable's convention before textstat runs on
+    CPU. Decoding the actual token sequence is essential: BPE boundaries,
+    punctuation, repeated tokens, and concatenated words make token-local ARI
+    arithmetic unsafe unless exact textual equivalence is proved.
+    """
+    with _profile_phase("ari_evaluation"):
+        # Include prompt token IDs so score_token_sequences can slice and decode
+        # the completion exactly as the repository's final ARI implementation.
+        full_ids = _full_inputs(prompt_ids, completions).detach().cpu().tolist()
+        score_batch = getattr(observable, "score_token_sequences", None)
+        if callable(score_batch):
+            scores = score_batch(
+                tokenizer=tokenizer,
+                prompt=prompt,
+                token_sequences=full_ids,
+                prompt_token_count=int(prompt_ids.numel()),
+            )
+        else:
+            completion_ids = completions.detach().cpu().tolist()
+            texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+            scores = [observable.score_completion(prompt, text) for text in texts]
+        phi = torch.tensor(
+            [float(score.value) for score in scores],
+            dtype=torch.float32,
+            device=completions.device,
         )
-    else:
-        completion_ids = completions.detach().cpu().tolist()
-        texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        scores = [observable.score_completion(prompt, text) for text in texts]
-    phi = torch.tensor(
-        [float(score.value) for score in scores],
-        dtype=torch.float32,
-        device=completions.device,
-    )
-    raw_ari = torch.tensor(
-        [float(score.metadata["raw_ari"]) for score in scores],
-        dtype=torch.float32,
-        device=completions.device,
-    )
-    if not bool(torch.isfinite(phi).all().item()) or not bool(torch.isfinite(raw_ari).all().item()):
-        raise ValueError("Observable returned a non-finite value")
+        raw_ari = torch.tensor(
+            [float(score.metadata["raw_ari"]) for score in scores],
+            dtype=torch.float32,
+            device=completions.device,
+        )
+        if not bool(torch.isfinite(phi).all().item()) or not bool(
+            torch.isfinite(raw_ari).all().item()
+        ):
+            raise ValueError("Observable returned a non-finite value")
     return phi, raw_ari, scores
 
 
@@ -781,7 +922,7 @@ def generate_base_completions(
     batch_size: int,
     generator: torch.Generator,
 ) -> torch.Tensor:
-    """Initialize particles from p_M using the same batched autoregressive path."""
+    """Initialize all particles from p_M using the batched autoregressive path."""
     contexts = prompt_ids.unsqueeze(0).expand(num_particles, -1)
     return _generate_suffix_with_backoff(
         model,
@@ -792,6 +933,59 @@ def generate_base_completions(
     )
 
 
+@dataclass(frozen=True)
+class _SuffixSizeSamplingState:
+    deterministic_row: tuple[int, ...] | None
+    sizes: torch.Tensor | None
+    probabilities: torch.Tensor | None
+
+
+def _prepare_suffix_size_sampling(
+    config: SuffixBalancedSMCConfig,
+    *,
+    transition_index: int,
+    device: torch.device,
+) -> _SuffixSizeSamplingState:
+    """Materialize immutable suffix-sampling constants once per transition."""
+
+    if config.suffix_mode == "deterministic":
+        assert config.suffix_size_schedule is not None
+        row = tuple(_schedule_row(config.suffix_size_schedule, transition_index))
+        return _SuffixSizeSamplingState(row, None, None)
+
+    assert config.suffix_sizes is not None
+    rows = config.suffix_rho_schedule
+    rho_values = _schedule_row(rows, transition_index) if rows is not None else config.suffix_rhos
+    assert rho_values is not None
+    return _SuffixSizeSamplingState(
+        deterministic_row=None,
+        sizes=torch.tensor(config.suffix_sizes, dtype=torch.long, device=device),
+        probabilities=torch.tensor(rho_values, dtype=torch.float32, device=device),
+    )
+
+
+def _sample_suffix_sizes_prepared(
+    config: SuffixBalancedSMCConfig,
+    sampling: _SuffixSizeSamplingState,
+    *,
+    step_index: int,
+    device: torch.device,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    if sampling.deterministic_row is not None:
+        size = int(_step_value(sampling.deterministic_row, step_index))
+        return torch.full((config.num_particles,), size, dtype=torch.long, device=device)
+
+    assert sampling.sizes is not None and sampling.probabilities is not None
+    choices = torch.multinomial(
+        sampling.probabilities,
+        config.num_particles,
+        replacement=True,
+        generator=generator,
+    )
+    return sampling.sizes.index_select(0, choices)
+
+
 def sample_suffix_sizes(
     config: SuffixBalancedSMCConfig,
     *,
@@ -800,26 +994,23 @@ def sample_suffix_sizes(
     device: torch.device,
     generator: torch.Generator,
 ) -> torch.Tensor:
-    """Draw all state-independent suffix lengths in one device operation."""
-    if config.suffix_mode == "deterministic":
-        assert config.suffix_size_schedule is not None
-        row = _schedule_row(config.suffix_size_schedule, transition_index)
-        size = int(_step_value(row, step_index))
-        return torch.full((config.num_particles,), size, dtype=torch.long, device=device)
+    """Draw all state-independent suffix lengths in one device operation.
 
-    assert config.suffix_sizes is not None
-    rows = config.suffix_rho_schedule
-    rho_values = _schedule_row(rows, transition_index) if rows is not None else config.suffix_rhos
-    assert rho_values is not None
-    rho = torch.tensor(rho_values, dtype=torch.float32, device=device)
-    choices = torch.multinomial(
-        rho,
-        config.num_particles,
-        replacement=True,
+    State independence and the shared forward/reverse law are what permit the
+    suffix-size probability to cancel in direct Metropolis acceptance.
+    """
+    sampling = _prepare_suffix_size_sampling(
+        config,
+        transition_index=transition_index,
+        device=device,
+    )
+    return _sample_suffix_sizes_prepared(
+        config,
+        sampling,
+        step_index=step_index,
+        device=device,
         generator=generator,
     )
-    sizes = torch.tensor(config.suffix_sizes, dtype=torch.long, device=device)
-    return sizes.index_select(0, choices)
 
 
 def systematic_resample(
@@ -827,6 +1018,7 @@ def systematic_resample(
     *,
     generator: torch.Generator,
 ) -> torch.Tensor:
+    """Draw systematic-resampling ancestor indices entirely on the device."""
     n_particles = normalized_log_weights.numel()
     weights = torch.exp(normalized_log_weights)
     cumulative = torch.cumsum(weights, dim=0)
@@ -851,6 +1043,11 @@ def incremental_log_weight_update(
     previous_lambda: float,
     current_lambda: float,
 ) -> torch.Tensor:
+    """Apply gamma_k/gamma_{k-1} and renormalize in log space.
+
+    The LM factor is shared by adjacent targets, so their ratio is only
+    ``exp(-(lambda_k - lambda_{k-1}) * phi)``.
+    """
     updated = normalized_log_weights - (current_lambda - previous_lambda) * phi.to(torch.float64)
     return normalize_log_weights(updated)
 
@@ -872,7 +1069,13 @@ def apply_suffix_balanced_mutation(
     generator: torch.Generator,
     discovery_callback: Callable[[torch.Tensor, torch.Tensor, float], None] | None = None,
 ) -> tuple[ParticleBatch, MutationDiagnostics]:
-    """Apply repeated M_{k-1} suffix moves targeting pi_{k-1}."""
+    """Apply repeated M_{k-1} suffix moves targeting pi_{k-1}.
+
+    Each step proposes all particles, evaluates proposal observables in one
+    batch, and makes accept/reject decisions vectorially on the model device.
+    Detailed balance of the selected acceptance rule makes every mutation step
+    invariant for pi_{k-1}; only the following SMC weight update changes level.
+    """
     device = particles.completion_token_ids.device
     accepted_total = torch.zeros((), dtype=torch.long, device=device)
     sym_sum = torch.zeros((), dtype=torch.float64, device=device)
@@ -888,11 +1091,16 @@ def apply_suffix_balanced_mutation(
     )
     use_metropolis_fast_path = metropolis_fast_path_enabled(config)
     compute_proposal_probabilities = not use_metropolis_fast_path
+    suffix_sampling = _prepare_suffix_size_sampling(
+        config,
+        transition_index=transition_index,
+        device=device,
+    )
 
     for step_index in range(config.mcmc_steps_per_level):
-        suffix_sizes = sample_suffix_sizes(
+        suffix_sizes = _sample_suffix_sizes_prepared(
             config,
-            transition_index=transition_index,
+            suffix_sampling,
             step_index=step_index,
             device=device,
             generator=generator,
@@ -918,6 +1126,8 @@ def apply_suffix_balanced_mutation(
                 generator=generator,
                 score_probabilities=compute_proposal_probabilities,
             )
+        # Exact text ARI is the deliberate CPU boundary in each mutation step;
+        # current-particle scores remain cached in ParticleBatch.
         proposal_phi, proposal_raw_ari, _ = score_observable(
             tokenizer,
             observable,
@@ -927,70 +1137,71 @@ def apply_suffix_balanced_mutation(
         )
         if discovery_callback is not None:
             discovery_callback(proposal_tokens, proposal_raw_ari, target_lambda)
-        if use_metropolis_fast_path:
-            # Exact direct MH: p_M and suffix-selection factors cancel completely.
-            log_acceptance = metropolis_log_acceptance_fast(
-                particles.phi,
-                proposal_phi,
-                target_lambda=target_lambda,
+        with _profile_phase("acceptance"):
+            if use_metropolis_fast_path:
+                # Exact direct MH: p_M and suffix-selection factors cancel completely.
+                log_acceptance = metropolis_log_acceptance_fast(
+                    particles.phi,
+                    proposal_phi,
+                    target_lambda=target_lambda,
+                )
+                log_symmetrization = None
+                log_balancing = log_acceptance
+            elif config.balancing_function == "metropolis":
+                # Reference direct-MH path: evaluate the full ratio, then cancel numerically.
+                assert log_r_forward is not None and log_r_reverse is not None
+                log_acceptance = metropolis_log_acceptance_full(
+                    log_r_forward,
+                    log_r_reverse,
+                    particles.phi,
+                    proposal_phi,
+                    target_lambda=target_lambda,
+                )
+                log_symmetrization = None
+                log_balancing = log_acceptance
+            else:
+                assert log_r_forward is not None and log_r_reverse is not None
+                components = kernel_components(
+                    log_r_forward,
+                    log_r_reverse,
+                    particles.phi,
+                    proposal_phi,
+                    target_lambda=target_lambda,
+                    balancing_function=config.balancing_function,
+                    phi_min=config.phi_min,
+                    phi_max=config.phi_max,
+                    sqrt_scale=config.sqrt_scale,
+                )
+                log_acceptance = components.log_acceptance
+                log_symmetrization = components.log_symmetrization
+                log_balancing = components.log_balancing
+            log_uniform = torch.log(
+                torch.rand(
+                    config.num_particles,
+                    dtype=log_acceptance.dtype,
+                    device=device,
+                    generator=generator,
+                )
             )
-            log_symmetrization = None
-            log_balancing = log_acceptance
-        elif config.balancing_function == "metropolis":
-            # Reference direct-MH path: evaluate the full ratio, then cancel numerically.
-            assert log_r_forward is not None and log_r_reverse is not None
-            log_acceptance = metropolis_log_acceptance_full(
-                log_r_forward,
-                log_r_reverse,
-                particles.phi,
-                proposal_phi,
-                target_lambda=target_lambda,
+            accepted = log_uniform < log_acceptance
+            particles = ParticleBatch(
+                completion_token_ids=torch.where(
+                    accepted.unsqueeze(1),
+                    proposal_tokens,
+                    particles.completion_token_ids,
+                ),
+                phi=torch.where(accepted, proposal_phi, particles.phi),
+                raw_ari=torch.where(accepted, proposal_raw_ari, particles.raw_ari),
+                root_ancestors=particles.root_ancestors,
+                last_suffix_sizes=suffix_sizes,
             )
-            log_symmetrization = None
-            log_balancing = log_acceptance
-        else:
-            assert log_r_forward is not None and log_r_reverse is not None
-            components = kernel_components(
-                log_r_forward,
-                log_r_reverse,
-                particles.phi,
-                proposal_phi,
-                target_lambda=target_lambda,
-                balancing_function=config.balancing_function,
-                phi_min=config.phi_min,
-                phi_max=config.phi_max,
-                sqrt_scale=config.sqrt_scale,
-            )
-            log_acceptance = components.log_acceptance
-            log_symmetrization = components.log_symmetrization
-            log_balancing = components.log_balancing
-        log_uniform = torch.log(
-            torch.rand(
-                config.num_particles,
-                dtype=log_acceptance.dtype,
-                device=device,
-                generator=generator,
-            )
-        )
-        accepted = log_uniform < log_acceptance
-        particles = ParticleBatch(
-            completion_token_ids=torch.where(
-                accepted.unsqueeze(1),
-                proposal_tokens,
-                particles.completion_token_ids,
-            ),
-            phi=torch.where(accepted, proposal_phi, particles.phi),
-            raw_ari=torch.where(accepted, proposal_raw_ari, particles.raw_ari),
-            root_ancestors=particles.root_ancestors,
-            last_suffix_sizes=suffix_sizes,
-        )
-        accepted_total += accepted.sum()
-        if log_symmetrization is not None:
-            sym_sum += torch.exp(log_symmetrization).to(torch.float64).sum()
-        balancing_sum += torch.exp(log_balancing).to(torch.float64).sum()
-        total_probability_sum += torch.exp(log_acceptance).to(torch.float64).sum()
-        size_counts += torch.bincount(suffix_sizes, minlength=config.max_new_tokens + 1)
-        regenerated_tokens += suffix_sizes.sum()
+            accepted_total += accepted.sum()
+            if log_symmetrization is not None:
+                sym_sum += torch.exp(log_symmetrization).to(torch.float64).sum()
+            balancing_sum += torch.exp(log_balancing).to(torch.float64).sum()
+            total_probability_sum += torch.exp(log_acceptance).to(torch.float64).sum()
+            size_counts += torch.bincount(suffix_sizes, minlength=config.max_new_tokens + 1)
+            regenerated_tokens += suffix_sizes.sum()
 
     denominator = max(1, proposals_total)
     counts_on_cpu = size_counts.detach().cpu().tolist()
@@ -1039,6 +1250,12 @@ def _final_samples(
     lambda_final: float,
     balancing_function: str,
 ) -> list[dict[str, Any]]:
+    """Serialize the final weighted particle system without resampling it.
+
+    This currently reconstructs score metadata and decoded strings on CPU. The
+    repeated work is retained during this audit because changing it would need
+    an explicit equivalence test for every serialized field.
+    """
     _, _, scores = score_observable(
         tokenizer,
         observable,
@@ -1088,7 +1305,13 @@ def run_suffix_balanced_smc(
     config: SuffixBalancedSMCConfig,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> SuffixBalancedSMCResult:
-    """Run full-sequence SMC using exact balanced suffix-regeneration moves."""
+    """Run full-sequence SMC using exact balanced suffix-regeneration moves.
+
+    The order at transition k is mutation under pi_{k-1}, incremental weighting
+    from gamma_{k-1} to gamma_k, then optional systematic resampling. The final
+    resampling is intentionally omitted so returned normalized weights retain
+    the final target approximation.
+    """
     set_seed(config.seed)
     device = next(model.parameters()).device
     generator = torch.Generator(device=device).manual_seed(config.seed)
@@ -1112,42 +1335,47 @@ def run_suffix_balanced_smc(
         raw_ari_batch: torch.Tensor,
         lambda_value: float,
     ) -> None:
-        completion_ids = token_batch.detach().cpu().tolist()
-        completion_texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        raw_values = raw_ari_batch.detach().cpu().tolist()
-        elapsed_now = time.perf_counter() - start
-        for completion, raw_value in zip(completion_texts, raw_values):
-            value = float(raw_value)
-            previous = best_discoveries.get(completion)
-            if previous is None or value > float(previous["raw_ari"]):
-                best_discoveries[completion] = {
-                    "raw_ari": value,
-                    "lambda": float(lambda_value),
-                    "time_first_seen_seconds": float(elapsed_now),
-                    "completion": completion,
-                }
-            for threshold in config.tail_thresholds:
-                threshold_value = float(threshold)
-                if value < threshold_value:
-                    continue
-                discovered_by_threshold[threshold_value].add(completion)
-                if first_tail_discovery[threshold_value] is None:
-                    first_tail_discovery[threshold_value] = {
+        # Discovery statistics include every generated proposal, accepted or
+        # rejected. This requires a second token transfer/decode beyond ARI
+        # scoring and is intentionally preserved as part of metric semantics.
+        with _profile_phase("discovery_tracking"):
+            completion_ids = token_batch.detach().cpu().tolist()
+            completion_texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+            raw_values = raw_ari_batch.detach().cpu().tolist()
+            elapsed_now = time.perf_counter() - start
+            for completion, raw_value in zip(completion_texts, raw_values):
+                value = float(raw_value)
+                previous = best_discoveries.get(completion)
+                if previous is None or value > float(previous["raw_ari"]):
+                    best_discoveries[completion] = {
                         "raw_ari": value,
                         "lambda": float(lambda_value),
                         "time_first_seen_seconds": float(elapsed_now),
                         "completion": completion,
                     }
+                for threshold in config.tail_thresholds:
+                    threshold_value = float(threshold)
+                    if value < threshold_value:
+                        continue
+                    discovered_by_threshold[threshold_value].add(completion)
+                    if first_tail_discovery[threshold_value] is None:
+                        first_tail_discovery[threshold_value] = {
+                            "raw_ari": value,
+                            "lambda": float(lambda_value),
+                            "time_first_seen_seconds": float(elapsed_now),
+                            "completion": completion,
+                        }
 
     with torch.inference_mode():
-        completion_tokens = generate_base_completions(
-            model,
-            prompt_ids,
-            num_particles=config.num_particles,
-            max_new_tokens=config.max_new_tokens,
-            batch_size=config.batch_size,
-            generator=generator,
-        )
+        with _profile_phase("initial_generation"):
+            completion_tokens = generate_base_completions(
+                model,
+                prompt_ids,
+                num_particles=config.num_particles,
+                max_new_tokens=config.max_new_tokens,
+                batch_size=config.batch_size,
+                generator=generator,
+            )
         phi, raw_ari, _ = score_observable(
             tokenizer,
             observable,
@@ -1221,40 +1449,43 @@ def run_suffix_balanced_smc(
             total_proposals += mutation.proposals
             total_regenerated_tokens += mutation.regenerated_tokens
 
-            # 2. Reweight the mutated particles from gamma_{k-1} to gamma_k.
-            log_weights = incremental_log_weight_update(
-                log_weights,
-                particles.phi,
-                previous_lambda=previous_lambda,
-                current_lambda=current_lambda,
-            )
-            # 3. Normalize, diagnose ESS, and resample only before the final level.
-            ess = ess_from_normalized_log_weights(log_weights)
-            ess_over_n_before = min(1.0, float((ess / config.num_particles).item()))
-            weights_before = torch.exp(log_weights)
-            weighted_mean_before = float(
-                torch.sum(weights_before * particles.raw_ari.to(torch.float64)).item()
-            )
-            min_ess_over_n = min(min_ess_over_n, ess_over_n_before)
-
-            # The final weighted particle system is retained without a final resample.
-            resampled = bool(
-                config.resampling
-                and level < len(config.lambdas) - 1
-                and ess_over_n_before < config.ess_threshold
-            )
-            if resampled:
-                indices = systematic_resample(log_weights, generator=generator)
-                particles = ParticleBatch(
-                    completion_token_ids=particles.completion_token_ids.index_select(0, indices),
-                    phi=particles.phi.index_select(0, indices),
-                    raw_ari=particles.raw_ari.index_select(0, indices),
-                    root_ancestors=particles.root_ancestors.index_select(0, indices),
-                    last_suffix_sizes=particles.last_suffix_sizes.index_select(0, indices),
+            with _profile_phase("reweight_ess_resampling"):
+                # 2. Since p_M is common to adjacent targets, only the exponential
+                # potential ratio is needed to move from gamma_{k-1} to gamma_k.
+                log_weights = incremental_log_weight_update(
+                    log_weights,
+                    particles.phi,
+                    previous_lambda=previous_lambda,
+                    current_lambda=current_lambda,
                 )
-                log_weights = torch.full_like(log_weights, uniform_log_weight)
-                resampling_steps += 1
-            ess_over_n_after = 1.0 if resampled else ess_over_n_before
+                # 3. Diagnose normalized weights and resample only before the final
+                # level, where equal weights can benefit subsequent mutation.
+                ess = ess_from_normalized_log_weights(log_weights)
+                ess_over_n_before = min(1.0, float((ess / config.num_particles).item()))
+                weights_before = torch.exp(log_weights)
+                weighted_mean_before = float(
+                    torch.sum(weights_before * particles.raw_ari.to(torch.float64)).item()
+                )
+                min_ess_over_n = min(min_ess_over_n, ess_over_n_before)
+
+                # The final weighted particle system is retained without a final resample.
+                resampled = bool(
+                    config.resampling
+                    and level < len(config.lambdas) - 1
+                    and ess_over_n_before < config.ess_threshold
+                )
+                if resampled:
+                    indices = systematic_resample(log_weights, generator=generator)
+                    particles = ParticleBatch(
+                        completion_token_ids=particles.completion_token_ids.index_select(0, indices),
+                        phi=particles.phi.index_select(0, indices),
+                        raw_ari=particles.raw_ari.index_select(0, indices),
+                        root_ancestors=particles.root_ancestors.index_select(0, indices),
+                        last_suffix_sizes=particles.last_suffix_sizes.index_select(0, indices),
+                    )
+                    log_weights = torch.full_like(log_weights, uniform_log_weight)
+                    resampling_steps += 1
+                ess_over_n_after = 1.0 if resampled else ess_over_n_before
             _synchronize(device)
             row = {
                 "level": level,

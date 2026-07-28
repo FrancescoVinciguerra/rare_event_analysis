@@ -129,6 +129,82 @@ def _manual_suffix_log_probability(
     return total
 
 
+def _legacy_generate_suffix_chunk(
+    model,
+    context_ids: torch.Tensor,
+    *,
+    suffix_size: int,
+    generator: torch.Generator,
+) -> torch.Tensor:
+    """Previous list-and-cat fallback, retained only as a regression oracle."""
+
+    work = context_ids
+    generated = []
+    for _ in range(suffix_size):
+        logits = suffix_sampler._selected_next_token_logits(model, work)
+        token = torch.multinomial(
+            torch.softmax(logits, dim=-1),
+            num_samples=1,
+            generator=generator,
+        )
+        generated.append(token)
+        work = torch.cat((work, token), dim=1)
+    return torch.cat(generated, dim=1)
+
+
+def test_preallocated_suffix_output_matches_previous_generation_path() -> None:
+    model = PrefixDependentTinyModel()
+    context = torch.tensor([[1, 0], [1, 3]], dtype=torch.long)
+    actual = suffix_sampler._generate_suffix_chunk(
+        model,
+        context,
+        suffix_size=5,
+        generator=_generator(101),
+    )
+    expected = _legacy_generate_suffix_chunk(
+        model,
+        context,
+        suffix_size=5,
+        generator=_generator(101),
+    )
+    assert torch.equal(actual, expected)
+
+
+def test_prepared_suffix_sampling_preserves_draws_across_steps() -> None:
+    config = SuffixBalancedSMCConfig(
+        num_particles=32,
+        max_new_tokens=4,
+        lambdas=(0.0, -0.5),
+        mcmc_steps_per_level=3,
+        suffix_sizes=(1, 2, 4),
+        suffix_rhos=(0.2, 0.3, 0.5),
+    )
+    device = torch.device("cpu")
+    prepared = suffix_sampler._prepare_suffix_size_sampling(
+        config,
+        transition_index=0,
+        device=device,
+    )
+    actual_generator = _generator(102)
+    expected_generator = _generator(102)
+    for step_index in range(config.mcmc_steps_per_level):
+        actual = suffix_sampler._sample_suffix_sizes_prepared(
+            config,
+            prepared,
+            step_index=step_index,
+            device=device,
+            generator=actual_generator,
+        )
+        expected = sample_suffix_sizes(
+            config,
+            transition_index=0,
+            step_index=step_index,
+            device=device,
+            generator=expected_generator,
+        )
+        assert torch.equal(actual, expected)
+
+
 def test_configuration_requires_temperature_one_and_global_suffix_support() -> None:
     with pytest.raises(ValueError, match="proposal_temperature=1.0"):
         _config(proposal_temperature=0.8)
@@ -552,6 +628,44 @@ def test_cpu_smoke_is_reproducible_with_fixed_seed() -> None:
     ]
     assert first_rows == second_rows
     assert first.summary["resample_final"] is False
+
+
+def test_phase_profiler_preserves_particles_and_collects_required_phases() -> None:
+    config = _config(num_particles=4, batch_size=4, seed=103)
+    unprofiled = run_suffix_balanced_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        CompletionTokenSumObservable(),
+        prompt="Once",
+        config=config,
+    )
+    model = PrefixDependentTinyModel()
+    profiler = suffix_sampler._PhaseProfiler(device=torch.device("cpu"))
+    with suffix_sampler._activate_phase_profiler(profiler):
+        profiled = run_suffix_balanced_smc(
+            model,
+            TinyTokenizer(),
+            CompletionTokenSumObservable(),
+            prompt="Once",
+            config=config,
+        )
+
+    comparable_fields = ("completion_token_ids", "phi", "raw_ari", "normalized_weight")
+    assert [
+        tuple(row[field] for field in comparable_fields) for row in profiled.samples
+    ] == [
+        tuple(row[field] for field in comparable_fields) for row in unprofiled.samples
+    ]
+    assert {
+        "initial_generation",
+        "suffix_generation",
+        "suffix_probability_scoring",
+        "ari_evaluation",
+        "discovery_tracking",
+        "acceptance",
+        "reweight_ess_resampling",
+    } <= profiler.elapsed_seconds.keys()
+    assert all(value >= 0.0 for value in profiler.elapsed_seconds.values())
 
 
 def test_cli_exposes_suffix_balanced_configuration() -> None:

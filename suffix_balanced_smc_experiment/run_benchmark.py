@@ -1,3 +1,10 @@
+"""Focused benchmarks for equivalent implementations of one SMC kernel.
+
+The script writes no experiment artifacts. It compares either particlewise
+versus grouped execution or full-ratio versus cancelled direct Metropolis; it
+does not compare different proposals or targets.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -19,6 +26,8 @@ from rea_llms.models import (  # noqa: E402
 from rea_llms.observables import create_observable  # noqa: E402
 from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
     SuffixBalancedSMCConfig,
+    _PhaseProfiler,
+    _activate_phase_profiler,
     parse_float_list,
     run_suffix_balanced_smc,
 )
@@ -45,6 +54,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--seed", type=int, default=12345)
     return parser.parse_args()
+
+
+def _run_profiled(model, tokenizer, observable, *, prompt: str, config):
+    profiler = _PhaseProfiler(device=next(model.parameters()).device)
+    with _activate_phase_profiler(profiler):
+        result = run_suffix_balanced_smc(
+            model,
+            tokenizer,
+            observable,
+            prompt=prompt,
+            config=config,
+        )
+    return result, profiler.snapshot()
+
+
+def _level_runtimes(result) -> list[float]:
+    return [
+        float(row["runtime_seconds"])
+        for row in result.diagnostics["level_diagnostics"][1:]
+    ]
 
 
 def main() -> None:
@@ -92,7 +121,7 @@ def main() -> None:
             prompt=args.prompt,
             config=replace(warmup_config, metropolis_fast_path=False),
         )
-        general = run_suffix_balanced_smc(
+        general, general_phases = _run_profiled(
             model,
             tokenizer,
             observable,
@@ -104,7 +133,7 @@ def main() -> None:
                 metropolis_fast_path=False,
             ),
         )
-        fast = run_suffix_balanced_smc(
+        fast, fast_phases = _run_profiled(
             model,
             tokenizer,
             observable,
@@ -120,6 +149,8 @@ def main() -> None:
         fast_runtime = fast.summary["runtime_total_seconds"]
         general_particles = [row["completion_token_ids"] for row in general.samples]
         fast_particles = [row["completion_token_ids"] for row in fast.samples]
+        # These two paths consume the same random numbers. Refuse to report a
+        # speedup unless the algebraic cancellation preserved the trajectory.
         if general_particles != fast_particles:
             raise RuntimeError(
                 "Fast and full direct-MH paths diverged at the same seed; benchmark aborted"
@@ -130,6 +161,14 @@ def main() -> None:
                     "runtime_total_seconds": {
                         "general_direct_mh": general_runtime,
                         "metropolis_fast_path": fast_runtime,
+                    },
+                    "phase_runtime_seconds": {
+                        "general_direct_mh": general_phases,
+                        "metropolis_fast_path": fast_phases,
+                    },
+                    "runtime_seconds_per_level": {
+                        "general_direct_mh": _level_runtimes(general),
+                        "metropolis_fast_path": _level_runtimes(fast),
                     },
                     "particles_per_second": fast.summary["particles_per_second"],
                     "mean_seconds_per_level": fast.summary[
@@ -145,14 +184,14 @@ def main() -> None:
         )
         return
 
-    reference = run_suffix_balanced_smc(
+    reference, reference_phases = _run_profiled(
         model,
         tokenizer,
         observable,
         prompt=args.prompt,
         config=replace(base_config, implementation="reference"),
     )
-    parallel = run_suffix_balanced_smc(
+    parallel, parallel_phases = _run_profiled(
         model,
         tokenizer,
         observable,
@@ -167,6 +206,14 @@ def main() -> None:
                 "runtime_total_seconds": {
                     "reference": reference_runtime,
                     "parallel": parallel_runtime,
+                },
+                "phase_runtime_seconds": {
+                    "reference": reference_phases,
+                    "parallel": parallel_phases,
+                },
+                "runtime_seconds_per_level": {
+                    "reference": _level_runtimes(reference),
+                    "parallel": _level_runtimes(parallel),
                 },
                 "particles_per_second": parallel.summary["particles_per_second"],
                 "mean_seconds_per_level": parallel.summary[

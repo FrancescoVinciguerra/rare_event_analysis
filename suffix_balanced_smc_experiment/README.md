@@ -154,6 +154,71 @@ between grouped and particlewise execution, so fixed-seed trajectories need
 not match across implementations; fixed proposals and all probability factors
 are tested exactly.
 
+## Performance audit and approved mechanical optimizations
+
+The current implementation is mathematically consistent with the target,
+mutation order, direct-MH cancellation, incremental weights, ESS, systematic
+resampling, and retained final weights described above. In particular,
+`torch.logsumexp`, `torch.cumsum`, and `torch.searchsorted` are already used for
+the numerically sensitive SMC operations. Future tokens of one completion
+cannot be generated in parallel; the existing parallelism is across particles
+that share a suffix length.
+
+After review, three class-1 changes were approved and implemented: fixed-length
+generation now writes into a preallocated output tensor, stochastic suffix-size
+constants are materialized once per SMC transition, and `run_benchmark.py` can
+attribute runtime by phase. No class-2 or class-3 proposal below has been
+implemented.
+
+The classifications below mean:
+
+1. **Safe mechanical optimization**: no intended mathematical change and low
+   implementation risk, but fixed-seed regression tests are still required.
+2. **Requires equivalence testing**: intended to preserve the kernel, but exact
+   proposal probabilities, serialized results, or random-number consumption
+   could change and must be tested explicitly.
+3. **Algorithmic change**: changes the proposal, target, acceptance, observable,
+   or particle dependence and is outside this optimization pass.
+
+| code location | potential inefficiency | expected cost | candidate optimization | class | correctness risk | priority | required verification |
+|---|---|---|---|---:|---|---|---|
+| `_generate_suffix_chunk` | Previously stored one tensor per generated token and concatenated at the end. | Temporary allocations proportional to batch size times suffix length. | **Implemented:** preallocate the fixed-size output tensor and fill one column per autoregressive step. | 1 | Low: in-place writes and tensor views must not affect sampled tokens. | Completed | Exact fixed-seed token equality against the previous list-and-cat path; CUDA benchmark. |
+| `_generate_suffix_chunk` | Manual decoding loop may miss optimized cache implementations available through Transformers. | One output-head projection and multinomial draw per token; cache implementation can dominate long suffixes. | Benchmark `model.generate` or a Transformers static/dynamic cache path with unrestricted sampling, temperature 1, no EOS stopping, no penalties, no beams, `top_k=0`, and `top_p=1`. | 2 | High: defaults, stopping rules, cache positions, and RNG batching can change the proposal. | High | Token-level proposal law, full support, fixed length, log-probability checks, stationary-distribution test, and throughput/memory benchmark. |
+| `_generate_suffix_chunk` fallback | Repeatedly concatenates and re-evaluates the growing prefix when `base_model`/KV cache is unavailable. | Superlinear work and allocation growth in suffix length. GPT-Neo uses the cached path, so this mainly affects other models. | Use the model's documented `prepare_inputs_for_generation`/cache API or fail clearly for unsupported cache behavior. | 2 | Medium: model-specific cache semantics and position IDs must match a full forward pass. | Medium | Next-token logits and sampled-suffix probabilities versus full-prefix recomputation for each supported architecture. |
+| `sample_suffix_sizes` | Previously recreated suffix-size and probability tensors at every MCMC step. | Small repeated host-to-device allocations and copies; noticeable only with many levels/steps. | **Implemented:** materialize immutable per-transition tensors once on the model device. | 1 | Low: the multinomial call and its ordering must remain unchanged. | Completed | Exact fixed-seed suffix-size draws across repeated MCMC steps and schedule tests. |
+| `propose_suffixes_parallel` / `score_fixed_suffix_proposals` | `torch.unique(...).cpu().tolist()` synchronizes the GPU before looping over size groups; groups also allocate `index_select`, prompt, context, and proposal tensors. | One synchronization and several group-sized copies per MCMC step. | Reuse the configured sorted support and preallocated index/context buffers, skipping empty groups without changing group order. | 2 | Medium: group order changes RNG consumption and buffer reuse can introduce aliasing. | High | Fixed proposals per size, empirical proposal distribution, acceptance factors, reproducibility within the parallel implementation, and peak memory. |
+| `_paired_suffix_log_probabilities_chunk` | Duplicates contexts for forward/reverse teacher forcing and materializes hidden states for both paths. `log_softmax(...).gather(...)` also builds full-vocabulary chunks. | Large activation and vocabulary-logit memory for Barker/sqrt; absent from the Metropolis fast path. | Reuse a cached prefix for the two suffix branches; benchmark selected-token `F.cross_entropy` against `log_softmax` plus `gather`. | 2 | Medium/high: cache branching and fused reductions can change indexing or numerical results. | Medium | Forward/reverse suffix log probabilities against enumeration, acceptance equality, detailed balance, and memory benchmark. |
+| `score_observable` | Copies prompt plus every completion to CPU and decodes text for exact ARI. Textstat itself is scalar CPU work. | Major synchronization/CPU bottleneck as particles and MCMC steps grow. | Transfer completion IDs only and share an exact decoded-text batch with downstream consumers. | 2 | High: BPE boundaries, punctuation, repetition, and concatenated words must decode identically to final evaluation. | High | Exact raw/capped ARI equality on randomized real-tokenizer sequences and explicit tokenizer-boundary cases. |
+| `track_discoveries` | Transfers and decodes every proposal again after ARI scoring and stores every unique proposal in `best_discoveries`, although only the top 20 are reported. | A second GPU-to-CPU boundary plus potentially unbounded strings and sets. | Reuse decoded text from ARI evaluation; maintain an exact bounded top-results structure while retaining threshold-unique sets and first-seen metadata. Make tracking optional only in a separate approved change. | 2 | Medium/high: rejected proposals, duplicate text, ties, and first-seen times are observable report semantics. | High | Byte-for-byte discovery summaries on fixed proposals, duplicates, ties, accepted/rejected cases, and all thresholds. |
+| `apply_suffix_balanced_mutation` | `current.clone()`, grouped copies, and `torch.where` produce full `N x T` token tensors at every MCMC step, even when few proposals are accepted. | Device memory bandwidth and allocation pressure proportional to all particles and completion length. | Update accepted rows with carefully isolated `index_copy_`/masked buffers and reuse proposal storage. | 2 | Medium: in-place aliasing can corrupt rejected states or cached observables. | High | Exact accept mask, tokens, cached `phi`, raw ARI, and ancestry for acceptance rates 0, 1, and mixed. |
+| `metropolis_log_acceptance_*`, `kernel_components`, level diagnostics | Finite checks and diagnostics call `.item()`, forcing synchronization. | Several small CUDA stalls per MCMC step/level; usually secondary to generation and ARI. | Aggregate validation flags and diagnostic scalars, then transfer once at a deliberate reporting boundary. | 2 | Medium: failures must remain clear and level timing semantics can shift. | Low | Invalid/non-finite injection tests and equality of every reported diagnostic. |
+| `_final_samples` | Re-evaluates exact ARI for final particles, decodes again, and performs several separate device-to-CPU transfers. | Duplicate CPU work and synchronization at the end of every run. | Carry or reconstruct generic score metadata from accepted cached scores and batch final transfers/decoding once. | 2 | Medium: every existing `samples.jsonl` field must remain identical. | Medium | Byte-for-byte sample rows for cached/uncached and raw/capped observables, including resampled ancestry. |
+| ARI/discovery caches | Exact ARI cache, discovery dictionaries, and threshold sets have no size bound. | Host memory grows with the number of unique evaluated proposals. | Add an optional bounded/LRU score cache and compact exact discovery structures. | 2 | Medium: eviction must not alter scores; compact discovery must preserve uniqueness and first occurrence. | Medium | Long-run memory profile and exact result equality under forced cache eviction. |
+| `run_benchmark.py` | Previously exposed total and per-level runtime but not phase attribution. | Bottlenecks could not be distinguished without ad hoc instrumentation. | **Implemented:** benchmark-only CPU timers/CUDA Events for initial generation, suffix generation/scoring, ARI, discovery, acceptance, and reweight/ESS/resampling. | 1 | Low: profiling must not change particles or synchronize every inner GPU call. | Completed | Profiled/unprofiled particle equality; one final event synchronization; CPU and CUDA benchmark runs. |
+| Proposal/observable alternatives | Vocabulary truncation, approximate or incremental non-equivalent ARI, parallel future-token generation, state-dependent suffix selection without proposal correction, or skipping proposals based on ARI. | Could be faster but changes support, target, transition kernel, or reported discovery set. | None in this audit. Treat each as a new method with its own derivation. | 3 | Unacceptable for an equivalence optimization. | Not applicable | New mathematical proof, stationary tests, and separate experimental labeling. |
+
+### Audit benchmark snapshot
+
+The phase-enabled benchmark was run on an NVIDIA GeForce MX570 A with local
+TinyStories-8M weights. With 8 particles, 8 completion tokens, one transition,
+one MCMC step, and batch size 8, the grouped implementation took 0.344 s versus
+2.110 s for the particlewise reference (6.13x in this microbenchmark), with
+173,725,184 bytes peak allocated CUDA memory. Its measured phases were 0.142 s
+for initial generation, 0.129 s for suffix generation, 0.021 s for suffix
+probability scoring, 0.004 s for ARI, 0.001 s for discovery, 0.003 s for
+acceptance, and 0.001 s for reweighting/ESS/resampling.
+
+In a less noisy direct-MH check with 32 particles, 20 tokens, two MCMC steps,
+and batch size 16, the fast path took 1.532 s versus 1.636 s for the full-ratio
+reference (1.07x), matched final token particles, and used 141,718,528 bytes
+peak allocated CUDA memory.
+
+These single-run numbers validate that batching and phase attribution are
+active; they are not estimates for a long experiment or statistically stable
+speedup claims. Profiling uses CPU timers off CUDA and CUDA Events on GPU, with
+one final synchronization. It writes no files and does not change the sampler's
+CLI or result schemas.
+
 ## CLI
 
 ```bash
