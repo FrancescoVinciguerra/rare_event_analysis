@@ -253,3 +253,6 @@ def test_comparison_notebook_is_valid_and_calls_shared_runner() -> None:
     assert "suffix_direct_mh_smc" in joined
     assert "official_annealed_tps" in joined
     assert "smc_tps_comparison/run_comparison.py" in joined
+    assert "Additional mixing, genealogy, weight, and token-repetition diagnostics" in joined
+    assert "weighted_mean_token_repeats" in joined
+    assert "within_level_drift" in joined
