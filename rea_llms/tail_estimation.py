@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import math
+import statistics
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -213,3 +215,197 @@ def estimate_base_tails_from_final_samples(
         thresholds,
         weights_are_log=True,
     )
+
+
+def overlap_is_usable(
+    corrected_ess_over_n: float,
+    raw_event_fraction: float,
+    *,
+    min_corrected_ess_over_n: float,
+    min_raw_event_fraction: float,
+    max_raw_event_fraction: float,
+) -> bool:
+    """Classify overlap diagnostically without changing an SNIS estimate."""
+
+    values = (
+        corrected_ess_over_n,
+        raw_event_fraction,
+        min_corrected_ess_over_n,
+        min_raw_event_fraction,
+        max_raw_event_fraction,
+    )
+    if any(not math.isfinite(float(value)) for value in values):
+        raise ValueError("overlap diagnostic values must be finite")
+    if not 0.0 <= min_corrected_ess_over_n <= 1.0:
+        raise ValueError("min_corrected_ess_over_n must be in [0, 1]")
+    if not 0.0 <= min_raw_event_fraction <= max_raw_event_fraction <= 1.0:
+        raise ValueError("raw event fraction bounds must lie in [0, 1]")
+    if not 0.0 <= corrected_ess_over_n <= 1.0 + 1e-12:
+        raise ValueError("corrected_ess_over_n must be in [0, 1]")
+    if not 0.0 <= raw_event_fraction <= 1.0:
+        raise ValueError("raw_event_fraction must be in [0, 1]")
+    return bool(
+        corrected_ess_over_n >= min_corrected_ess_over_n
+        and min_raw_event_fraction
+        <= raw_event_fraction
+        <= max_raw_event_fraction
+    )
+
+
+def _seed_independent_configuration(payload: dict[str, Any]) -> str:
+    config = dict(payload.get("config", {}))
+    config.pop("seed", None)
+    return json.dumps(
+        {
+            "config": config,
+            "repository_commit": payload.get("repository_commit"),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+
+
+def aggregate_terminal_lambda_runs(
+    payloads: Sequence[dict[str, Any]],
+    *,
+    min_corrected_ess_over_n: float,
+    min_raw_event_fraction: float,
+    max_raw_event_fraction: float,
+) -> dict[str, Any]:
+    """Aggregate independent seeds within, never across, terminal configurations."""
+
+    if not payloads:
+        raise ValueError("at least one completed run is required")
+    configuration_state: dict[str, dict[str, Any]] = {}
+    run_rows: list[dict[str, Any]] = []
+    for payload in payloads:
+        if payload.get("algorithm") != "suffix_direct_mh_smc":
+            raise ValueError("all runs must use suffix_direct_mh_smc")
+        label = str(payload.get("configuration_label", "")).strip()
+        if not label:
+            raise ValueError("every sweep run requires a configuration_label")
+        seed = int(payload["seed"])
+        summary = payload["summary"]
+        lambda_final = float(summary["lambda_final"])
+        corrected_ess_over_n = float(summary["corrected_importance_ess_over_n"])
+        thresholds = tuple(float(row["threshold"]) for row in summary["tails"])
+        signature = _seed_independent_configuration(payload)
+        state = configuration_state.setdefault(
+            label,
+            {
+                "signature": signature,
+                "lambda_final": lambda_final,
+                "thresholds": thresholds,
+                "seeds": set(),
+                "ess_by_seed": {},
+            },
+        )
+        if state["signature"] != signature:
+            raise ValueError(f"configuration {label!r} mixes different run parameters")
+        if not math.isclose(
+            float(state["lambda_final"]),
+            lambda_final,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise ValueError(f"configuration {label!r} mixes terminal lambdas")
+        if state["thresholds"] != thresholds:
+            raise ValueError(f"configuration {label!r} mixes tail thresholds")
+        if seed in state["seeds"]:
+            raise ValueError(f"configuration {label!r} repeats seed {seed}")
+        state["seeds"].add(seed)
+        state["ess_by_seed"][seed] = corrected_ess_over_n
+        for tail in summary["tails"]:
+            raw_fraction = float(tail["raw_tilted_fraction"])
+            estimate = float(tail["estimated_probability_under_p_m"])
+            run_rows.append(
+                {
+                    "configuration": label,
+                    "lambda_final": lambda_final,
+                    "threshold": float(tail["threshold"]),
+                    "seed": seed,
+                    "raw_event_count": int(tail["raw_count"]),
+                    "raw_event_fraction": raw_fraction,
+                    "estimated_probability_under_p_m": estimate,
+                    "corrected_ess_over_n": corrected_ess_over_n,
+                    "overlap_usable": overlap_is_usable(
+                        corrected_ess_over_n,
+                        raw_fraction,
+                        min_corrected_ess_over_n=min_corrected_ess_over_n,
+                        min_raw_event_fraction=min_raw_event_fraction,
+                        max_raw_event_fraction=max_raw_event_fraction,
+                    ),
+                }
+            )
+
+    grouped_rows: dict[tuple[str, float], list[dict[str, Any]]] = {}
+    for row in run_rows:
+        grouped_rows.setdefault(
+            (str(row["configuration"]), float(row["threshold"])),
+            [],
+        ).append(row)
+    aggregate_rows: list[dict[str, Any]] = []
+    for (label, threshold), rows in grouped_rows.items():
+        estimates = [float(row["estimated_probability_under_p_m"]) for row in rows]
+        corrected_ess = [float(row["corrected_ess_over_n"]) for row in rows]
+        raw_fractions = [float(row["raw_event_fraction"]) for row in rows]
+        raw_counts = [int(row["raw_event_count"]) for row in rows]
+        aggregate_rows.append(
+            {
+                "configuration": label,
+                "lambda_final": float(rows[0]["lambda_final"]),
+                "threshold": threshold,
+                "completed_seeds": len(rows),
+                "mean_raw_event_count": float(statistics.fmean(raw_counts)),
+                "mean_raw_event_fraction": float(statistics.fmean(raw_fractions)),
+                "mean_estimated_probability_under_p_m": float(
+                    statistics.fmean(estimates)
+                ),
+                "std_estimated_probability_under_p_m": (
+                    float(statistics.stdev(estimates)) if len(estimates) > 1 else None
+                ),
+                "minimum_corrected_ess_over_n": min(corrected_ess),
+                "mean_corrected_ess_over_n": float(statistics.fmean(corrected_ess)),
+                "usable_seed_count": sum(bool(row["overlap_usable"]) for row in rows),
+                "overlap_usable": all(bool(row["overlap_usable"]) for row in rows),
+            }
+        )
+    aggregate_rows.sort(
+        key=lambda row: (
+            float(row["lambda_final"]),
+            float(row["threshold"]),
+            str(row["configuration"]),
+        )
+    )
+    run_rows.sort(
+        key=lambda row: (
+            float(row["lambda_final"]),
+            float(row["threshold"]),
+            int(row["seed"]),
+        )
+    )
+    configuration_rows = [
+        {
+            "configuration": label,
+            "lambda_final": float(state["lambda_final"]),
+            "completed_seeds": len(state["seeds"]),
+            "minimum_corrected_ess_over_n": min(state["ess_by_seed"].values()),
+            "mean_corrected_ess_over_n": float(
+                statistics.fmean(state["ess_by_seed"].values())
+            ),
+        }
+        for label, state in configuration_state.items()
+    ]
+    configuration_rows.sort(key=lambda row: float(row["lambda_final"]))
+    return {
+        "diagnostic_thresholds": {
+            "min_corrected_ess_over_n": float(min_corrected_ess_over_n),
+            "min_raw_event_fraction": float(min_raw_event_fraction),
+            "max_raw_event_fraction": float(max_raw_event_fraction),
+        },
+        "run_estimates": run_rows,
+        "configuration_rows": configuration_rows,
+        "aggregate_rows": aggregate_rows,
+    }

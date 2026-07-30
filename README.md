@@ -67,7 +67,9 @@ schedule syntax, square-root limits, and output schema.
 The dedicated `run_tail_estimation.py` runner fixes this sampler to its exact
 direct-Metropolis configuration and uses only the final weighted population to
 estimate base-model tail probabilities by self-normalized importance sampling.
-It does not run direct sampling, TPS, MBAR, or any other sampler.
+Its terminal-lambda sweep keeps every configuration separate and aggregates
+only independent seeds with matching parameters. It does not run direct
+sampling, TPS, MBAR, or any other sampler.
 
 ### Raw-ARI SMC versus official annealed TPS
 

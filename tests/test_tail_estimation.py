@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from rea_llms.tail_estimation import (
+    aggregate_terminal_lambda_runs,
     corrected_base_log_weights,
     estimate_base_expectation,
     estimate_base_tail_probabilities,
@@ -14,6 +15,8 @@ from rea_llms.tail_estimation import (
 from suffix_balanced_smc_experiment.run_tail_estimation import (
     _config_for_seed,
     parse_args,
+    parse_lambda_schedules,
+    tail_run_directory,
 )
 
 
@@ -148,3 +151,128 @@ def test_tail_runner_builds_only_exact_direct_metropolis_smc() -> None:
     assert config.proposal_temperature == 1.0
     assert config.resampling
     assert config.implementation == "parallel"
+
+
+def _completed_sweep_payload(
+    configuration: str,
+    seed: int,
+    lambda_final: float,
+    *,
+    estimate: float,
+    raw_fraction: float,
+    corrected_ess_over_n: float,
+) -> dict:
+    return {
+        "algorithm": "suffix_direct_mh_smc",
+        "configuration_label": configuration,
+        "seed": seed,
+        "repository_commit": "test-commit",
+        "config": {
+            "seed": seed,
+            "lambdas": [0.0, lambda_final],
+            "num_particles": 10,
+        },
+        "summary": {
+            "lambda_final": lambda_final,
+            "corrected_importance_ess_over_n": corrected_ess_over_n,
+            "tails": [
+                {
+                    "threshold": 8.0,
+                    "raw_count": round(10 * raw_fraction),
+                    "raw_tilted_fraction": raw_fraction,
+                    "estimated_probability_under_p_m": estimate,
+                }
+            ],
+        },
+    }
+
+
+def test_terminal_configurations_have_distinct_output_directories(tmp_path) -> None:
+    first = tail_run_directory(
+        tmp_path,
+        "sweep",
+        200,
+        configuration_label="lambda_m1",
+    )
+    second = tail_run_directory(
+        tmp_path,
+        "sweep",
+        200,
+        configuration_label="lambda_m2",
+    )
+    assert first != second
+    assert first == tmp_path / "sweep" / "lambda_m1" / "seed_200"
+    assert second == tmp_path / "sweep" / "lambda_m2" / "seed_200"
+    schedules = parse_lambda_schedules(
+        '{"lambda_m1":"0,-0.5,-1", "lambda_m2":[0,-1,-2]}'
+    )
+    assert schedules["lambda_m1"][-1] == -1.0
+    assert schedules["lambda_m2"][-1] == -2.0
+
+
+def test_sweep_aggregation_never_combines_terminal_configurations() -> None:
+    payloads = [
+        _completed_sweep_payload(
+            "lambda_m1", seed, -1.0, estimate=estimate, raw_fraction=0.3,
+            corrected_ess_over_n=0.4,
+        )
+        for seed, estimate in [(200, 0.10), (201, 0.20)]
+    ] + [
+        _completed_sweep_payload(
+            "lambda_m2", seed, -2.0, estimate=estimate, raw_fraction=0.6,
+            corrected_ess_over_n=0.2,
+        )
+        for seed, estimate in [(200, 0.02), (201, 0.04)]
+    ]
+    aggregate = aggregate_terminal_lambda_runs(
+        payloads,
+        min_corrected_ess_over_n=0.1,
+        min_raw_event_fraction=0.05,
+        max_raw_event_fraction=0.95,
+    )
+    rows = {row["configuration"]: row for row in aggregate["aggregate_rows"]}
+    assert set(rows) == {"lambda_m1", "lambda_m2"}
+    assert rows["lambda_m1"]["completed_seeds"] == 2
+    assert rows["lambda_m1"]["mean_estimated_probability_under_p_m"] == pytest.approx(0.15)
+    assert rows["lambda_m2"]["mean_estimated_probability_under_p_m"] == pytest.approx(0.03)
+
+    incompatible = dict(payloads[0])
+    incompatible["seed"] = 202
+    incompatible["config"] = {**payloads[0]["config"], "seed": 202, "num_particles": 20}
+    with pytest.raises(ValueError, match="mixes different run parameters"):
+        aggregate_terminal_lambda_runs(
+            [payloads[0], incompatible],
+            min_corrected_ess_over_n=0.1,
+            min_raw_event_fraction=0.05,
+            max_raw_event_fraction=0.95,
+        )
+
+
+def test_overlap_flag_is_diagnostic_and_does_not_change_estimate() -> None:
+    payload = _completed_sweep_payload(
+        "lambda_m1",
+        200,
+        -1.0,
+        estimate=0.07,
+        raw_fraction=0.5,
+        corrected_ess_over_n=0.2,
+    )
+    usable = aggregate_terminal_lambda_runs(
+        [payload],
+        min_corrected_ess_over_n=0.1,
+        min_raw_event_fraction=0.05,
+        max_raw_event_fraction=0.95,
+    )
+    unusable = aggregate_terminal_lambda_runs(
+        [payload],
+        min_corrected_ess_over_n=0.3,
+        min_raw_event_fraction=0.05,
+        max_raw_event_fraction=0.95,
+    )
+    usable_row = usable["aggregate_rows"][0]
+    unusable_row = unusable["aggregate_rows"][0]
+    assert usable_row["overlap_usable"] is True
+    assert unusable_row["overlap_usable"] is False
+    assert usable_row["mean_estimated_probability_under_p_m"] == pytest.approx(
+        unusable_row["mean_estimated_probability_under_p_m"]
+    )

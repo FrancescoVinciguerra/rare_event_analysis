@@ -248,21 +248,28 @@ python suffix_balanced_smc_experiment/run_tail_estimation.py \
   --seeds 200,201,202 \
   --num-particles 256 \
   --max-new-tokens 100 \
-  --lambdas 0,-0.25,-0.5,-0.75,-1,-1.5,-2 \
-  --mcmc-steps-per-level 5 \
+  --lambda-schedules-json '{"lambda_m1":"0,-0.25,-0.5,-0.75,-1","lambda_m2":"0,-0.25,-0.5,-0.75,-1,-1.25,-1.5,-1.75,-2"}' \
+  --mcmc-steps-per-level 10 \
   --mask-mode stochastic \
   --mask-sizes 1,2,4,8,16,32,64,100 \
   --mask-rho-schedule 0.20,0.18,0.16,0.14,0.12,0.10,0.06,0.04 \
-  --tail-thresholds 6,8,10,12,15,20 \
-  --experiment-label suffix_smc_tail_estimation \
+  --tail-thresholds 6,8,10,12,15 \
+  --min-corrected-ess-over-n 0.10 \
+  --min-raw-event-fraction 0.05 \
+  --max-raw-event-fraction 0.95 \
+  --experiment-label suffix_smc_terminal_lambda_sweep \
   --skip-completed
 ```
 
-Each seed writes only `run.json` and `report.md`. `run.json` contains the final
-particles, normalized final log weights, completion text, seed, runtime,
-essential configuration, corrected ESS, and tail table. Independent seeds are
-aggregated in the dedicated Colab notebook; particles within one run are not
-treated as independent uncertainty replicates. Open
+In sweep mode, every `(configuration, seed)` writes one `run.json` under its
+own directory. The experiment root contains one `aggregate.json`, one
+`report.md`, and one two-panel `terminal_lambda_sweep.png`. Each estimate uses
+only the final population from its own terminal-lambda run. Aggregation is
+strictly across independent seeds with identical configuration; estimates from
+different terminal lambdas are never mixed. The `overlap_usable` flag only
+highlights low corrected ESS or saturated/raw-unobserved events and never
+filters or changes an estimate. Particles within one run are not treated as
+uncertainty replicates. Open
 `notebooks/REA_Suffix_SMC_Tail_Estimation_Quickstart.ipynb` for the resumable
 Google Drive workflow and the single two-panel figure.
 
