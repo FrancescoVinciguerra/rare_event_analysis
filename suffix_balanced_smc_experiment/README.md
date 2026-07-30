@@ -219,6 +219,53 @@ speedup claims. Profiling uses CPU timers off CUDA and CUDA Events on GPU, with
 one final synchronization. It writes no files and does not change the sampler's
 CLI or result schemas.
 
+## Base-model tail estimation
+
+`run_tail_estimation.py` configures this sampler as `suffix_direct_mh_smc`:
+direct Metropolis, the exact cancellation fast path, temperature one, parallel
+suffix generation, raw ARI, and the existing ESS-adaptive resampling policy.
+The final level remains unresampled.
+
+For final normalized SMC weights `W_i`, final potential `phi_i`, and final
+schedule value `lambda`, the base-model correction is
+
+\[
+\log r_i = \log W_i + \lambda\phi_i,
+\qquad
+R_i = \exp\{\log r_i-\operatorname{logsumexp}_j(\log r_j)\}.
+\]
+
+The reusable function
+`rea_llms.tail_estimation.estimate_base_expectation` returns
+`sum_i R_i f_i`. Tail indicators for all thresholds are evaluated together by
+broadcasting. This self-normalized estimator is consistent but generally
+biased at finite particle count. The corrected importance ESS is reported
+separately from the final SMC ESS.
+
+```bash
+python suffix_balanced_smc_experiment/run_tail_estimation.py \
+  --device cuda \
+  --seeds 200,201,202 \
+  --num-particles 256 \
+  --max-new-tokens 100 \
+  --lambdas 0,-0.25,-0.5,-0.75,-1,-1.5,-2 \
+  --mcmc-steps-per-level 5 \
+  --mask-mode stochastic \
+  --mask-sizes 1,2,4,8,16,32,64,100 \
+  --mask-rho-schedule 0.20,0.18,0.16,0.14,0.12,0.10,0.06,0.04 \
+  --tail-thresholds 6,8,10,12,15,20 \
+  --experiment-label suffix_smc_tail_estimation \
+  --skip-completed
+```
+
+Each seed writes only `run.json` and `report.md`. `run.json` contains the final
+particles, normalized final log weights, completion text, seed, runtime,
+essential configuration, corrected ESS, and tail table. Independent seeds are
+aggregated in the dedicated Colab notebook; particles within one run are not
+treated as independent uncertainty replicates. Open
+`notebooks/REA_Suffix_SMC_Tail_Estimation_Quickstart.ipynb` for the resumable
+Google Drive workflow and the single two-panel figure.
+
 ## CLI
 
 ```bash

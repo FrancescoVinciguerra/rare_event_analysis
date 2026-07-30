@@ -64,6 +64,11 @@ depend on direct sampling, mixture MCMC, TPS, MBAR, or either earlier SMC
 pipeline. See `suffix_balanced_smc_experiment/README.md` for the formulas,
 schedule syntax, square-root limits, and output schema.
 
+The dedicated `run_tail_estimation.py` runner fixes this sampler to its exact
+direct-Metropolis configuration and uses only the final weighted population to
+estimate base-model tail probabilities by self-normalized importance sampling.
+It does not run direct sampling, TPS, MBAR, or any other sampler.
+
 ### Raw-ARI SMC versus official annealed TPS
 
 `official_annealed_tps_experiment/` provides a minimal adapter for Algorithm 2
@@ -82,12 +87,15 @@ and `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`.
 - `full_sequence_smc_experiment/run_smc_sampler.py`: CLI for full-sequence SMC.
 - `masked_barker_smc_experiment/run_experiment.py`: CLI for masked Barker SMC.
 - `suffix_balanced_smc_experiment/run_experiment.py`: CLI for suffix-balanced SMC.
+- `suffix_balanced_smc_experiment/run_tail_estimation.py`: final-population SNIS tail estimation under `p_M`.
 - `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel and direct-MH fast-path benchmarks.
+- `rea_llms/tail_estimation.py`: reusable log-space SNIS expectation and tail functions.
 - `official_annealed_tps_experiment/run_experiment.py`: official Algorithm 2 TPS adapter.
 - `smc_tps_comparison/run_comparison.py`: raw-ARI multi-seed comparison runner.
 - `mixture_mcmc_experiment/run_experiment.py`: CLI for mixture MCMC.
 - `notebooks/REA_Colab_Quickstart.ipynb`: Colab quickstart.
 - `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`: standalone suffix-balanced SMC Colab quickstart.
+- `notebooks/REA_Suffix_SMC_Tail_Estimation_Quickstart.ipynb`: suffix direct-MH SMC and base-model tail estimation.
 - `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`: SMC/TPS comparison and optional stability study.
 - `results/EXPERIMENT_LOG.md`: cumulative log of selected runs.
 - `results/selected_runs/`: only curated run summaries and small sample previews.
