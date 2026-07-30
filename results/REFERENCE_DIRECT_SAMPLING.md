@@ -17,7 +17,10 @@ no completion text, token IDs, generation metadata, or separate README.
 
 - Model: `roneneldan/TinyStories-8M` (revision not published)
 - Tokenizer: `EleutherAI/gpt-neo-125M` (revision not published)
-- Prompt (16 tokens): `Once upon a time, in a big forest, there lived a rhinoc`
+- Exact prompt (16 tokens): `Once upon a time, in a big forest, there lived a rhinoc`
+- `repr(prompt)`: `'Once upon a time, in a big forest, there lived a rhinoc'`
+- Prompt SHA-256 (exact UTF-8): `b4b7f60343cd3d1e24d8f2e312810afdaaa28034b9a194c66865b47483f70f59`
+- Prompt token IDs: `[7454, 2402, 257, 640, 11, 287, 257, 1263, 8222, 11, 612, 5615, 257, 9529, 259, 420]`
 - Completion: 100 fixed tokens
 - Generation: `do_sample=True`, temperature 1.0, `top_k=None`, top-p not explicitly set
 - EOS and padding IDs are passed as `None`; the demo asserts exact length
@@ -105,7 +108,7 @@ conditioned on values above 15.
 - Model/tokenizer revisions, the exact dataset-generation environment, and
   dataset RNG seeds are not published.
 
-## Ground-truth assessment
+## Reference assessment
 
 High-precision empirical baseline for the official direct-sampling observable, but not exact ground truth for this repository's textstat raw-ARI convention until observable equivalence is established.
 

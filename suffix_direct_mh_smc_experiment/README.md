@@ -71,3 +71,17 @@ unverified because the paper's custom edge-case implementation and original
 completions are unavailable. Production is blocked unless
 `--allow-unverified-observable-reference` is passed; that flag requests an
 approximate cross-implementation comparison, never exact ground truth.
+
+Audit an existing cache without loading the model or generating missing runs:
+
+```bash
+python suffix_direct_mh_smc_experiment/run_tail_validation.py \
+  --audit-only --seed-groups 200 \
+  --output-root results/tail_probability_validation
+```
+
+The audit classifies each candidate as `exactly_reusable`,
+`comparable_but_not_cache_equivalent`, `incompatible`, or `unverifiable`.
+Only unique exact matches enter the mixture denominator and corrected ESS. It
+also reports component-wise reverse estimates and compares SMC and reverse
+normalizing-constant diagnostics in log-space.

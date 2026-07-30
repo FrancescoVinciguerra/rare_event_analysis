@@ -224,7 +224,9 @@ the chosen output directory. The summary reports:
 Tail estimation adds per-threshold SNIS estimates under `p_M`, corrected
 importance ESS/N, overlap flags, and independent-seed aggregate summaries.
 Mixture validation stores one compact archive per independent component,
-`comparison.csv`, a short report, and exactly two figures.
+`data_reuse_audit.csv`, `component_diagnostics.csv`, `comparison.csv`, a short
+report, and exactly two figures. `--audit-only` regenerates these diagnostics
+from compatible archives without loading the model or sampling.
 Generated outputs are ignored by Git. Only compact results that support a stated
 conclusion should be recorded in `results/EXPERIMENT_LOG.md`.
 

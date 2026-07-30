@@ -6,14 +6,21 @@ import math
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 import torch
 
+from rea_llms.data_reuse_audit import (
+    classify_component_archives,
+    prompt_sha256,
+    selected_archive_paths,
+)
 from rea_llms.tail_estimation import (
     MixtureComponentPopulation,
     aggregate_terminal_lambda_runs,
     capped_potential,
     corrected_base_log_weights,
+    diagnose_component_reverse_estimator,
     effective_sample_size_from_log_weights,
     estimate_base_expectation,
     estimate_base_tail_probabilities,
@@ -23,6 +30,7 @@ from rea_llms.tail_estimation import (
 )
 from suffix_direct_mh_smc_experiment.run_tail_validation import (
     ComponentSpec,
+    _component_metadata,
     _load_component_archive,
     _save_component_archive,
     assess_reference_compatibility,
@@ -31,6 +39,7 @@ from suffix_direct_mh_smc_experiment.run_tail_validation import (
     component_run_id,
     component_seed,
     enforce_reference_compatibility,
+    main as run_validation_main,
     parse_args as parse_validation_args,
 )
 from suffix_direct_mh_smc_experiment.run_tail_estimation import (
@@ -228,6 +237,332 @@ def test_component_cache_requires_exact_metadata(tmp_path) -> None:
         )
 
 
+def _audit_metadata(
+    *,
+    prompt: str = "Once upon a time, in a big forest, there lived a rhinoc",
+    num_particles: int = 2,
+) -> dict:
+    args = parse_validation_args(
+        [
+            "--prompt",
+            prompt,
+            "--seed-groups",
+            "200",
+            "--num-particles",
+            str(num_particles),
+            "--max-new-tokens",
+            "4",
+            "--mcmc-steps-per-level",
+            "1",
+            "--suffix-sizes",
+            "1,4",
+        ]
+    )
+    spec = ComponentSpec(cap=6.0, lambda_final=-0.5)
+    return _component_metadata(
+        args,
+        spec,
+        seed_group=200,
+        component_index=0,
+        seed=component_seed(200, 0),
+        schedule=build_lambda_schedule(-0.5, 0.25),
+    )
+
+
+def _write_audit_archive(path: Path, metadata: dict) -> None:
+    count = int(metadata.get("num_particles", 2))
+    raw = np.linspace(5.0, 7.0, count)
+    _save_component_archive(
+        path,
+        metadata=metadata,
+        raw_ari=raw,
+        phi=np.minimum(raw, 6.0),
+        final_log_weights=np.full(count, -math.log(count)),
+        log_normalizing_constant=1.2,
+        runtime_seconds=3.0,
+    )
+
+
+def test_prompt_comparison_is_exact_and_hash_is_deterministic() -> None:
+    prompt = "Once upon a time"
+    assert prompt_sha256(prompt) == prompt_sha256(prompt)
+    assert prompt_sha256(prompt) != prompt_sha256(prompt + " ")
+    assert prompt_sha256(prompt) != prompt_sha256("once upon a time")
+
+
+def test_archive_with_missing_metadata_is_unverifiable(tmp_path) -> None:
+    metadata = _audit_metadata()
+    incomplete_metadata = {key: value for key, value in metadata.items() if key != "prompt"}
+    path = tmp_path / "missing_metadata.npz"
+    _write_audit_archive(path, incomplete_metadata)
+    records = classify_component_archives(
+        [path],
+        {component_run_id(metadata): metadata},
+    )
+    assert records[0].classification == "unverifiable"
+    assert not records[0].selected_for_mixture
+
+
+@pytest.mark.parametrize(
+    "different_prompt",
+    [
+        "Once upon a time, in a big forest, there lived a rhinoc ",
+        "once upon a time, in a big forest, there lived a rhinoc",
+    ],
+)
+def test_archive_with_exact_prompt_mismatch_is_incompatible(
+    tmp_path,
+    different_prompt: str,
+) -> None:
+    expected = _audit_metadata()
+    stored = _audit_metadata(prompt=different_prompt)
+    path = tmp_path / "prompt_mismatch.npz"
+    _write_audit_archive(path, stored)
+    records = classify_component_archives(
+        [path],
+        {component_run_id(expected): expected},
+    )
+    assert records[0].classification == "incompatible"
+    assert "prompt" in records[0].reasons[0]
+
+
+def test_exact_archive_is_selected_and_smoke_archive_is_not(tmp_path) -> None:
+    expected = _audit_metadata(num_particles=256)
+    exact_path = tmp_path / f"{component_run_id(expected)}.npz"
+    smoke_path = tmp_path / "smoke.npz"
+    _write_audit_archive(exact_path, expected)
+    _write_audit_archive(smoke_path, _audit_metadata(num_particles=8))
+    records = classify_component_archives(
+        [exact_path, smoke_path],
+        {component_run_id(expected): expected},
+    )
+    by_name = {record.facts.path.name: record for record in records}
+    assert by_name[exact_path.name].classification == "exactly_reusable"
+    assert by_name[exact_path.name].selected_for_mixture
+    assert by_name[smoke_path.name].classification == "comparable_but_not_cache_equivalent"
+    assert not by_name[smoke_path.name].selected_for_mixture
+    assert selected_archive_paths(records) == {
+        component_run_id(expected): exact_path
+    }
+
+
+def test_duplicate_exact_seed_is_rejected(tmp_path) -> None:
+    metadata = _audit_metadata()
+    run_id = component_run_id(metadata)
+    canonical = tmp_path / f"{run_id}.npz"
+    duplicate = tmp_path / "copied_archive.npz"
+    _write_audit_archive(canonical, metadata)
+    _write_audit_archive(duplicate, metadata)
+    records = classify_component_archives(
+        [duplicate, canonical],
+        {run_id: metadata},
+    )
+    assert sum(record.selected_for_mixture for record in records) == 1
+    rejected = [record for record in records if not record.selected_for_mixture]
+    assert rejected[0].classification == "incompatible"
+    assert "duplicate" in "; ".join(rejected[0].reasons)
+
+
+def test_excluded_archive_cannot_change_mixture_ess_or_denominator(tmp_path) -> None:
+    expected = _audit_metadata(num_particles=2)
+    exact_path = tmp_path / f"{component_run_id(expected)}.npz"
+    excluded_path = tmp_path / "old_configuration.npz"
+    _write_audit_archive(exact_path, expected)
+    _write_audit_archive(excluded_path, _audit_metadata(num_particles=3))
+    records = classify_component_archives(
+        [exact_path, excluded_path],
+        {component_run_id(expected): expected},
+    )
+    selected = selected_archive_paths(records)
+    assert list(selected.values()) == [exact_path]
+    loaded = _load_component_archive(
+        exact_path,
+        expected_metadata=expected,
+        spec=ComponentSpec(cap=6.0, lambda_final=-0.5),
+        reused=True,
+    )
+    estimate = estimate_base_tails_from_deterministic_mixture(
+        [
+            MixtureComponentPopulation(
+                run_id=loaded.run_id,
+                seed=loaded.seed,
+                cap=loaded.spec.cap,
+                lambda_final=loaded.spec.lambda_final,
+                log_normalizing_constant=loaded.log_normalizing_constant,
+                raw_ari=loaded.raw_ari,
+                final_log_weights=loaded.final_log_weights,
+            )
+        ],
+        thresholds=[6.0],
+    )
+    assert estimate.corrected_log_weights.numel() == 2
+    assert float(estimate.corrected_ess) <= 2.0
+
+
+def test_audit_only_reuses_archive_without_loading_model(tmp_path, monkeypatch) -> None:
+    output_root = tmp_path / "audit"
+    component_root = output_root / "component_runs"
+    metadata = _audit_metadata(num_particles=2)
+    archive_path = component_root / f"{component_run_id(metadata)}.npz"
+    _write_audit_archive(archive_path, metadata)
+
+    def fail_model_load(*args, **kwargs):
+        raise AssertionError("audit-only must not load the model")
+
+    monkeypatch.setattr(
+        "suffix_direct_mh_smc_experiment.run_tail_validation.load_model_and_tokenizer",
+        fail_model_load,
+    )
+    run_validation_main(
+        [
+            "--audit-only",
+            "--smoke-mode",
+            "--components-json",
+            json.dumps([{"cap": 6.0, "lambda": -0.5}]),
+            "--seed-groups",
+            "200",
+            "--num-particles",
+            "2",
+            "--max-new-tokens",
+            "4",
+            "--mcmc-steps-per-level",
+            "1",
+            "--suffix-sizes",
+            "1,4",
+            "--output-root",
+            str(output_root),
+        ]
+    )
+    audit = pd.read_csv(output_root / "data_reuse_audit.csv")
+    diagnostics = pd.read_csv(output_root / "component_diagnostics.csv")
+    comparison = pd.read_csv(output_root / "comparison.csv")
+    report = (output_root / "REPORT.md").read_text(encoding="utf-8")
+    assert audit["selected_for_mixture"].tolist() == [True]
+    assert not diagnostics.empty
+    assert not comparison.empty
+    assert "Candidate archives found: `1`" in report
+    assert "Selected for the mixture: `1`" in report
+
+
+def test_component_reverse_probability_and_log_z_on_toy_model() -> None:
+    base = torch.tensor([0.1, 0.2, 0.3, 0.4], dtype=torch.float64)
+    raw = torch.tensor([0.0, 1.0, 2.0, 3.0], dtype=torch.float64)
+    cap = 2.0
+    lambda_final = -0.5
+    potential = torch.clamp(raw, max=cap)
+    unnormalized = base * torch.exp(-lambda_final * potential)
+    z_value = unnormalized.sum()
+    tilted = unnormalized / z_value
+    diagnostic = diagnose_component_reverse_estimator(
+        raw,
+        torch.log(tilted),
+        cap=cap,
+        lambda_final=lambda_final,
+        thresholds=[2.0],
+    )
+    assert float(diagnostic.estimated_probabilities[0]) == pytest.approx(0.7)
+    assert float(diagnostic.reverse_log_normalizing_constant) == pytest.approx(
+        float(torch.log(z_value))
+    )
+
+
+def test_single_component_mixture_equals_component_reverse_formula() -> None:
+    component = MixtureComponentPopulation(
+        run_id="single",
+        seed=5,
+        cap=2.0,
+        lambda_final=-0.7,
+        log_normalizing_constant=0.4,
+        raw_ari=[0.0, 1.0, 3.0],
+        final_log_weights=np.log([0.1, 0.3, 0.6]),
+    )
+    reverse = diagnose_component_reverse_estimator(
+        component.raw_ari,
+        component.final_log_weights,
+        cap=component.cap,
+        lambda_final=component.lambda_final,
+        thresholds=[2.0],
+    )
+    mixture = estimate_base_tails_from_deterministic_mixture(
+        [component],
+        thresholds=[2.0],
+    )
+    assert float(mixture.estimated_probabilities[0]) == pytest.approx(
+        float(reverse.estimated_probabilities[0])
+    )
+
+
+def test_nonuniform_smc_weights_are_not_dropped_from_mixture() -> None:
+    common = {
+        "run_id": "weighted",
+        "seed": 9,
+        "cap": 2.0,
+        "lambda_final": -0.5,
+        "log_normalizing_constant": 0.3,
+        "raw_ari": [0.0, 3.0],
+    }
+    weighted = MixtureComponentPopulation(
+        **common,
+        final_log_weights=np.log([0.9, 0.1]),
+    )
+    uniform = MixtureComponentPopulation(
+        **{**common, "run_id": "uniform", "seed": 10},
+        final_log_weights=np.log([0.5, 0.5]),
+    )
+    weighted_probability = estimate_base_tails_from_deterministic_mixture(
+        [weighted], thresholds=[2.0]
+    ).estimated_probabilities[0]
+    uniform_probability = estimate_base_tails_from_deterministic_mixture(
+        [uniform], thresholds=[2.0]
+    ).estimated_probabilities[0]
+    assert float(weighted_probability) != pytest.approx(float(uniform_probability))
+
+
+def test_component_weights_are_normalized_internally_and_rho_is_applied_once() -> None:
+    first = MixtureComponentPopulation(
+        run_id="first",
+        seed=21,
+        cap=2.0,
+        lambda_final=-0.5,
+        log_normalizing_constant=0.2,
+        raw_ari=[0.0, 3.0],
+        final_log_weights=np.log([0.8, 0.2]),
+    )
+    second = MixtureComponentPopulation(
+        run_id="second",
+        seed=22,
+        cap=2.0,
+        lambda_final=-0.5,
+        log_normalizing_constant=0.2,
+        raw_ari=[0.0, 3.0],
+        final_log_weights=np.log([0.8, 0.2]) + 100.0,
+    )
+    one = estimate_base_tails_from_deterministic_mixture(
+        [first], thresholds=[2.0]
+    )
+    combined = estimate_base_tails_from_deterministic_mixture(
+        [first, second],
+        thresholds=[2.0],
+        mixture_coefficients=[0.2, 0.8],
+    )
+    assert float(combined.estimated_probabilities[0]) == pytest.approx(
+        float(one.estimated_probabilities[0])
+    )
+
+
+def test_each_component_cap_changes_mixture_denominator() -> None:
+    raw = torch.tensor([10.0], dtype=torch.float64)
+    common = dict(
+        raw_ari=raw,
+        lambdas=[-1.0, -1.0],
+        log_normalizing_constants=[0.0, 0.0],
+        mixture_coefficients=[0.5, 0.5],
+    )
+    first = log_mixture_density_ratio(caps=[6.0, 8.0], **common)
+    second = log_mixture_density_ratio(caps=[6.0, 10.0], **common)
+    assert not torch.allclose(first, second)
+
+
 def test_lambda_zero_preserves_normalized_smc_weights() -> None:
     phi = torch.tensor([0.0, 2.0, 5.0], dtype=torch.float64)
     smc_weights = torch.tensor([0.2, 0.3, 0.5], dtype=torch.float64)
@@ -382,10 +717,13 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "LAMBDA_STEP" in joined
     assert "SKIP_COMPLETED_RUNS" in joined
     assert "ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE" in joined
+    assert "RUN_CACHE_AUDIT" in joined
     assert "RUN_SMOKE_TEST" in joined
     assert "RUN_PRODUCTION" in joined
     assert "--components-json" in joined
     assert "--smoke-mode" in joined
+    assert "--audit-only" in joined
+    assert "Loaded component archives" not in joined
     assert "SEED_GROUPS = [200]" in joined
     assert "official_annealed_tps" not in joined
 

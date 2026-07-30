@@ -29,10 +29,19 @@ from rea_llms.models import (  # noqa: E402
     DEFAULT_TOKENIZER_NAME,
     load_model_and_tokenizer,
 )
+from rea_llms.data_reuse_audit import (  # noqa: E402
+    AUDIT_CATEGORIES,
+    ArchiveAuditRecord,
+    classify_component_archives,
+    discover_component_archives,
+    prompt_sha256,
+    selected_archive_paths,
+)
 from rea_llms.observables import create_observable  # noqa: E402
 from rea_llms.official_direct_data import boxplot_statistics  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
     MixtureComponentPopulation,
+    diagnose_component_reverse_estimator,
     estimate_base_tails_from_deterministic_mixture,
 )
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
@@ -304,6 +313,65 @@ def _load_component_archive(
         reused=reused,
         path=path,
     )
+
+
+def _audit_component_cache(
+    component_root: Path,
+    plans: Sequence[
+        tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]
+    ],
+) -> list[ArchiveAuditRecord]:
+    expected = {path.stem: metadata for *_, metadata, path in plans}
+    return classify_component_archives(
+        discover_component_archives(component_root),
+        expected,
+    )
+
+
+def _load_selected_audit_components(
+    records: Sequence[ArchiveAuditRecord],
+    plans: Sequence[
+        tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]
+    ],
+) -> list[CompletedComponent]:
+    selected = selected_archive_paths(records)
+    plan_by_run_id = {
+        path.stem: (spec, metadata)
+        for _, _, spec, _, _, metadata, path in plans
+    }
+    completed: list[CompletedComponent] = []
+    for run_id, archive_path in sorted(selected.items()):
+        spec, expected_metadata = plan_by_run_id[run_id]
+        completed.append(
+            _load_component_archive(
+                archive_path,
+                expected_metadata=expected_metadata,
+                spec=spec,
+                reused=True,
+            )
+        )
+    return completed
+
+
+def _write_audit_csv(
+    path: Path,
+    records: Sequence[ArchiveAuditRecord],
+) -> pd.DataFrame:
+    rows = [record.to_row() for record in records]
+    frame = pd.DataFrame(rows)
+    if frame.empty:
+        frame = pd.DataFrame(
+            columns=[
+                "path",
+                "run_id",
+                "expected_run_id",
+                "classification",
+                "selected_for_mixture",
+                "reasons",
+            ]
+        )
+    frame.to_csv(path, index=False)
+    return frame
 
 
 def _run_component(
@@ -622,6 +690,162 @@ def _comparison_rows(
     return rows, estimates_by_group
 
 
+def _component_diagnostic_rows(
+    components: Sequence[CompletedComponent],
+    thresholds: Sequence[float],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for component in sorted(
+        components,
+        key=lambda item: (item.seed_group, item.spec.cap, item.spec.lambda_final),
+    ):
+        compatible_thresholds = [
+            float(threshold)
+            for threshold in thresholds
+            if float(threshold) <= component.spec.cap
+        ]
+        if not compatible_thresholds:
+            continue
+        diagnostic = diagnose_component_reverse_estimator(
+            component.raw_ari,
+            component.final_log_weights,
+            cap=component.spec.cap,
+            lambda_final=component.spec.lambda_final,
+            thresholds=compatible_thresholds,
+        )
+        reverse_log_z = float(
+            diagnostic.reverse_log_normalizing_constant.detach().cpu()
+        )
+        ess = float(diagnostic.corrected_ess.detach().cpu())
+        ess_over_n = float(diagnostic.corrected_ess_over_n.detach().cpu())
+        probabilities = diagnostic.estimated_probabilities.detach().cpu().tolist()
+        counts = diagnostic.raw_counts.detach().cpu().tolist()
+        for threshold, probability, count in zip(
+            compatible_thresholds,
+            probabilities,
+            counts,
+        ):
+            rows.append(
+                {
+                    "run_id": component.run_id,
+                    "seed_group": component.seed_group,
+                    "cap": component.spec.cap,
+                    "lambda_final": component.spec.lambda_final,
+                    "threshold": threshold,
+                    "component_probability": float(probability),
+                    "corrected_ess": ess,
+                    "corrected_ess_over_n": ess_over_n,
+                    "raw_event_count": int(count),
+                    "log_z_smc": component.log_normalizing_constant,
+                    "log_z_reverse": reverse_log_z,
+                    "delta_log_z_smc_minus_reverse": (
+                        component.log_normalizing_constant - reverse_log_z
+                    ),
+                }
+            )
+    return rows
+
+
+def _diagnostic_interpretation(
+    diagnostic_rows: Sequence[dict[str, Any]],
+    aggregate_rows: Sequence[dict[str, Any]],
+    compatibility: ReferenceCompatibility,
+    seed_group_count: int,
+) -> list[str]:
+    messages: list[str] = []
+    if seed_group_count == 1:
+        messages.append(
+            "Only one seed group is available, so between-run variance and stability "
+            "cannot be assessed."
+        )
+    elif seed_group_count == 0:
+        messages.append("No complete seed group is available for mixture estimation.")
+    if not compatibility.strict_observable_match_verified:
+        messages.append(
+            "The official/current ARI equivalence is unverified; an observable or "
+            "decoding mismatch remains a live explanation."
+        )
+    if not diagnostic_rows:
+        messages.append(
+            "No complete exactly reusable component set is available locally; the "
+            "numerical source of the discrepancy remains unidentified."
+        )
+        return messages
+
+    moderate = [
+        row
+        for row in diagnostic_rows
+        if abs(float(row["lambda_final"])) <= 1.5
+        and float(row["corrected_ess_over_n"]) >= 0.2
+    ]
+    suspect_log_z = [
+        row
+        for row in moderate
+        if abs(float(row["delta_log_z_smc_minus_reverse"])) > 0.5
+    ]
+    if suspect_log_z:
+        messages.append(
+            "Some moderate-tilt components have corrected ESS/N >= 0.2 but "
+            "|delta log Z| > 0.5; the SMC normalizing-constant estimate needs scrutiny."
+        )
+
+    overlap_warning = any(
+        float(row["corrected_ess_over_n"]) < 0.05 for row in diagnostic_rows
+    )
+    if overlap_warning:
+        messages.append(
+            "At least one reverse correction has ESS/N < 0.05, indicating poor "
+            "overlap; its component-wise and reverse-log-Z estimates are unstable."
+        )
+
+    component_disagreement = False
+    component_close_to_reference = True
+    by_threshold: dict[float, list[float]] = {}
+    for row in diagnostic_rows:
+        by_threshold.setdefault(float(row["threshold"]), []).append(
+            float(row["component_probability"])
+        )
+    direct_by_threshold = {
+        float(row["threshold"]): float(row["direct_probability"])
+        for row in aggregate_rows
+    }
+    for threshold, values in by_threshold.items():
+        positives = [value for value in values if value > 0.0]
+        if len(positives) >= 2 and max(positives) / min(positives) > 3.0:
+            component_disagreement = True
+        direct = direct_by_threshold.get(threshold)
+        if direct and positives:
+            median_value = float(statistics.median(positives))
+            if not (0.5 * direct <= median_value <= 2.0 * direct):
+                component_close_to_reference = False
+    if component_disagreement:
+        messages.append(
+            "Component-wise estimates differ by more than a factor of three at "
+            "one or more thresholds, pointing to overlap or mixing limitations."
+        )
+    elif not component_close_to_reference:
+        messages.append(
+            "Component-wise estimates are mutually more consistent than they are "
+            "with the official empirical reference; observable/reference mismatch "
+            "is the leading diagnostic suspicion."
+        )
+    elif aggregate_rows and any(
+        abs(float(row["relative_difference"])) > 1.0
+        for row in aggregate_rows
+        if row.get("relative_difference") is not None
+    ):
+        messages.append(
+            "Component-wise reverse estimates are near the reference while the "
+            "mixture is not; inspect plug-in log Z values and mixture aggregation."
+        )
+    else:
+        messages.append(
+            "The available diagnostics do not isolate a single source of the "
+            "difference; retain reference, log-Z, and overlap caveats."
+        )
+    return messages
+
+
 def _weighted_box(values: np.ndarray, log_weights: np.ndarray, label: str) -> dict[str, Any]:
     weights = np.exp(log_weights - np.logaddexp.reduce(log_weights))
     stats = boxplot_statistics(values, weights=weights)
@@ -766,14 +990,83 @@ def _render_report(
     grouped_components: dict[int, list[CompletedComponent]],
     aggregate_rows: Sequence[dict[str, Any]],
     reference_path: Path,
+    reference_summary: dict[str, Any],
     compatibility: ReferenceCompatibility,
+    audit_records: Sequence[ArchiveAuditRecord],
+    component_diagnostics: Sequence[dict[str, Any]],
+    interpretation: Sequence[str],
 ) -> str:
     total_runs = sum(len(rows) for rows in grouped_components.values())
     reused_runs = sum(row.reused for rows in grouped_components.values() for row in rows)
+    official = reference_summary.get("official_configuration", {})
+    source = reference_summary.get("source", {})
+    prompt = official.get("prompt")
+    category_counts = {
+        category: sum(record.classification == category for record in audit_records)
+        for category in AUDIT_CATEGORIES
+    }
+    selected_count = sum(record.selected_for_mixture for record in audit_records)
     lines = [
         "# Tail-probability validation",
         "",
-        "The reference is empirical direct sampling, not exact analytic ground truth.",
+        "The comparison uses the **official empirical reference**, not exact analytic",
+        "ground truth. Only archives classified as `exactly_reusable` can enter the",
+        "deterministic mixture.",
+        "",
+        "## Official empirical reference audit",
+        "",
+        f"- Summary: `{reference_path}`",
+        "- Origin notebook: `external/rea_of_llms_official/sampling_examples.ipynb`",
+        f"- Official repository commit inspected: `{source.get('official_repository_commit_inspected', 'unverified')}`",
+        f"- Model / revision: `{official.get('model', 'unverified')}` / `{official.get('model_revision', 'unverified')}`",
+        f"- Tokenizer / revision: `{official.get('tokenizer', 'unverified')}` / `{official.get('tokenizer_revision', 'unverified')}`",
+        f"- Exact prompt: `{prompt}`",
+        f"- `repr(prompt)`: `{repr(prompt)}`",
+        f"- Prompt SHA-256: `{prompt_sha256(prompt) if isinstance(prompt, str) else 'unverified'}`",
+        f"- Prompt token IDs: `{official.get('prompt_token_ids', 'unverified')}`",
+        f"- Prompt token count: `{official.get('prompt_token_count', 'unverified')}`",
+        f"- Completion: `{official.get('completion_tokens', 'unverified')}` fixed tokens",
+        f"- Temperature / top-k / top-p: `{official.get('temperature', 'unverified')}` / `{official.get('top_k', 'unverified')}` / `{official.get('top_p', 'unverified')}`",
+        f"- EOS / padding: `{official.get('eos_token_id', 'unverified')}` / `{official.get('pad_token_id', 'unverified')}`",
+        f"- Dataset seed policy: `{official.get('dataset_seed', 'unverified')}`",
+        f"- Decode convention: {official.get('decode_convention', 'unverified')}",
+        f"- Observable scope: `{official.get('observable_scope', 'unverified')}`",
+        f"- Paper ARI implementation: {official.get('paper_ari_implementation', 'unverified')}",
+        f"- Public demo ARI: `{official.get('demo_ari_implementation', 'unverified')}`",
+        f"- Paper cap: `{official.get('paper_ari_cap', 'unverified')}`; direct archived ARI is raw.",
+        "- Direct samples contain neither completions nor token IDs. Exact equivalence",
+        "  with the current textstat/decode convention remains unverified.",
+        "",
+        "## Archive reuse audit",
+        "",
+        f"- Candidate archives found: `{len(audit_records)}`",
+        f"- Exactly reusable: `{category_counts['exactly_reusable']}`",
+        f"- Comparable but not cache-equivalent: `{category_counts['comparable_but_not_cache_equivalent']}`",
+        f"- Incompatible: `{category_counts['incompatible']}`",
+        f"- Unverifiable: `{category_counts['unverifiable']}`",
+        f"- Selected for the mixture: `{selected_count}`",
+        "",
+        "The mixture denominator, corrected weights, and ESS are constructed only",
+        "from the selected paths below. Excluded archives are never passed to the",
+        "estimator.",
+        "",
+        "| archive | classification | selected | reason |",
+        "|:---|:---|:---:|:---|",
+    ]
+    if audit_records:
+        for record in audit_records:
+            reason = "; ".join(record.reasons).replace("|", "\\|")
+            lines.append(
+                f"| `{record.facts.path.name}` | `{record.classification}` | "
+                f"`{record.selected_for_mixture}` | {reason} |"
+            )
+    else:
+        lines.append("| _none available in this output root_ | - | - | - |")
+    lines.extend(
+        [
+        "",
+        "## Estimator status",
+        "",
         "The SMC result is a plug-in deterministic-mixture SNIS estimate because the",
         "component normalizing constants are estimated by SMC.",
         "",
@@ -792,8 +1085,7 @@ def _render_report(
         "",
         "## Configuration",
         "",
-        f"- Direct reference: `{reference_path}`",
-        f"- Direct observations: `{aggregate_rows[0]['direct_sample_count']:,}`",
+        f"- Direct observations: `{reference_summary.get('direct_ari', {}).get('count', 'unverified')}`",
         f"- Sampling setup match: `{compatibility.sampling_setup_match}`",
         f"- Strict observable match verified: `{compatibility.strict_observable_match_verified}`",
         f"- Seed groups: `{sorted(grouped_components)}`",
@@ -810,18 +1102,69 @@ def _render_report(
         "",
         "| cap | terminal lambda | mixture rho | reused seed groups |",
         "|---:|---:|---:|:---|",
-    ]
+        ]
+    )
     for index, spec in enumerate(specs):
         rho = "n_j / sum(n)" if spec.rho is None else f"{spec.rho:.6g}"
         reused_groups = [
             str(seed_group)
             for seed_group, rows in sorted(grouped_components.items())
-            if rows[index].reused
+            if len(rows) > index and rows[index].reused
         ]
         reused = ", ".join(reused_groups) if reused_groups else "none"
         lines.append(
             f"| {spec.cap:g} | {spec.lambda_final:g} | {rho} | {reused} |"
         )
+    lines.extend(
+        [
+            "",
+            "## Component diagnostics",
+            "",
+            "Reverse estimates use each component's normalized final SMC weights and",
+            "are computed in log-space. `log Z reverse` is a stability diagnostic, not",
+            "an exact reference.",
+            "",
+            "Normalizing constants:",
+            "",
+            "| cap | lambda | seed group | corrected ESS/N | log Z SMC | log Z reverse | delta log Z |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    if component_diagnostics:
+        seen_runs: set[str] = set()
+        for row in component_diagnostics:
+            if row["run_id"] in seen_runs:
+                continue
+            seen_runs.add(row["run_id"])
+            lines.append(
+                f"| {row['cap']:g} | {row['lambda_final']:g} | "
+                f"{row['seed_group']} | {row['corrected_ess_over_n']:.4f} | "
+                f"{row['log_z_smc']:.6g} | "
+                f"{row['log_z_reverse']:.6g} | "
+                f"{row['delta_log_z_smc_minus_reverse']:.6g} |"
+            )
+    else:
+        lines.append("| - | - | - | - | - | - | - |")
+    lines.extend(
+        [
+            "",
+            "Component-wise reverse tail estimates:",
+            "",
+            "| cap | lambda | seed group | threshold | probability | corrected ESS/N | raw events |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    if component_diagnostics:
+        for row in component_diagnostics:
+            lines.append(
+                f"| {row['cap']:g} | {row['lambda_final']:g} | "
+                f"{row['seed_group']} | {row['threshold']:g} | "
+                f"{row['component_probability']:.6g} | "
+                f"{row['corrected_ess_over_n']:.4f} | "
+                f"{row['raw_event_count']} |"
+            )
+    else:
+        lines.append("| - | - | - | - | - | - | - |")
     lines.extend(
         [
             "",
@@ -831,18 +1174,21 @@ def _render_report(
             "|---:|---:|---:|:---|---:|---:|---:|---:|---:|---:|",
         ]
     )
-    for row in aggregate_rows:
-        sd = row["mixture_probability_std"]
-        lines.append(
-            f"| {row['threshold']:g} | {row['direct_event_count']} | "
-            f"{row['direct_probability']:.6g} | "
-            f"[{row['direct_wilson_95_lower']:.6g}, {row['direct_wilson_95_upper']:.6g}] | "
-            f"{row['mixture_probability']:.6g} | "
-            f"{('-' if sd is None else f'{sd:.6g}')} | "
-            f"{row['difference_hat_minus_direct']:.6g} | "
-            f"{row['weight_ess']:.2f} | {row['weight_ess_over_n']:.4f} | "
-            f"{row['runtime_seconds']:.1f} |"
-        )
+    if aggregate_rows:
+        for row in aggregate_rows:
+            sd = row["mixture_probability_std"]
+            lines.append(
+                f"| {row['threshold']:g} | {row['direct_event_count']} | "
+                f"{row['direct_probability']:.6g} | "
+                f"[{row['direct_wilson_95_lower']:.6g}, {row['direct_wilson_95_upper']:.6g}] | "
+                f"{row['mixture_probability']:.6g} | "
+                f"{('-' if sd is None else f'{sd:.6g}')} | "
+                f"{row['difference_hat_minus_direct']:.6g} | "
+                f"{row['weight_ess']:.2f} | {row['weight_ess_over_n']:.4f} | "
+                f"{row['runtime_seconds']:.1f} |"
+            )
+    else:
+        lines.append("| - | - | - | - | - | - | - | - | - | - |")
     lines.extend(
         [
             "",
@@ -850,8 +1196,12 @@ def _render_report(
             "are not treated as independent replicates. The ARI boxplots use final",
             "SMC weights for tilted targets and do not represent reconstructed p_M.",
             "",
+            "## Diagnostic interpretation",
+            "",
         ]
     )
+    lines.extend(f"- {message}" for message in interpretation)
+    lines.append("")
     return "\n".join(lines)
 
 
@@ -898,6 +1248,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="Run integration checks without treating probability differences as validation.",
     )
     parser.add_argument(
+        "--audit-only",
+        action="store_true",
+        help=(
+            "Audit and analyze existing compatible archives without loading the model "
+            "or generating missing components."
+        ),
+    )
+    parser.add_argument(
         "--skip-completed-runs",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -929,7 +1287,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         reference_compatibility,
         smoke_mode=args.smoke_mode,
         allow_unverified_observable_reference=(
-            args.allow_unverified_observable_reference
+            args.allow_unverified_observable_reference or args.audit_only
         ),
     )
     print(
@@ -974,21 +1332,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     if len({item[6].stem for item in plans}) != len(plans):
         raise AssertionError("derived component run IDs are not unique")
 
-    completed: list[CompletedComponent] = []
-    missing = []
-    for plan in plans:
-        seed_group, _, spec, _, _, metadata, path = plan
-        if path.exists() and args.skip_completed_runs:
-            completed.append(
-                _load_component_archive(
-                    path,
-                    expected_metadata=metadata,
-                    spec=spec,
-                    reused=True,
-                )
-            )
-        else:
-            missing.append(plan)
+    audit_records = _audit_component_cache(component_root, plans)
+    selected_before_run = selected_archive_paths(audit_records)
+    if args.audit_only:
+        missing = []
+    elif args.skip_completed_runs:
+        missing = [plan for plan in plans if plan[6].stem not in selected_before_run]
+    else:
+        missing = list(plans)
     model = tokenizer = None
     if missing:
         model, tokenizer = load_model_and_tokenizer(
@@ -1002,22 +1353,28 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise RuntimeError("--device cuda requested, but model is not on CUDA")
         print(f"model device: {model_device}", flush=True)
     started = time.perf_counter()
-    for plan in tqdm(missing, desc="Independent SMC components"):
+    progress = tqdm(missing, desc="Independent SMC components") if missing else missing
+    for plan in progress:
         seed_group, component_index, spec, seed, schedule, metadata, path = plan
-        completed.append(
-            _run_component(
-                args,
-                model,
-                tokenizer,
-                spec=spec,
-                schedule=schedule,
-                seed_group=seed_group,
-                component_index=component_index,
-                seed=seed,
-                metadata=metadata,
-                output_path=path,
-            )
+        _run_component(
+            args,
+            model,
+            tokenizer,
+            spec=spec,
+            schedule=schedule,
+            seed_group=seed_group,
+            component_index=component_index,
+            seed=seed,
+            metadata=metadata,
+            output_path=path,
         )
+
+    audit_records = _audit_component_cache(component_root, plans)
+    audit_frame = _write_audit_csv(
+        output_root / "data_reuse_audit.csv",
+        audit_records,
+    )
+    completed = _load_selected_audit_components(audit_records, plans)
     grouped: dict[int, list[CompletedComponent]] = {}
     index_by_spec = {
         (component_seed(seed_group, index), seed_group): index
@@ -1026,44 +1383,105 @@ def main(argv: Sequence[str] | None = None) -> None:
     }
     for component in completed:
         grouped.setdefault(component.seed_group, []).append(component)
-    for seed_group, rows in grouped.items():
+    complete_grouped: dict[int, list[CompletedComponent]] = {}
+    for seed_group, rows in sorted(grouped.items()):
         rows.sort(key=lambda row: index_by_spec[(row.seed, seed_group)])
-        if len(rows) != len(specs):
+        if len(rows) == len(specs):
+            complete_grouped[seed_group] = rows
+        elif not args.audit_only:
             raise RuntimeError(f"seed group {seed_group} is incomplete")
 
-    comparison_rows, _ = _comparison_rows(
-        grouped,
-        specs,
-        thresholds,
-        direct_rows,
-        int(direct_summary["direct_ari"]["count"]),
+    comparison_rows: list[dict[str, Any]] = []
+    if complete_grouped:
+        comparison_rows, _ = _comparison_rows(
+            complete_grouped,
+            specs,
+            thresholds,
+            direct_rows,
+            int(direct_summary["direct_ari"]["count"]),
+        )
+    comparison = pd.DataFrame(
+        comparison_rows,
+        columns=[
+            "row_type",
+            "seed_group",
+            "threshold",
+            "direct_sample_count",
+            "direct_event_count",
+            "direct_probability",
+            "direct_wilson_95_lower",
+            "direct_wilson_95_upper",
+            "mixture_probability",
+            "mixture_probability_std",
+            "difference_hat_minus_direct",
+            "relative_difference",
+            "weight_ess",
+            "weight_ess_over_n",
+            "runtime_seconds",
+        ],
     )
-    comparison = pd.DataFrame(comparison_rows)
     comparison.to_csv(output_root / "comparison.csv", index=False)
     aggregate_rows = [
         row for row in comparison_rows if row["row_type"] == "aggregate"
     ]
-    _write_ari_boxplots(output_root / "ari_boxplots.png", direct_summary, grouped, specs)
-    _write_probability_plot(
-        output_root / "probability_comparison.png",
+    component_diagnostics = _component_diagnostic_rows(completed, thresholds)
+    pd.DataFrame(
+        component_diagnostics,
+        columns=[
+            "run_id",
+            "seed_group",
+            "cap",
+            "lambda_final",
+            "threshold",
+            "component_probability",
+            "corrected_ess",
+            "corrected_ess_over_n",
+            "raw_event_count",
+            "log_z_smc",
+            "log_z_reverse",
+            "delta_log_z_smc_minus_reverse",
+        ],
+    ).to_csv(
+        output_root / "component_diagnostics.csv",
+        index=False,
+    )
+    if complete_grouped:
+        _write_ari_boxplots(
+            output_root / "ari_boxplots.png",
+            direct_summary,
+            complete_grouped,
+            specs,
+        )
+        _write_probability_plot(
+            output_root / "probability_comparison.png",
+            aggregate_rows,
+            exact_reference_match=reference_compatibility.exact_reference_match,
+            smoke_mode=args.smoke_mode,
+        )
+    interpretation = _diagnostic_interpretation(
+        component_diagnostics,
         aggregate_rows,
-        exact_reference_match=reference_compatibility.exact_reference_match,
-        smoke_mode=args.smoke_mode,
+        reference_compatibility,
+        len(complete_grouped),
     )
     (output_root / "REPORT.md").write_text(
         _render_report(
             args,
             specs,
-            grouped,
+            complete_grouped,
             aggregate_rows,
             reference_path,
+            direct_summary,
             reference_compatibility,
+            audit_records,
+            component_diagnostics,
+            interpretation,
         ),
         encoding="utf-8",
     )
     print(
-        f"completed {len(completed)} components ({len(completed) - len(missing)} reused) "
-        f"in {time.perf_counter() - started:.1f} s",
+        f"audit found {len(audit_frame)} archives; selected {len(completed)} exact "
+        f"components; generated {len(missing)} in {time.perf_counter() - started:.1f} s",
         flush=True,
     )
     print((output_root / "comparison.csv").resolve(), flush=True)

@@ -90,6 +90,19 @@ class DeterministicMixtureTailEstimates:
         }
 
 
+@dataclass(frozen=True)
+class ComponentReverseDiagnostics:
+    """Reverse-importance diagnostics for one weighted tilted population."""
+
+    thresholds: torch.Tensor
+    estimated_probabilities: torch.Tensor
+    raw_counts: torch.Tensor
+    corrected_log_weights: torch.Tensor
+    corrected_ess: torch.Tensor
+    corrected_ess_over_n: torch.Tensor
+    reverse_log_normalizing_constant: torch.Tensor
+
+
 def _as_vector(values, *, name: str, device: torch.device | None = None) -> torch.Tensor:
     tensor = torch.as_tensor(values, dtype=torch.float64, device=device)
     if tensor.ndim != 1 or tensor.numel() == 0:
@@ -117,6 +130,65 @@ def effective_sample_size_from_log_weights(log_weights) -> torch.Tensor:
         raise ValueError("log_weights must be finite or -inf, with one finite value")
     normalized = values - torch.logsumexp(values, dim=0)
     return torch.exp(-torch.logsumexp(2.0 * normalized, dim=0))
+
+
+def diagnose_component_reverse_estimator(
+    raw_ari,
+    final_log_weights,
+    *,
+    cap: float,
+    lambda_final: float,
+    thresholds: Sequence[float],
+) -> ComponentReverseDiagnostics:
+    """Estimate base tails and ``log Z`` from one terminal SMC population.
+
+    With normalized terminal weights ``W_i``, reverse correction uses
+    ``W_i exp(lambda * min(raw_ari_i, cap))``. The same corrected weights
+    produce the component-wise tail estimate and its ESS. The reciprocal of
+    their unnormalized sum gives the diagnostic reverse estimate of ``Z``.
+    """
+
+    if not math.isfinite(float(cap)) or not math.isfinite(float(lambda_final)):
+        raise ValueError("cap and lambda_final must be finite")
+    raw = _as_vector(raw_ari, name="raw_ari")
+    log_weights = _as_vector(
+        final_log_weights,
+        name="final_log_weights",
+        device=raw.device,
+    )
+    if raw.shape != log_weights.shape:
+        raise ValueError("raw ARI and final log weights must have the same length")
+    if not bool(torch.isfinite(raw).all().item()):
+        raise ValueError("raw_ari must contain only finite values")
+    valid = ~torch.isnan(log_weights) & ~torch.isposinf(log_weights)
+    if not bool(valid.all().item()) or not bool(torch.isfinite(log_weights).any().item()):
+        raise ValueError("final log weights must be finite or -inf")
+
+    normalized_log_weights = log_weights - torch.logsumexp(log_weights, dim=0)
+    potential = torch.clamp(raw, max=float(cap))
+    reverse_log_mass = normalized_log_weights + float(lambda_final) * potential
+    log_reverse_expectation = torch.logsumexp(reverse_log_mass, dim=0)
+    corrected = reverse_log_mass - log_reverse_expectation
+
+    threshold_values = _as_vector(thresholds, name="thresholds", device=raw.device)
+    if not bool(torch.isfinite(threshold_values).all().item()):
+        raise ValueError("thresholds must contain only finite values")
+    events = raw.unsqueeze(0) >= threshold_values.unsqueeze(1)
+    probabilities = torch.sum(
+        events.to(torch.float64) * torch.exp(corrected).unsqueeze(0),
+        dim=1,
+    )
+    counts = events.sum(dim=1)
+    ess = effective_sample_size_from_log_weights(corrected)
+    return ComponentReverseDiagnostics(
+        thresholds=threshold_values,
+        estimated_probabilities=probabilities,
+        raw_counts=counts,
+        corrected_log_weights=corrected,
+        corrected_ess=ess,
+        corrected_ess_over_n=ess / raw.numel(),
+        reverse_log_normalizing_constant=-log_reverse_expectation,
+    )
 
 
 def log_mixture_density_ratio(
