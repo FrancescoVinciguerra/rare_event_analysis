@@ -426,6 +426,15 @@ count. Independent seed groups, rather than particles within one run, are the
 replication unit. Veach and Guibas (1995) supplies multiple-importance-sampling
 context; the formula above is the direct derivation used by this code.
 
+The tracked official direct array is an empirical reference for the paper's
+observable, not analytic ground truth. Its model, tokenizer, prompt, generation
+length, and temperature match this project. Strict observable equivalence is
+unverified because neither the paper's custom ARI edge-case code nor the source
+completions/token IDs are published, and the public notebook uses a different
+decode/slicing convention. `run_tail_validation.py` checks the published setup
+before sampling and requires an explicit opt-in to report a cross-implementation
+comparison when this observable limitation remains.
+
 ### D. An unnormalized mixture potential
 
 One may instead define

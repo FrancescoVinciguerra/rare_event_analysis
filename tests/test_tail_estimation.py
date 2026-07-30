@@ -25,10 +25,13 @@ from suffix_direct_mh_smc_experiment.run_tail_validation import (
     ComponentSpec,
     _load_component_archive,
     _save_component_archive,
+    assess_reference_compatibility,
     build_lambda_schedule,
     cache_metadata_matches,
     component_run_id,
     component_seed,
+    enforce_reference_compatibility,
+    parse_args as parse_validation_args,
 )
 from suffix_direct_mh_smc_experiment.run_tail_estimation import (
     _config_for_seed,
@@ -39,6 +42,52 @@ from suffix_direct_mh_smc_experiment.run_tail_estimation import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_official_reference_preflight_blocks_unverified_exact_validation() -> None:
+    reference = json.loads(
+        (ROOT / "results" / "reference_direct_sampling_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    args = parse_validation_args([])
+    compatibility = assess_reference_compatibility(reference, args)
+    assert compatibility.sampling_setup_match
+    assert not compatibility.strict_observable_match_verified
+    assert not compatibility.exact_reference_match
+    with pytest.raises(RuntimeError, match="strict equivalence"):
+        enforce_reference_compatibility(
+            compatibility,
+            smoke_mode=False,
+            allow_unverified_observable_reference=False,
+        )
+    enforce_reference_compatibility(
+        compatibility,
+        smoke_mode=False,
+        allow_unverified_observable_reference=True,
+    )
+
+
+def test_reference_preflight_rejects_sampling_mismatch_except_in_smoke() -> None:
+    reference = json.loads(
+        (ROOT / "results" / "reference_direct_sampling_summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    args = parse_validation_args(["--max-new-tokens", "8"])
+    compatibility = assess_reference_compatibility(reference, args)
+    assert not compatibility.sampling_checks["completion_tokens"]
+    with pytest.raises(RuntimeError, match="completion_tokens"):
+        enforce_reference_compatibility(
+            compatibility,
+            smoke_mode=False,
+            allow_unverified_observable_reference=True,
+        )
+    enforce_reference_compatibility(
+        compatibility,
+        smoke_mode=True,
+        allow_unverified_observable_reference=False,
+    )
 
 
 def test_capped_potential_preserves_raw_values() -> None:
@@ -332,9 +381,12 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "SEED_GROUPS" in joined
     assert "LAMBDA_STEP" in joined
     assert "SKIP_COMPLETED_RUNS" in joined
+    assert "ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE" in joined
     assert "RUN_SMOKE_TEST" in joined
     assert "RUN_PRODUCTION" in joined
     assert "--components-json" in joined
+    assert "--smoke-mode" in joined
+    assert "SEED_GROUPS = [200]" in joined
     assert "official_annealed_tps" not in joined
 
 

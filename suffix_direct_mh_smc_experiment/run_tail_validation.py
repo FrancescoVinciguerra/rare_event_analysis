@@ -85,6 +85,15 @@ class CompletedComponent:
     path: Path
 
 
+@dataclass(frozen=True)
+class ReferenceCompatibility:
+    sampling_checks: dict[str, bool]
+    sampling_setup_match: bool
+    strict_observable_match_verified: bool
+    exact_reference_match: bool
+    observable_limitation: str
+
+
 def canonical_json(payload: Any) -> str:
     return json.dumps(
         payload,
@@ -414,6 +423,78 @@ def _load_direct_reference(
     return payload, rows
 
 
+def assess_reference_compatibility(
+    reference: dict[str, Any],
+    args: argparse.Namespace,
+) -> ReferenceCompatibility:
+    """Compare every published sampling field with the active SMC setup."""
+
+    official = reference.get("official_configuration", {})
+    comparability = reference.get("comparability", {})
+    checks = {
+        "model": official.get("model") == args.model_name,
+        "tokenizer": official.get("tokenizer") == args.tokenizer_name,
+        "prompt": official.get("prompt") == args.prompt,
+        "completion_tokens": int(official.get("completion_tokens", -1))
+        == int(args.max_new_tokens),
+        "temperature_one": math.isclose(
+            float(official.get("temperature", math.nan)),
+            1.0,
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ),
+        "sampling_enabled": official.get("do_sample") is True,
+        "fixed_length": official.get("fixed_length_asserted") is True,
+        "eos_disabled": official.get("eos_token_id") is None,
+        "top_k_untruncated": official.get("top_k") is None,
+        "top_p_default": official.get("top_p")
+        == "not explicitly set; Hugging Face default",
+    }
+    observable_verified = comparability.get("strict_observable_match_verified") is True
+    sampling_match = all(checks.values())
+    limitation = str(
+        comparability.get(
+            "reason_observable_match_unverified",
+            "No strict observable-equivalence statement is available.",
+        )
+    )
+    return ReferenceCompatibility(
+        sampling_checks=checks,
+        sampling_setup_match=sampling_match,
+        strict_observable_match_verified=observable_verified,
+        exact_reference_match=sampling_match and observable_verified,
+        observable_limitation=limitation,
+    )
+
+
+def enforce_reference_compatibility(
+    compatibility: ReferenceCompatibility,
+    *,
+    smoke_mode: bool,
+    allow_unverified_observable_reference: bool,
+) -> None:
+    failed_sampling = [
+        name for name, passed in compatibility.sampling_checks.items() if not passed
+    ]
+    if failed_sampling and not smoke_mode:
+        raise RuntimeError(
+            "official direct sampling setup mismatch: "
+            + ", ".join(failed_sampling)
+        )
+    if (
+        not compatibility.strict_observable_match_verified
+        and not smoke_mode
+        and not allow_unverified_observable_reference
+    ):
+        raise RuntimeError(
+            "strict equivalence between the official ARI observable and this "
+            "repository's textstat/decode convention is unverified. Production "
+            "comparison is blocked by default; use "
+            "--allow-unverified-observable-reference only to run an explicitly "
+            "approximate cross-implementation comparison."
+        )
+
+
 def _mixture_coefficients(
     specs: Sequence[ComponentSpec],
     completed: Sequence[CompletedComponent],
@@ -614,6 +695,9 @@ def _write_ari_boxplots(
 def _write_probability_plot(
     output_path: Path,
     aggregate_rows: Sequence[dict[str, Any]],
+    *,
+    exact_reference_match: bool,
+    smoke_mode: bool,
 ) -> None:
     rows = sorted(aggregate_rows, key=lambda row: float(row["threshold"]))
     x = np.asarray([float(row["threshold"]) for row in rows])
@@ -663,7 +747,12 @@ def _write_probability_plot(
     ax.set_xticks(x)
     ax.set_xlabel("raw ARI threshold")
     ax.set_ylabel("P under base language model")
-    ax.set_title("Tail-probability validation")
+    title = "Tail-probability validation"
+    if smoke_mode:
+        title = "Integration smoke only - estimates are not a validation"
+    elif not exact_reference_match:
+        title = "Cross-implementation comparison - exact ARI match unverified"
+    ax.set_title(title)
     ax.grid(alpha=0.25, which="both")
     ax.legend()
     fig.tight_layout()
@@ -677,6 +766,7 @@ def _render_report(
     grouped_components: dict[int, list[CompletedComponent]],
     aggregate_rows: Sequence[dict[str, Any]],
     reference_path: Path,
+    compatibility: ReferenceCompatibility,
 ) -> str:
     total_runs = sum(len(rows) for rows in grouped_components.values())
     reused_runs = sum(row.reused for rows in grouped_components.values() for row in rows)
@@ -687,10 +777,25 @@ def _render_report(
         "The SMC result is a plug-in deterministic-mixture SNIS estimate because the",
         "component normalizing constants are estimated by SMC.",
         "",
+        (
+            "**Integration smoke only: probability differences are not statistically "
+            "interpretable.**"
+            if args.smoke_mode
+            else ""
+        ),
+        (
+            "**Strict observable equivalence is unverified; this is not exact ground "
+            "truth for the repository ARI convention.**"
+            if not compatibility.strict_observable_match_verified
+            else ""
+        ),
+        "",
         "## Configuration",
         "",
         f"- Direct reference: `{reference_path}`",
         f"- Direct observations: `{aggregate_rows[0]['direct_sample_count']:,}`",
+        f"- Sampling setup match: `{compatibility.sampling_setup_match}`",
+        f"- Strict observable match verified: `{compatibility.strict_observable_match_verified}`",
         f"- Seed groups: `{sorted(grouped_components)}`",
         f"- Particles per component: `{args.num_particles}`",
         f"- MCMC steps per level: `{args.mcmc_steps_per_level}`",
@@ -699,6 +804,7 @@ def _render_report(
         f"- Independent terminal component runs: `{total_runs}`",
         f"- Reused compatible component runs: `{reused_runs}`",
         "- Final resampling: `false`",
+        f"- Observable limitation: {compatibility.observable_limitation}",
         "",
         "Components per seed group:",
         "",
@@ -779,6 +885,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--reference-summary", type=Path, default=None)
     parser.add_argument(
+        "--allow-unverified-observable-reference",
+        action="store_true",
+        help=(
+            "Allow an explicitly approximate comparison when exact official/current "
+            "ARI equivalence cannot be verified."
+        ),
+    )
+    parser.add_argument(
+        "--smoke-mode",
+        action="store_true",
+        help="Run integration checks without treating probability differences as validation.",
+    )
+    parser.add_argument(
         "--skip-completed-runs",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -805,6 +924,22 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     reference_path = _reference_summary_path(args.reference_summary)
     direct_summary, direct_rows = _load_direct_reference(reference_path, thresholds)
+    reference_compatibility = assess_reference_compatibility(direct_summary, args)
+    enforce_reference_compatibility(
+        reference_compatibility,
+        smoke_mode=args.smoke_mode,
+        allow_unverified_observable_reference=(
+            args.allow_unverified_observable_reference
+        ),
+    )
+    print(
+        "reference preflight: "
+        f"sampling_setup_match={reference_compatibility.sampling_setup_match}, "
+        "strict_observable_match_verified="
+        f"{reference_compatibility.strict_observable_match_verified}, "
+        f"smoke_mode={args.smoke_mode}",
+        flush=True,
+    )
     output_root = args.output_root
     component_root = output_root / "component_runs"
     output_root.mkdir(parents=True, exist_ok=True)
@@ -909,9 +1044,21 @@ def main(argv: Sequence[str] | None = None) -> None:
         row for row in comparison_rows if row["row_type"] == "aggregate"
     ]
     _write_ari_boxplots(output_root / "ari_boxplots.png", direct_summary, grouped, specs)
-    _write_probability_plot(output_root / "probability_comparison.png", aggregate_rows)
+    _write_probability_plot(
+        output_root / "probability_comparison.png",
+        aggregate_rows,
+        exact_reference_match=reference_compatibility.exact_reference_match,
+        smoke_mode=args.smoke_mode,
+    )
     (output_root / "REPORT.md").write_text(
-        _render_report(args, specs, grouped, aggregate_rows, reference_path),
+        _render_report(
+            args,
+            specs,
+            grouped,
+            aggregate_rows,
+            reference_path,
+            reference_compatibility,
+        ),
         encoding="utf-8",
     )
     print(

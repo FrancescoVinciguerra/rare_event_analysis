@@ -141,7 +141,18 @@ Open the primary notebook directly:
 Its single parameter cell controls cap/lambda components, seed groups,
 particles, token length, lambda step, MCMC steps, suffix-size distribution, ESS
 threshold, output location, and resume behavior. A CPU smoke test is separate
-from the optional CUDA production run. It runs only the active suffix sampler.
+from the optional CUDA production run. The first production pass defaults to
+seed group `200`; changing the list later to `[200, 300, 400]` reuses group 200
+and adds the two missing independent replications. It runs only the active
+suffix sampler.
+
+The official archive matches the sampling setup but does not publish enough
+information to verify exact equivalence of its custom ARI/decode convention with
+this repository's `textstat` convention. Production comparison is therefore
+blocked by default. `ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE=True` enables only an
+explicitly labelled cross-implementation comparison, not an exact-ground-truth
+claim. Smoke probabilities are hidden because a tiny integration run cannot
+validate estimator accuracy.
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).

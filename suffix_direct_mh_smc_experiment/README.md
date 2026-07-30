@@ -63,3 +63,11 @@ The runner stores one compact `.npz` archive per component and reuses it only
 when its full algorithm/configuration metadata matches. It combines final SMC
 weights with estimated normalizing constants in log-space; no final resampling,
 direct generation, TPS, or MBAR is performed.
+
+Before loading a model, the runner checks model, tokenizer, prompt, completion
+length, sampling temperature, truncation, EOS, and fixed-length settings against
+the official reference metadata. Exact official/current ARI equivalence remains
+unverified because the paper's custom edge-case implementation and original
+completions are unavailable. Production is blocked unless
+`--allow-unverified-observable-reference` is passed; that flag requests an
+approximate cross-implementation comparison, never exact ground truth.
