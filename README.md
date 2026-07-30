@@ -105,17 +105,18 @@ diagnoses degeneracy while representing the tilted target; the second diagnoses
 overlap after correcting back to `p_M`. An aggressive tilt can improve discovery
 while making the corrected estimate unusable.
 
-The official-reference validation combines independent capped-ARI terminal
+The tail-validation workflow combines independent capped-ARI terminal
 populations as a normalized deterministic mixture. Its balance heuristic uses
 both the final SMC weights and the estimated component normalizers; all events
 are still evaluated with raw ARI. This is a plug-in SNIS estimator, not an
 exactly unbiased finite-sample estimator. The direct formula is in
-[THEORY.md](THEORY.md).
+[THEORY.md](THEORY.md). Its primary reference can be generated once with the
+same generation and scoring primitives used by SMC.
 
 ## Repository structure
 
 ```text
-rea_llms/                              shared model, ARI, diagnostics, and SNIS
+rea_llms/                              shared generation, ARI, diagnostics, and SNIS
 suffix_direct_mh_smc_experiment/       active sampler and command-line runners
 notebooks/REA_Suffix_SMC_Quickstart.ipynb
                                        primary Colab validation workflow
@@ -141,18 +142,21 @@ Open the primary notebook directly:
 Its single parameter cell controls cap/lambda components, seed groups,
 particles, token length, lambda step, MCMC steps, suffix-size distribution, ESS
 threshold, output location, and resume behavior. A CPU smoke test is separate
-from the optional CUDA production run. The first production pass defaults to
-seed group `200`; changing the list later to `[200, 300, 400]` reuses group 200
-and adds the two missing independent replications. It runs only the active
-suffix sampler.
+from optional CUDA work. The default audit requests seed groups `[200, 300]`,
+reuses exact cached components, and reports partial groups without including
+them in a mixture. `RUN_CURRENT_DIRECT_REFERENCE=False` and
+`RUN_PRODUCTION=False` keep both expensive stages opt-in. The notebook runs
+only the active suffix sampler plus the independent current-pipeline direct
+reference when explicitly requested.
 
 The official archive matches the sampling setup but does not publish enough
 information to verify exact equivalence of its custom ARI/decode convention with
-this repository's `textstat` convention. Production comparison is therefore
-blocked by default. `ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE=True` enables only an
-explicitly labelled cross-implementation comparison, not an exact-ground-truth
-claim. Smoke probabilities are hidden because a tiny integration run cannot
-validate estimator accuracy.
+this repository's `textstat` convention. It is therefore labelled as a
+cross-implementation comparison. A compatible current-pipeline direct reference
+is the primary correctness benchmark. Without one,
+`ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE=True` enables only an explicitly labelled
+official comparison, not an exact-ground-truth claim. Smoke probabilities are
+hidden because a tiny integration run cannot validate estimator accuracy.
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
@@ -198,7 +202,21 @@ uv run python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
 Use `--help` for output paths, resume behavior, suffix schedules, overlap
 criteria, and terminal-lambda sweep options.
 
-Validate a deterministic mixture against the official direct reference:
+Build the one-time current-pipeline direct reference (the 200,000-sample default
+is not run by tests or setup):
+
+```bash
+uv run python -m rea_llms.current_direct_reference \
+  --device cuda \
+  --num-samples 200000 \
+  --batch-size 256 \
+  --max-new-tokens 100 \
+  --thresholds 6,7,8,10 \
+  --output-dir /path/to/rea_tail_probability_validation/current_direct_reference
+```
+
+Validate a deterministic mixture against current direct when available and
+retain official direct as cross-implementation context:
 
 ```bash
 uv run python suffix_direct_mh_smc_experiment/run_tail_validation.py \

@@ -18,8 +18,8 @@ or a vocabulary-wide proposal normalizer.
 - `run_tail_estimation.py`: multi-seed SNIS tail estimates and optional terminal
   lambda schedule sweep.
 - `run_tail_validation.py`: independent cap/lambda components, SMC normalizer
-  estimates, deterministic-mixture MIS, and comparison with official direct
-  statistics.
+  estimates, deterministic-mixture MIS, and comparison with current-pipeline
+  and official direct statistics.
 
 ## One run
 
@@ -48,7 +48,7 @@ Each seed is an independent SMC population. The report keeps final SMC ESS and
 corrected importance ESS separate. Generated run directories are ignored by
 Git; curate only compact, interpretable summaries under `results/`.
 
-## Official-reference validation
+## Tail validation
 
 ```bash
 python suffix_direct_mh_smc_experiment/run_tail_validation.py \
@@ -68,20 +68,37 @@ Before loading a model, the runner checks model, tokenizer, prompt, completion
 length, sampling temperature, truncation, EOS, and fixed-length settings against
 the official reference metadata. Exact official/current ARI equivalence remains
 unverified because the paper's custom edge-case implementation and original
-completions are unavailable. Production is blocked unless
-`--allow-unverified-observable-reference` is passed; that flag requests an
-approximate cross-implementation comparison, never exact ground truth.
+completions are unavailable. The official data are therefore a labelled
+cross-implementation comparison, never exact ground truth.
+
+Generate the primary current-pipeline direct reference once, explicitly:
+
+```bash
+python -m rea_llms.current_direct_reference \
+  --device cuda --num-samples 200000 --batch-size 256 \
+  --max-new-tokens 100 --thresholds 6,7,8,10 \
+  --output-dir /path/to/output/current_direct_reference
+```
+
+This sampler shares fixed-length generation and exact completion-token scoring
+with SMC, writes only `direct_ari.npz` and `summary.json`, and strictly validates
+metadata before cache reuse. It is never launched by tests or by the validation
+runner. When absent, production validation remains blocked unless
+`--allow-unverified-observable-reference` explicitly requests the approximate
+official comparison.
 
 Audit an existing cache without loading the model or generating missing runs:
 
 ```bash
 python suffix_direct_mh_smc_experiment/run_tail_validation.py \
-  --audit-only --seed-groups 200 \
+  --audit-only --seed-groups 200,300 \
   --output-root results/tail_probability_validation
 ```
 
 The audit classifies each candidate as `exactly_reusable`,
 `comparable_but_not_cache_equivalent`, `incompatible`, or `unverifiable`.
-Only unique exact matches enter the mixture denominator and corrected ESS. It
-also reports component-wise reverse estimates and compares SMC and reverse
-normalizing-constant diagnostics in log-space.
+Only unique exact matches from a complete seed group enter the mixture
+denominator and corrected ESS. Exact archives from a partial group remain
+available for component-wise diagnostics but are not declared a complete
+mixture. The report compares SMC and reverse normalizing-constant diagnostics
+in log-space.

@@ -287,8 +287,12 @@
     "ari_formula": "4.71 * characters/words + 0.5 * words/sentences - 21.43",
     "completion_tokens": 100,
     "dataset_seed": "not published",
-    "decode_convention": "decode the full prompt-token plus completion-token sequence with skip_special_tokens=True, then remove len(prompt) characters",
-    "demo_ari_implementation": "textstat.automated_readability_index, uncapped",
+    "ari_input_expression": "prompt + decoded_full_text[len(prompt):]",
+    "ari_preprocessing": "no strip, whitespace normalization, case normalization, or newline processing is explicit in the public demo",
+    "decode_clean_up_tokenization_spaces": "not passed explicitly; tokenizer/version default",
+    "decode_convention": "decode the full prompt-token plus completion-token sequence with skip_special_tokens=True, then define completion_text as decoded_full_text[len(prompt):]",
+    "demo_ari_implementation": "textstat.automated_readability_index, uncapped; public environment declares textstat>=0.7.12 without an exact lock",
+    "demo_edge_case_handling": "delegated to the installed textstat version; no additional handling appears in the public notebook",
     "demo_python_seed": 1234,
     "demo_torch_seed": 42,
     "do_sample": true,
@@ -297,7 +301,7 @@
     "log_probability_observable": "re-tokenize decoded prompt plus completion, compute model log-softmax, zero prompt-token contributions, gather observed token IDs, and sum",
     "model": "roneneldan/TinyStories-8M",
     "model_revision": "not published",
-    "observable_scope": "decoded prompt plus completion",
+    "observable_scope": "the original prompt string concatenated with the character-sliced completion from the decoded full token sequence",
     "pad_token_id": null,
     "paper_ari_cap": 15.0,
     "paper_ari_implementation": "custom py-readability implementation with edge-case handling; implementation not published",
@@ -326,6 +330,16 @@
       420
     ],
     "prompt_token_count": 16,
+    "source_cell_indices_zero_based": {
+      "direct_sampling": 5,
+      "generate_tokens_and_compute_ari": 3
+    },
+    "source_fragments": {
+      "ari": "automated_readability_index(prompt + c)",
+      "decode": "output_text = tokenizer.decode(output_tokens[0], skip_special_tokens=True)",
+      "prompt_slice": "completion_text = output_text[len(prompt):]"
+    },
+    "source_notebook": "external/rea_of_llms_official/sampling_examples.ipynb",
     "public_demo_batching": "one completion at a time",
     "temperature": 1.0,
     "tokenizer": "EleutherAI/gpt-neo-125M",

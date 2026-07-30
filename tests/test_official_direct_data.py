@@ -175,3 +175,43 @@ def test_official_data_colab_notebook_is_valid_and_analysis_only() -> None:
     assert "run_suffix_direct_mh_smc" not in joined
     assert "official_annealed_tps" not in joined
     assert "AutoModelForCausalLM" not in joined
+
+
+def test_official_demo_decoding_and_ari_input_are_audited_from_source() -> None:
+    notebook_path = (
+        Path(__file__).resolve().parents[1]
+        / "external"
+        / "rea_of_llms_official"
+        / "sampling_examples.ipynb"
+    )
+    notebook = json.loads(notebook_path.read_text(encoding="utf-8"))
+    source = "\n".join(
+        "".join(cell.get("source", []))
+        for cell in notebook["cells"]
+        if cell.get("cell_type") == "code"
+    )
+    assert "tokenizer.decode(output_tokens[0], skip_special_tokens=True)" in source
+    assert "completion_text = output_text[len(prompt):]" in source
+    assert "automated_readability_index(prompt + c)" in source
+    assert "clean_up_tokenization_spaces" not in source
+
+    summary = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "results"
+            / "reference_direct_sampling_summary.json"
+        ).read_text(encoding="utf-8")
+    )
+    official = summary["official_configuration"]
+    assert official["ari_input_expression"] == (
+        "prompt + decoded_full_text[len(prompt):]"
+    )
+    assert official["decode_clean_up_tokenization_spaces"].startswith(
+        "not passed explicitly"
+    )
+    assert official["source_cell_indices_zero_based"] == {
+        "direct_sampling": 5,
+        "generate_tokens_and_compute_ari": 3,
+    }
+    assert official["source_fragments"]["prompt_slice"] in source
+    assert summary["comparability"]["strict_observable_match_verified"] is False

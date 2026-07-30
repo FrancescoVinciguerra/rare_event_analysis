@@ -37,6 +37,9 @@ from rea_llms.data_reuse_audit import (  # noqa: E402
     prompt_sha256,
     selected_archive_paths,
 )
+from rea_llms.current_direct_reference import (  # noqa: E402
+    load_scientifically_compatible_summary,
+)
 from rea_llms.observables import create_observable  # noqa: E402
 from rea_llms.official_direct_data import boxplot_statistics  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
@@ -333,6 +336,8 @@ def _load_selected_audit_components(
     plans: Sequence[
         tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]
     ],
+    *,
+    reused_run_ids: set[str] | None = None,
 ) -> list[CompletedComponent]:
     selected = selected_archive_paths(records)
     plan_by_run_id = {
@@ -340,6 +345,7 @@ def _load_selected_audit_components(
         for _, _, spec, _, _, metadata, path in plans
     }
     completed: list[CompletedComponent] = []
+    reused_ids = reused_run_ids or set()
     for run_id, archive_path in sorted(selected.items()):
         spec, expected_metadata = plan_by_run_id[run_id]
         completed.append(
@@ -347,7 +353,7 @@ def _load_selected_audit_components(
                 archive_path,
                 expected_metadata=expected_metadata,
                 spec=spec,
-                reused=True,
+                reused=run_id in reused_ids,
             )
         )
     return completed
@@ -356,6 +362,8 @@ def _load_selected_audit_components(
 def _write_audit_csv(
     path: Path,
     records: Sequence[ArchiveAuditRecord],
+    *,
+    included_paths: set[Path] | None = None,
 ) -> pd.DataFrame:
     rows = [record.to_row() for record in records]
     frame = pd.DataFrame(rows)
@@ -370,6 +378,12 @@ def _write_audit_csv(
                 "reasons",
             ]
         )
+    resolved_included = {
+        candidate.resolve() for candidate in (included_paths or set())
+    }
+    frame["included_in_complete_mixture"] = [
+        Path(value).resolve() in resolved_included for value in frame["path"]
+    ]
     frame.to_csv(path, index=False)
     return frame
 
@@ -600,8 +614,10 @@ def _comparison_rows(
     grouped_components: dict[int, list[CompletedComponent]],
     specs: Sequence[ComponentSpec],
     thresholds: Sequence[float],
-    direct_rows: dict[float, dict[str, Any]],
-    direct_n: int,
+    official_rows: dict[float, dict[str, Any]],
+    official_n: int,
+    current_rows: dict[float, dict[str, Any]] | None = None,
+    current_n: int | None = None,
 ) -> tuple[list[dict[str, Any]], dict[int, Any]]:
     rows: list[dict[str, Any]] = []
     estimates_by_group: dict[int, Any] = {}
@@ -613,24 +629,42 @@ def _comparison_rows(
         ess_over_n = float(estimate.corrected_ess_over_n.detach().cpu())
         runtime = float(sum(component.runtime_seconds for component in components))
         for threshold, probability in zip(thresholds, probabilities):
-            reference = direct_rows[float(threshold)]
-            direct_probability = float(reference["empirical_probability"])
-            difference = float(probability - direct_probability)
+            official = official_rows[float(threshold)]
+            official_probability = float(official["empirical_probability"])
+            current = None if current_rows is None else current_rows[float(threshold)]
+            current_probability = (
+                None if current is None else float(current["empirical_probability"])
+            )
             rows.append(
                 {
                     "row_type": "seed_group",
                     "seed_group": seed_group,
                     "threshold": float(threshold),
-                    "direct_sample_count": direct_n,
-                    "direct_event_count": int(reference["count"]),
-                    "direct_probability": direct_probability,
-                    "direct_wilson_95_lower": float(reference["wilson_95_lower"]),
-                    "direct_wilson_95_upper": float(reference["wilson_95_upper"]),
+                    "official_direct_sample_count": official_n,
+                    "official_direct_event_count": int(official["count"]),
+                    "official_direct_probability": official_probability,
+                    "official_direct_wilson_95_lower": float(official["wilson_95_lower"]),
+                    "official_direct_wilson_95_upper": float(official["wilson_95_upper"]),
+                    "current_direct_sample_count": current_n,
+                    "current_direct_event_count": (
+                        None if current is None else int(current["count"])
+                    ),
+                    "current_direct_probability": current_probability,
+                    "current_direct_wilson_95_lower": (
+                        None if current is None else float(current["wilson_95_lower"])
+                    ),
+                    "current_direct_wilson_95_upper": (
+                        None if current is None else float(current["wilson_95_upper"])
+                    ),
                     "mixture_probability": float(probability),
                     "mixture_probability_std": None,
-                    "difference_hat_minus_direct": difference,
-                    "relative_difference": (
-                        difference / direct_probability if direct_probability > 0.0 else None
+                    "difference_mixture_minus_current_direct": (
+                        None
+                        if current_probability is None
+                        else float(probability - current_probability)
+                    ),
+                    "difference_mixture_minus_official_direct": float(
+                        probability - official_probability
                     ),
                     "weight_ess": ess,
                     "weight_ess_over_n": ess_over_n,
@@ -645,32 +679,46 @@ def _comparison_rows(
             and math.isclose(float(row["threshold"]), float(threshold))
         ]
         probabilities = [float(row["mixture_probability"]) for row in threshold_rows]
-        direct_probability = float(threshold_rows[0]["direct_probability"])
         mean_probability = float(statistics.fmean(probabilities))
-        difference = mean_probability - direct_probability
+        first = threshold_rows[0]
+        official_probability = float(first["official_direct_probability"])
+        current_probability = first["current_direct_probability"]
         rows.append(
             {
                 "row_type": "aggregate",
                 "seed_group": None,
                 "threshold": float(threshold),
-                "direct_sample_count": direct_n,
-                "direct_event_count": int(threshold_rows[0]["direct_event_count"]),
-                "direct_probability": direct_probability,
-                "direct_wilson_95_lower": float(
-                    threshold_rows[0]["direct_wilson_95_lower"]
+                "official_direct_sample_count": official_n,
+                "official_direct_event_count": int(first["official_direct_event_count"]),
+                "official_direct_probability": official_probability,
+                "official_direct_wilson_95_lower": float(
+                    first["official_direct_wilson_95_lower"]
                 ),
-                "direct_wilson_95_upper": float(
-                    threshold_rows[0]["direct_wilson_95_upper"]
+                "official_direct_wilson_95_upper": float(
+                    first["official_direct_wilson_95_upper"]
                 ),
+                "current_direct_sample_count": current_n,
+                "current_direct_event_count": first["current_direct_event_count"],
+                "current_direct_probability": current_probability,
+                "current_direct_wilson_95_lower": first[
+                    "current_direct_wilson_95_lower"
+                ],
+                "current_direct_wilson_95_upper": first[
+                    "current_direct_wilson_95_upper"
+                ],
                 "mixture_probability": mean_probability,
                 "mixture_probability_std": (
                     float(statistics.stdev(probabilities))
                     if len(probabilities) > 1
                     else None
                 ),
-                "difference_hat_minus_direct": difference,
-                "relative_difference": (
-                    difference / direct_probability if direct_probability > 0.0 else None
+                "difference_mixture_minus_current_direct": (
+                    None
+                    if current_probability is None
+                    else mean_probability - float(current_probability)
+                ),
+                "difference_mixture_minus_official_direct": (
+                    mean_probability - official_probability
                 ),
                 "weight_ess": float(
                     statistics.fmean(float(row["weight_ess"]) for row in threshold_rows)
@@ -751,6 +799,8 @@ def _diagnostic_interpretation(
     aggregate_rows: Sequence[dict[str, Any]],
     compatibility: ReferenceCompatibility,
     seed_group_count: int,
+    *,
+    smoke_mode: bool = False,
 ) -> list[str]:
     messages: list[str] = []
     if seed_group_count == 1:
@@ -765,6 +815,12 @@ def _diagnostic_interpretation(
             "The official/current ARI equivalence is unverified; an observable or "
             "decoding mismatch remains a live explanation."
         )
+    if smoke_mode:
+        messages.append(
+            "Smoke-mode estimates validate execution only; they are not used to "
+            "attribute discrepancies or assess estimator accuracy."
+        )
+        return messages
     if not diagnostic_rows:
         messages.append(
             "No complete exactly reusable component set is available locally; the "
@@ -799,44 +855,117 @@ def _diagnostic_interpretation(
         )
 
     component_disagreement = False
-    component_close_to_reference = True
     by_threshold: dict[float, list[float]] = {}
     for row in diagnostic_rows:
         by_threshold.setdefault(float(row["threshold"]), []).append(
             float(row["component_probability"])
         )
-    direct_by_threshold = {
-        float(row["threshold"]): float(row["direct_probability"])
-        for row in aggregate_rows
+    aggregate_by_threshold = {
+        float(row["threshold"]): row for row in aggregate_rows
     }
+    component_current_checks: list[bool] = []
     for threshold, values in by_threshold.items():
         positives = [value for value in values if value > 0.0]
         if len(positives) >= 2 and max(positives) / min(positives) > 3.0:
             component_disagreement = True
-        direct = direct_by_threshold.get(threshold)
-        if direct and positives:
-            median_value = float(statistics.median(positives))
-            if not (0.5 * direct <= median_value <= 2.0 * direct):
-                component_close_to_reference = False
+        aggregate = aggregate_by_threshold.get(threshold)
+        current = None if aggregate is None else aggregate["current_direct_probability"]
+        if current is not None and positives:
+            current_value = float(current)
+            lower = float(aggregate["current_direct_wilson_95_lower"])
+            upper = float(aggregate["current_direct_wilson_95_upper"])
+            tolerance = max(upper - lower, 0.5 * current_value, 1e-12)
+            component_current_checks.append(
+                abs(float(statistics.median(positives)) - current_value) <= tolerance
+            )
     if component_disagreement:
         messages.append(
             "Component-wise estimates differ by more than a factor of three at "
             "one or more thresholds, pointing to overlap or mixing limitations."
         )
-    elif not component_close_to_reference:
+
+    if not aggregate_rows:
         messages.append(
-            "Component-wise estimates are mutually more consistent than they are "
-            "with the official empirical reference; observable/reference mismatch "
-            "is the leading diagnostic suspicion."
+            "No aggregate mixture is available, so the discrepancy cannot yet be "
+            "assigned to decoding, component overlap, or mixture normalization."
         )
-    elif aggregate_rows and any(
-        abs(float(row["relative_difference"])) > 1.0
-        for row in aggregate_rows
-        if row.get("relative_difference") is not None
-    ):
+        return messages
+
+    has_current = all(
+        row["current_direct_probability"] is not None for row in aggregate_rows
+    )
+    if not has_current:
         messages.append(
-            "Component-wise reverse estimates are near the reference while the "
-            "mixture is not; inspect plug-in log Z values and mixture aggregation."
+            "The current-pipeline direct reference is unavailable. The official "
+            "reference remains a cross-implementation comparison only, so these "
+            "results cannot distinguish an SMC error from an observable mismatch."
+        )
+        return messages
+
+    mixture_current_checks: list[bool] = []
+    current_official_checks: list[bool] = []
+    mixture_official_checks: list[bool] = []
+    for row in aggregate_rows:
+        current = float(row["current_direct_probability"])
+        current_lower = float(row["current_direct_wilson_95_lower"])
+        current_upper = float(row["current_direct_wilson_95_upper"])
+        official = float(row["official_direct_probability"])
+        official_lower = float(row["official_direct_wilson_95_lower"])
+        official_upper = float(row["official_direct_wilson_95_upper"])
+        mixture = float(row["mixture_probability"])
+        mixture_sd = row["mixture_probability_std"]
+        mixture_tolerance = max(
+            current_upper - current_lower,
+            0.0 if mixture_sd is None else float(mixture_sd),
+            0.5 * current,
+            1e-12,
+        )
+        mixture_current_checks.append(abs(mixture - current) <= mixture_tolerance)
+        current_official_checks.append(
+            max(current_lower, official_lower) <= min(current_upper, official_upper)
+        )
+        official_tolerance = max(
+            official_upper - official_lower,
+            0.0 if mixture_sd is None else float(mixture_sd),
+            0.5 * official,
+            1e-12,
+        )
+        mixture_official_checks.append(abs(mixture - official) <= official_tolerance)
+
+    mixture_matches_current = all(mixture_current_checks)
+    current_matches_official = all(current_official_checks)
+    mixture_matches_official = all(mixture_official_checks)
+    components_match_current = bool(component_current_checks) and all(
+        component_current_checks
+    )
+
+    if mixture_matches_current and not current_matches_official:
+        messages.append(
+            "The SMC mixture is compatible with the current-pipeline direct "
+            "reference while both differ from the official direct reference; the "
+            "leading explanation is an observable or decoding mismatch."
+        )
+    elif current_matches_official and not mixture_matches_current:
+        messages.append(
+            "The two direct references are mutually compatible while the SMC "
+            "mixture is not; inspect the SMC approximation, mixture weights, and "
+            "normalizing constants."
+        )
+    elif components_match_current and not mixture_matches_current:
+        messages.append(
+            "Component-wise reverse estimates are compatible with current-direct "
+            "while the mixture is not; inspect plug-in log Z values and the balance "
+            "heuristic."
+        )
+    elif component_current_checks and not components_match_current:
+        messages.append(
+            "Component-wise reverse estimates also differ from current-direct; "
+            "investigate target overlap, mutation mixing, or the component target."
+        )
+    elif mixture_matches_current and current_matches_official and mixture_matches_official:
+        messages.append(
+            "All three sources are mutually compatible at the audited thresholds; "
+            "additional seed groups are still needed to assess SMC run variability."
         )
     else:
         messages.append(
@@ -863,6 +992,7 @@ def _weighted_box(values: np.ndarray, log_weights: np.ndarray, label: str) -> di
 def _write_ari_boxplots(
     output_path: Path,
     direct_summary: dict[str, Any],
+    current_direct_summary: dict[str, Any] | None,
     grouped_components: dict[int, list[CompletedComponent]],
     specs: Sequence[ComponentSpec],
 ) -> None:
@@ -879,6 +1009,19 @@ def _write_ari_boxplots(
             "fliers": [],
         }
     ]
+    if current_direct_summary is not None:
+        current_box = current_direct_summary["statistics"]["boxplot"]
+        boxes.append(
+            {
+                "label": "current\ndirect",
+                "q1": float(current_box["q1"]),
+                "med": float(current_box["median"]),
+                "q3": float(current_box["q3"]),
+                "whislo": float(current_box["whisker_low"]),
+                "whishi": float(current_box["whisker_high"]),
+                "fliers": [],
+            }
+        )
     for index, spec in enumerate(specs):
         component_rows = [rows[index] for rows in grouped_components.values()]
         values = np.concatenate([row.raw_ari for row in component_rows])
@@ -898,10 +1041,14 @@ def _write_ari_boxplots(
     fig, ax = plt.subplots(figsize=(max(10.0, 0.78 * len(boxes)), 5.2))
     artists = ax.bxp(boxes, showfliers=False, patch_artist=True)
     artists["boxes"][0].set_facecolor("#4C78A8")
-    for box in artists["boxes"][1:]:
+    first_tilted = 1
+    if current_direct_summary is not None:
+        artists["boxes"][1].set_facecolor("#54A24B")
+        first_tilted = 2
+    for box in artists["boxes"][first_tilted:]:
         box.set_facecolor("#F58518")
     ax.set_ylabel("raw ARI")
-    ax.set_title("Official direct reference and weighted terminal tilted populations")
+    ax.set_title("Direct references and weighted terminal tilted populations")
     ax.grid(axis="y", alpha=0.25)
     ax.text(
         0.01,
@@ -925,9 +1072,13 @@ def _write_probability_plot(
 ) -> None:
     rows = sorted(aggregate_rows, key=lambda row: float(row["threshold"]))
     x = np.asarray([float(row["threshold"]) for row in rows])
-    direct = np.asarray([float(row["direct_probability"]) for row in rows])
-    direct_low = np.asarray([float(row["direct_wilson_95_lower"]) for row in rows])
-    direct_high = np.asarray([float(row["direct_wilson_95_upper"]) for row in rows])
+    official = np.asarray([float(row["official_direct_probability"]) for row in rows])
+    official_low = np.asarray(
+        [float(row["official_direct_wilson_95_lower"]) for row in rows]
+    )
+    official_high = np.asarray(
+        [float(row["official_direct_wilson_95_upper"]) for row in rows]
+    )
     mixture = np.asarray([float(row["mixture_probability"]) for row in rows])
     mixture_std = np.asarray(
         [
@@ -938,13 +1089,31 @@ def _write_probability_plot(
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     ax.errorbar(
         x - 0.05,
-        direct,
-        yerr=np.vstack((direct - direct_low, direct_high - direct)),
+        official,
+        yerr=np.vstack((official - official_low, official_high - official)),
         marker="o",
         capsize=3,
         label="official direct (Wilson 95%)",
         color="#4C78A8",
     )
+    has_current = all(row["current_direct_probability"] is not None for row in rows)
+    if has_current:
+        current = np.asarray([float(row["current_direct_probability"]) for row in rows])
+        current_low = np.asarray(
+            [float(row["current_direct_wilson_95_lower"]) for row in rows]
+        )
+        current_high = np.asarray(
+            [float(row["current_direct_wilson_95_upper"]) for row in rows]
+        )
+        ax.errorbar(
+            x,
+            current,
+            yerr=np.vstack((current - current_low, current_high - current)),
+            marker="^",
+            capsize=3,
+            label="current-pipeline direct (Wilson 95%)",
+            color="#54A24B",
+        )
     positive = mixture > 0.0
     if np.any(positive):
         lower = np.minimum(mixture_std[positive], mixture[positive] * 0.999999)
@@ -958,7 +1127,7 @@ def _write_probability_plot(
             color="#F58518",
         )
     if np.any(~positive):
-        zero_floor = float(direct_low.min() / 3.0)
+        zero_floor = float(official_low.min() / 3.0)
         ax.scatter(
             x[~positive] + 0.05,
             np.full(np.count_nonzero(~positive), zero_floor),
@@ -974,8 +1143,10 @@ def _write_probability_plot(
     title = "Tail-probability validation"
     if smoke_mode:
         title = "Integration smoke only - estimates are not a validation"
-    elif not exact_reference_match:
+    elif not exact_reference_match and not has_current:
         title = "Cross-implementation comparison - exact ARI match unverified"
+    elif has_current:
+        title = "Current-pipeline direct validation with official reference context"
     ax.set_title(title)
     ax.grid(alpha=0.25, which="both")
     ax.legend()
@@ -992,6 +1163,9 @@ def _render_report(
     reference_path: Path,
     reference_summary: dict[str, Any],
     compatibility: ReferenceCompatibility,
+    current_direct_path: Path,
+    current_direct_summary: dict[str, Any] | None,
+    current_direct_reasons: Sequence[str],
     audit_records: Sequence[ArchiveAuditRecord],
     component_diagnostics: Sequence[dict[str, Any]],
     interpretation: Sequence[str],
@@ -1005,13 +1179,31 @@ def _render_report(
         category: sum(record.classification == category for record in audit_records)
         for category in AUDIT_CATEGORIES
     }
-    selected_count = sum(record.selected_for_mixture for record in audit_records)
+    exact_candidate_count = sum(
+        record.selected_for_mixture for record in audit_records
+    )
+    included_paths = {
+        component.path.resolve()
+        for components in grouped_components.values()
+        for component in components
+    }
+    included_count = sum(
+        record.facts.path.resolve() in included_paths for record in audit_records
+    )
+    requested_seed_groups = parse_int_list(args.seed_groups)
+    expected_count = len(specs) * len(requested_seed_groups)
+    missing_count = expected_count - exact_candidate_count
+    current_count = (
+        None
+        if current_direct_summary is None
+        else int(current_direct_summary["statistics"]["count"])
+    )
     lines = [
         "# Tail-probability validation",
         "",
-        "The comparison uses the **official empirical reference**, not exact analytic",
-        "ground truth. Only archives classified as `exactly_reusable` can enter the",
-        "deterministic mixture.",
+        "The primary correctness benchmark is the **current-pipeline empirical direct",
+        "reference**, when available. The official empirical reference is retained as",
+        "a **cross-implementation comparison; exact ARI equivalence unverified**.",
         "",
         "## Official empirical reference audit",
         "",
@@ -1030,12 +1222,41 @@ def _render_report(
         f"- EOS / padding: `{official.get('eos_token_id', 'unverified')}` / `{official.get('pad_token_id', 'unverified')}`",
         f"- Dataset seed policy: `{official.get('dataset_seed', 'unverified')}`",
         f"- Decode convention: {official.get('decode_convention', 'unverified')}",
+        f"- Decode cleanup: {official.get('decode_clean_up_tokenization_spaces', 'unverified')}",
+        f"- Exact public-demo ARI input: `{official.get('ari_input_expression', 'unverified')}`",
+        "- Source cells: `external/rea_of_llms_official/sampling_examples.ipynb`, "
+        "zero-based JSON cell 3 (`generate_tokens`, `compute_ari`) and cell 5 "
+        "(`direct_sampling`).",
+        f"- Decode fragment: `{official.get('source_fragments', {}).get('decode', 'unverified')}`",
+        f"- Prompt-slice fragment: `{official.get('source_fragments', {}).get('prompt_slice', 'unverified')}`",
+        f"- ARI fragment: `{official.get('source_fragments', {}).get('ari', 'unverified')}`",
         f"- Observable scope: `{official.get('observable_scope', 'unverified')}`",
+        f"- Explicit preprocessing: {official.get('ari_preprocessing', 'unverified')}",
         f"- Paper ARI implementation: {official.get('paper_ari_implementation', 'unverified')}",
         f"- Public demo ARI: `{official.get('demo_ari_implementation', 'unverified')}`",
+        f"- Public-demo edge cases: {official.get('demo_edge_case_handling', 'unverified')}",
         f"- Paper cap: `{official.get('paper_ari_cap', 'unverified')}`; direct archived ARI is raw.",
-        "- Direct samples contain neither completions nor token IDs. Exact equivalence",
-        "  with the current textstat/decode convention remains unverified.",
+        "- Exact flow in the public demo: token IDs -> decode full sequence with",
+        "  `skip_special_tokens=True` -> `decoded_full_text[len(prompt):]` ->",
+        "  `textstat.automated_readability_index(prompt + completion)`.",
+        "- The current pipeline instead decodes completion-token IDs separately and",
+        "  prepends the exact prompt. Token-boundary text can therefore differ.",
+        "- Archived samples contain neither completions nor token IDs, and the paper's",
+        "  custom ARI edge handling is unpublished; exact equivalence is unverified.",
+        "",
+        "## Current-pipeline direct reference",
+        "",
+        f"- Expected summary: `{current_direct_path}`",
+        f"- Status: `{'compatible' if current_direct_summary is not None else 'unavailable'}`",
+        f"- Observations: `{current_count if current_count is not None else '-'}`",
+        "- Generation and scoring primitives are shared with the SMC initialization:",
+        f"  fixed {args.max_new_tokens}-token categorical sampling at temperature 1, no EOS stopping,",
+        "  separate completion decoding, and exact `prompt + completion` textstat ARI.",
+        (
+            "- Unavailable because: " + "; ".join(current_direct_reasons)
+            if current_direct_summary is None
+            else "- This is the primary SMC correctness benchmark."
+        ),
         "",
         "## Archive reuse audit",
         "",
@@ -1044,24 +1265,27 @@ def _render_report(
         f"- Comparable but not cache-equivalent: `{category_counts['comparable_but_not_cache_equivalent']}`",
         f"- Incompatible: `{category_counts['incompatible']}`",
         f"- Unverifiable: `{category_counts['unverifiable']}`",
-        f"- Selected for the mixture: `{selected_count}`",
+        f"- Exact cache candidates for requested seed groups: `{exact_candidate_count}`",
+        f"- Included in complete seed-group mixtures: `{included_count}`",
+        f"- Planned components not yet present: `{missing_count}` of `{expected_count}`",
         "",
-        "The mixture denominator, corrected weights, and ESS are constructed only",
-        "from the selected paths below. Excluded archives are never passed to the",
-        "estimator.",
+        "An exact archive is included in mixture estimation only when every component",
+        "of its seed group is available. Excluded and partial-group archives never",
+        "enter the mixture denominator, corrected weights, or ESS.",
         "",
-        "| archive | classification | selected | reason |",
-        "|:---|:---|:---:|:---|",
+        "| archive | classification | exact candidate | complete mixture | reason |",
+        "|:---|:---|:---:|:---:|:---|",
     ]
     if audit_records:
         for record in audit_records:
             reason = "; ".join(record.reasons).replace("|", "\\|")
+            included = record.facts.path.resolve() in included_paths
             lines.append(
                 f"| `{record.facts.path.name}` | `{record.classification}` | "
-                f"`{record.selected_for_mixture}` | {reason} |"
+                f"`{record.selected_for_mixture}` | `{included}` | {reason} |"
             )
     else:
-        lines.append("| _none available in this output root_ | - | - | - |")
+        lines.append("| _none available in this output root_ | - | - | - | - |")
     lines.extend(
         [
         "",
@@ -1077,15 +1301,16 @@ def _render_report(
             else ""
         ),
         (
-            "**Strict observable equivalence is unverified; this is not exact ground "
-            "truth for the repository ARI convention.**"
+            "**Official/current observable equivalence is unverified; official direct "
+            "is context, not exact ground truth for the current pipeline.**"
             if not compatibility.strict_observable_match_verified
             else ""
         ),
         "",
         "## Configuration",
         "",
-        f"- Direct observations: `{reference_summary.get('direct_ari', {}).get('count', 'unverified')}`",
+        f"- Official direct observations: `{reference_summary.get('direct_ari', {}).get('count', 'unverified')}`",
+        f"- Current-pipeline direct observations: `{current_count if current_count is not None else 'unavailable'}`",
         f"- Sampling setup match: `{compatibility.sampling_setup_match}`",
         f"- Strict observable match verified: `{compatibility.strict_observable_match_verified}`",
         f"- Seed groups: `{sorted(grouped_components)}`",
@@ -1170,22 +1395,33 @@ def _render_report(
             "",
             "## Aggregate comparison",
             "",
-            "| threshold | direct events | direct | Wilson 95% | mixture mean | seed SD | difference (hat-direct) | ESS | ESS/N | mean runtime (s) |",
-            "|---:|---:|---:|:---|---:|---:|---:|---:|---:|---:|",
+            "| threshold | official direct | official Wilson 95% | current direct | current Wilson 95% | mixture mean | seed SD | mix-current | mix-official | ESS/N |",
+            "|---:|---:|:---|---:|:---|---:|---:|---:|---:|---:|",
         ]
     )
     if aggregate_rows:
         for row in aggregate_rows:
             sd = row["mixture_probability_std"]
+            current_probability = row["current_direct_probability"]
+            current_interval = (
+                "-"
+                if current_probability is None
+                else (
+                    f"[{row['current_direct_wilson_95_lower']:.6g}, "
+                    f"{row['current_direct_wilson_95_upper']:.6g}]"
+                )
+            )
+            current_difference = row["difference_mixture_minus_current_direct"]
             lines.append(
-                f"| {row['threshold']:g} | {row['direct_event_count']} | "
-                f"{row['direct_probability']:.6g} | "
-                f"[{row['direct_wilson_95_lower']:.6g}, {row['direct_wilson_95_upper']:.6g}] | "
+                f"| {row['threshold']:g} | {row['official_direct_probability']:.6g} | "
+                f"[{row['official_direct_wilson_95_lower']:.6g}, {row['official_direct_wilson_95_upper']:.6g}] | "
+                f"{('-' if current_probability is None else f'{current_probability:.6g}')} | "
+                f"{current_interval} | "
                 f"{row['mixture_probability']:.6g} | "
                 f"{('-' if sd is None else f'{sd:.6g}')} | "
-                f"{row['difference_hat_minus_direct']:.6g} | "
-                f"{row['weight_ess']:.2f} | {row['weight_ess_over_n']:.4f} | "
-                f"{row['runtime_seconds']:.1f} |"
+                f"{('-' if current_difference is None else f'{current_difference:.6g}')} | "
+                f"{row['difference_mixture_minus_official_direct']:.6g} | "
+                f"{row['weight_ess_over_n']:.4f} |"
             )
     else:
         lines.append("| - | - | - | - | - | - | - | - | - | - |")
@@ -1235,6 +1471,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--reference-summary", type=Path, default=None)
     parser.add_argument(
+        "--current-direct-summary",
+        type=Path,
+        default=None,
+        help=(
+            "Current-pipeline direct summary. Defaults to "
+            "OUTPUT_ROOT/current_direct_reference/summary.json."
+        ),
+    )
+    parser.add_argument(
         "--allow-unverified-observable-reference",
         action="store_true",
         help=(
@@ -1283,24 +1528,58 @@ def main(argv: Sequence[str] | None = None) -> None:
     reference_path = _reference_summary_path(args.reference_summary)
     direct_summary, direct_rows = _load_direct_reference(reference_path, thresholds)
     reference_compatibility = assess_reference_compatibility(direct_summary, args)
+    output_root = args.output_root
+    component_root = output_root / "component_runs"
+    output_root.mkdir(parents=True, exist_ok=True)
+    current_direct_path = (
+        args.current_direct_summary
+        if args.current_direct_summary is not None
+        else output_root / "current_direct_reference" / "summary.json"
+    )
+    current_direct_summary, current_direct_reasons = load_scientifically_compatible_summary(
+        current_direct_path,
+        model_name=args.model_name,
+        tokenizer_name=args.tokenizer_name,
+        prompt=args.prompt,
+        max_new_tokens=args.max_new_tokens,
+        thresholds=thresholds,
+    )
+    current_direct_rows = None
+    current_direct_n = None
+    if current_direct_summary is not None:
+        current_statistics = current_direct_summary["statistics"]
+        current_direct_rows = {
+            float(row["threshold"]): row for row in current_statistics["tails"]
+        }
+        current_direct_n = int(current_statistics["count"])
+        print(
+            f"current-pipeline direct reference: compatible N={current_direct_n}",
+            flush=True,
+        )
+    else:
+        print(
+            "current-pipeline direct reference unavailable: "
+            + "; ".join(current_direct_reasons),
+            flush=True,
+        )
     enforce_reference_compatibility(
         reference_compatibility,
         smoke_mode=args.smoke_mode,
         allow_unverified_observable_reference=(
-            args.allow_unverified_observable_reference or args.audit_only
+            args.allow_unverified_observable_reference
+            or args.audit_only
+            or current_direct_summary is not None
         ),
     )
     print(
         "reference preflight: "
         f"sampling_setup_match={reference_compatibility.sampling_setup_match}, "
-        "strict_observable_match_verified="
+        "strict_official_observable_match_verified="
         f"{reference_compatibility.strict_observable_match_verified}, "
+        f"current_direct_available={current_direct_summary is not None}, "
         f"smoke_mode={args.smoke_mode}",
         flush=True,
     )
-    output_root = args.output_root
-    component_root = output_root / "component_runs"
-    output_root.mkdir(parents=True, exist_ok=True)
 
     plans: list[tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]] = []
     for seed_group in seed_groups:
@@ -1370,11 +1649,13 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
 
     audit_records = _audit_component_cache(component_root, plans)
-    audit_frame = _write_audit_csv(
-        output_root / "data_reuse_audit.csv",
+    completed = _load_selected_audit_components(
         audit_records,
+        plans,
+        reused_run_ids=(
+            set(selected_before_run) if args.skip_completed_runs else set()
+        ),
     )
-    completed = _load_selected_audit_components(audit_records, plans)
     grouped: dict[int, list[CompletedComponent]] = {}
     index_by_spec = {
         (component_seed(seed_group, index), seed_group): index
@@ -1390,6 +1671,16 @@ def main(argv: Sequence[str] | None = None) -> None:
             complete_grouped[seed_group] = rows
         elif not args.audit_only:
             raise RuntimeError(f"seed group {seed_group} is incomplete")
+    included_paths = {
+        component.path
+        for components in complete_grouped.values()
+        for component in components
+    }
+    audit_frame = _write_audit_csv(
+        output_root / "data_reuse_audit.csv",
+        audit_records,
+        included_paths=included_paths,
+    )
 
     comparison_rows: list[dict[str, Any]] = []
     if complete_grouped:
@@ -1399,6 +1690,8 @@ def main(argv: Sequence[str] | None = None) -> None:
             thresholds,
             direct_rows,
             int(direct_summary["direct_ari"]["count"]),
+            current_direct_rows,
+            current_direct_n,
         )
     comparison = pd.DataFrame(
         comparison_rows,
@@ -1406,15 +1699,20 @@ def main(argv: Sequence[str] | None = None) -> None:
             "row_type",
             "seed_group",
             "threshold",
-            "direct_sample_count",
-            "direct_event_count",
-            "direct_probability",
-            "direct_wilson_95_lower",
-            "direct_wilson_95_upper",
+            "official_direct_sample_count",
+            "official_direct_event_count",
+            "official_direct_probability",
+            "official_direct_wilson_95_lower",
+            "official_direct_wilson_95_upper",
+            "current_direct_sample_count",
+            "current_direct_event_count",
+            "current_direct_probability",
+            "current_direct_wilson_95_lower",
+            "current_direct_wilson_95_upper",
             "mixture_probability",
             "mixture_probability_std",
-            "difference_hat_minus_direct",
-            "relative_difference",
+            "difference_mixture_minus_current_direct",
+            "difference_mixture_minus_official_direct",
             "weight_ess",
             "weight_ess_over_n",
             "runtime_seconds",
@@ -1449,6 +1747,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         _write_ari_boxplots(
             output_root / "ari_boxplots.png",
             direct_summary,
+            current_direct_summary,
             complete_grouped,
             specs,
         )
@@ -1463,6 +1762,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         aggregate_rows,
         reference_compatibility,
         len(complete_grouped),
+        smoke_mode=args.smoke_mode,
     )
     (output_root / "REPORT.md").write_text(
         _render_report(
@@ -1473,15 +1773,23 @@ def main(argv: Sequence[str] | None = None) -> None:
             reference_path,
             direct_summary,
             reference_compatibility,
+            current_direct_path,
+            current_direct_summary,
+            current_direct_reasons,
             audit_records,
             component_diagnostics,
             interpretation,
         ),
         encoding="utf-8",
     )
+    reusable_count = len(completed)
+    planned_missing_count = len(plans) - reusable_count
+    included_count = sum(len(rows) for rows in complete_grouped.values())
     print(
-        f"audit found {len(audit_frame)} archives; selected {len(completed)} exact "
-        f"components; generated {len(missing)} in {time.perf_counter() - started:.1f} s",
+        f"audit found {len(audit_frame)} archives; {reusable_count} exactly reusable; "
+        f"{included_count} included in complete mixtures; {planned_missing_count} "
+        f"planned components missing; generated {len(missing)} in "
+        f"{time.perf_counter() - started:.1f} s",
         flush=True,
     )
     print((output_root / "comparison.csv").resolve(), flush=True)

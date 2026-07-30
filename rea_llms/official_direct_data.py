@@ -521,6 +521,14 @@ def _official_configuration() -> dict[str, Any]:
         "tokenizer": "EleutherAI/gpt-neo-125M",
         "tokenizer_revision": "not published",
         "prompt": "Once upon a time, in a big forest, there lived a rhinoc",
+        "prompt_repr": "'Once upon a time, in a big forest, there lived a rhinoc'",
+        "prompt_sha256": (
+            "b4b7f60343cd3d1e24d8f2e312810afdaaa28034b9a194c66865b47483f70f59"
+        ),
+        "prompt_token_ids": [
+            7454, 2402, 257, 640, 11, 287, 257, 1263,
+            8222, 11, 612, 5615, 257, 9529, 259, 420,
+        ],
         "prompt_token_count": 16,
         "completion_tokens": 100,
         "temperature": 1.0,
@@ -534,9 +542,34 @@ def _official_configuration() -> dict[str, Any]:
         "paper_generation_implementation": "not published",
         "decode_convention": (
             "decode the full prompt-token plus completion-token sequence with "
-            "skip_special_tokens=True, then remove len(prompt) characters"
+            "skip_special_tokens=True, then define completion_text as "
+            "decoded_full_text[len(prompt):]"
         ),
-        "observable_scope": "decoded prompt plus completion",
+        "decode_clean_up_tokenization_spaces": (
+            "not passed explicitly; tokenizer/version default"
+        ),
+        "ari_input_expression": "prompt + decoded_full_text[len(prompt):]",
+        "source_notebook": "external/rea_of_llms_official/sampling_examples.ipynb",
+        "source_cell_indices_zero_based": {
+            "generate_tokens_and_compute_ari": 3,
+            "direct_sampling": 5,
+        },
+        "source_fragments": {
+            "decode": (
+                "output_text = tokenizer.decode(output_tokens[0], "
+                "skip_special_tokens=True)"
+            ),
+            "prompt_slice": "completion_text = output_text[len(prompt):]",
+            "ari": "automated_readability_index(prompt + c)",
+        },
+        "observable_scope": (
+            "the original prompt string concatenated with the character-sliced "
+            "completion from the decoded full token sequence"
+        ),
+        "ari_preprocessing": (
+            "no strip, whitespace normalization, case normalization, or newline "
+            "processing is explicit in the public demo"
+        ),
         "ari_formula": "4.71 * characters/words + 0.5 * words/sentences - 21.43",
         "paper_ari_cap": 15.0,
         "paper_cap_operation": (
@@ -547,7 +580,14 @@ def _official_configuration() -> dict[str, Any]:
             "custom py-readability implementation with edge-case handling; "
             "implementation not published"
         ),
-        "demo_ari_implementation": "textstat.automated_readability_index, uncapped",
+        "demo_ari_implementation": (
+            "textstat.automated_readability_index, uncapped; public environment "
+            "declares textstat>=0.7.12 without an exact lock"
+        ),
+        "demo_edge_case_handling": (
+            "delegated to the installed textstat version; no additional handling "
+            "appears in the public notebook"
+        ),
         "demo_torch_seed": 42,
         "demo_python_seed": 1234,
         "dataset_seed": "not published",
@@ -789,6 +829,9 @@ def render_reference_report(summary: dict[str, Any]) -> str:
         f"- Model: `{config['model']}` (revision not published)",
         f"- Tokenizer: `{config['tokenizer']}` (revision not published)",
         f"- Prompt ({config['prompt_token_count']} tokens): `{config['prompt']}`",
+        f"- `repr(prompt)`: `{config['prompt_repr']}`",
+        f"- Prompt SHA-256: `{config['prompt_sha256']}`",
+        f"- Prompt token IDs: `{config['prompt_token_ids']}`",
         f"- Completion: {config['completion_tokens']} fixed tokens",
         f"- Generation: `do_sample={config['do_sample']}`, temperature "
         f"{config['temperature']}, `top_k=None`, top-p not explicitly set",
@@ -798,11 +841,21 @@ def render_reference_report(summary: dict[str, Any]) -> str:
         f"- Demo batching: {config['public_demo_batching']}; the paper generation "
         "implementation is not published",
         f"- Decode convention: {config['decode_convention']}",
-        "- ARI scope: decoded prompt plus completion",
+        f"- Decode cleanup: {config['decode_clean_up_tokenization_spaces']}",
+        f"- Exact public-demo ARI input: `{config['ari_input_expression']}`",
+        "- Source: `external/rea_of_llms_official/sampling_examples.ipynb`, "
+        "zero-based JSON cell 3 (`generate_tokens`, `compute_ari`) and cell 5 "
+        "(`direct_sampling`)",
+        f"- Decode fragment: `{config['source_fragments']['decode']}`",
+        f"- Prompt-slice fragment: `{config['source_fragments']['prompt_slice']}`",
+        f"- ARI fragment: `{config['source_fragments']['ari']}`",
+        f"- ARI scope: {config['observable_scope']}",
+        f"- Explicit preprocessing: {config['ari_preprocessing']}",
         f"- ARI formula: `{config['ari_formula']}`",
         f"- Paper method: {config['paper_ari_implementation']}",
         f"- Cap: {config['paper_cap_operation']}",
         f"- Public notebook demo: {config['demo_ari_implementation']}",
+        f"- Public-demo edge cases: {config['demo_edge_case_handling']}",
         f"- Log-probability: {config['log_probability_observable']}",
         f"- Published use: {config['paper_data_use']}",
         "",

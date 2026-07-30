@@ -241,13 +241,15 @@ def _audit_metadata(
     *,
     prompt: str = "Once upon a time, in a big forest, there lived a rhinoc",
     num_particles: int = 2,
+    seed_group: int = 200,
+    component_index: int = 0,
 ) -> dict:
     args = parse_validation_args(
         [
             "--prompt",
             prompt,
             "--seed-groups",
-            "200",
+            str(seed_group),
             "--num-particles",
             str(num_particles),
             "--max-new-tokens",
@@ -262,9 +264,9 @@ def _audit_metadata(
     return _component_metadata(
         args,
         spec,
-        seed_group=200,
-        component_index=0,
-        seed=component_seed(200, 0),
+        seed_group=seed_group,
+        component_index=component_index,
+        seed=component_seed(seed_group, component_index),
         schedule=build_lambda_schedule(-0.5, 0.25),
     )
 
@@ -344,6 +346,29 @@ def test_exact_archive_is_selected_and_smoke_archive_is_not(tmp_path) -> None:
     assert selected_archive_paths(records) == {
         component_run_id(expected): exact_path
     }
+
+
+def test_group_300_is_selected_only_when_it_is_requested(tmp_path) -> None:
+    group_200 = _audit_metadata(seed_group=200)
+    group_300 = _audit_metadata(seed_group=300)
+    archive = tmp_path / f"{component_run_id(group_300)}.npz"
+    _write_audit_archive(archive, group_300)
+
+    only_200 = classify_component_archives(
+        [archive],
+        {component_run_id(group_200): group_200},
+    )
+    assert not only_200[0].selected_for_mixture
+
+    requested_200_and_300 = classify_component_archives(
+        [archive],
+        {
+            component_run_id(group_200): group_200,
+            component_run_id(group_300): group_300,
+        },
+    )
+    assert requested_200_and_300[0].classification == "exactly_reusable"
+    assert requested_200_and_300[0].selected_for_mixture
 
 
 def test_duplicate_exact_seed_is_rejected(tmp_path) -> None:
@@ -438,10 +463,62 @@ def test_audit_only_reuses_archive_without_loading_model(tmp_path, monkeypatch) 
     comparison = pd.read_csv(output_root / "comparison.csv")
     report = (output_root / "REPORT.md").read_text(encoding="utf-8")
     assert audit["selected_for_mixture"].tolist() == [True]
+    assert audit["included_in_complete_mixture"].tolist() == [True]
     assert not diagnostics.empty
     assert not comparison.empty
     assert "Candidate archives found: `1`" in report
-    assert "Selected for the mixture: `1`" in report
+    assert "Exact cache candidates for requested seed groups: `1`" in report
+    assert "Included in complete seed-group mixtures: `1`" in report
+
+
+def test_audit_does_not_declare_partial_seed_group_complete(
+    tmp_path, monkeypatch
+) -> None:
+    output_root = tmp_path / "partial"
+    component_root = output_root / "component_runs"
+    first = _audit_metadata(component_index=0)
+    archive_path = component_root / f"{component_run_id(first)}.npz"
+    _write_audit_archive(archive_path, first)
+
+    def fail_model_load(*args, **kwargs):
+        raise AssertionError("audit-only must not load the model")
+
+    monkeypatch.setattr(
+        "suffix_direct_mh_smc_experiment.run_tail_validation.load_model_and_tokenizer",
+        fail_model_load,
+    )
+    run_validation_main(
+        [
+            "--audit-only",
+            "--smoke-mode",
+            "--components-json",
+            json.dumps(
+                [
+                    {"cap": 6.0, "lambda": -0.5},
+                    {"cap": 6.0, "lambda": -0.5},
+                ]
+            ),
+            "--seed-groups",
+            "200",
+            "--num-particles",
+            "2",
+            "--max-new-tokens",
+            "4",
+            "--mcmc-steps-per-level",
+            "1",
+            "--suffix-sizes",
+            "1,4",
+            "--output-root",
+            str(output_root),
+        ]
+    )
+    audit = pd.read_csv(output_root / "data_reuse_audit.csv")
+    comparison = pd.read_csv(output_root / "comparison.csv")
+    report = (output_root / "REPORT.md").read_text(encoding="utf-8")
+    assert audit["selected_for_mixture"].tolist() == [True]
+    assert audit["included_in_complete_mixture"].tolist() == [False]
+    assert comparison.empty
+    assert "Planned components not yet present: `1` of `2`" in report
 
 
 def test_component_reverse_probability_and_log_z_on_toy_model() -> None:
@@ -719,14 +796,18 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE" in joined
     assert "RUN_CACHE_AUDIT" in joined
     assert "RUN_SMOKE_TEST" in joined
+    assert "RUN_CURRENT_DIRECT_REFERENCE = False" in joined
     assert "RUN_PRODUCTION" in joined
     assert "--components-json" in joined
     assert "--smoke-mode" in joined
     assert "--audit-only" in joined
     assert "Loaded component archives" not in joined
     assert "HAS_AUDITED_PRODUCTION_RESULTS" in joined
-    assert "suffix SMC mixture versus official direct sampling" in joined
-    assert "SEED_GROUPS = [200]" in joined
+    assert "rea_llms.current_direct_reference" in joined
+    assert "CURRENT_DIRECT_NUM_SAMPLES = 200_000" in joined
+    assert "Planned components still missing:" in joined
+    assert "suffix SMC mixture versus current direct" in joined
+    assert "SEED_GROUPS = [200, 300]" in joined
     assert "official_annealed_tps" not in joined
 
 

@@ -26,12 +26,18 @@ no completion text, token IDs, generation metadata, or separate README.
 - EOS and padding IDs are passed as `None`; the demo asserts exact length
 - Dataset seed: not published; notebook demo seeds are Torch=42 and Python=1234
 - Demo batching: one completion at a time; the paper generation implementation is not published
-- Decode convention: decode the full prompt-token plus completion-token sequence with skip_special_tokens=True, then remove len(prompt) characters
-- ARI scope: decoded prompt plus completion
+- Decode convention: decode the full prompt-token plus completion-token sequence with `skip_special_tokens=True`, then set `completion_text = decoded_full_text[len(prompt):]`.
+- `clean_up_tokenization_spaces` is not passed explicitly, so behavior depends on the tokenizer/version default.
+- Exact public-demo ARI input: `prompt + decoded_full_text[len(prompt):]`. The original prompt string is reattached before calling ARI.
+- Source cells: `external/rea_of_llms_official/sampling_examples.ipynb`, zero-based JSON cell 3 (`generate_tokens`, `compute_ari`) and cell 5 (`direct_sampling`).
+- Decode fragment: `output_text = tokenizer.decode(output_tokens[0], skip_special_tokens=True)`
+- Prompt-slice fragment: `completion_text = output_text[len(prompt):]`
+- ARI fragment: `automated_readability_index(prompt + c)`
+- No `.strip()`, whitespace normalization, case conversion, or newline preprocessing is explicit in the public notebook.
 - ARI formula: `4.71 * characters/words + 0.5 * words/sentences - 21.43`
 - Paper method: custom py-readability implementation with edge-case handling; implementation not published
 - Cap: described as a hard cap at 15 and consistent with min(raw_ari, 15), but the implementation and paired raw/capped TPS values are unavailable
-- Public notebook demo: textstat.automated_readability_index, uncapped
+- Public notebook demo: `textstat.automated_readability_index`, uncapped. The environment declares `textstat>=0.7.12`, not an exact version; edge cases are delegated to that installed version.
 - Log-probability: re-tokenize decoded prompt plus completion, compute model log-softmax, zero prompt-token contributions, gather observed token IDs, and sum
 - Published use: Figure 3b direct ARI/log-probability curves, direct data incorporated into MBAR, and Figure 4 direct-sampling Wilson error analysis
 

@@ -12,7 +12,13 @@ from typing import Any, Callable, Sequence, TypeVar
 import numpy as np
 import torch
 
+from rea_llms.generation import (
+    generate_fixed_length_completions,
+    generate_fixed_length_suffixes,
+    prompt_token_ids,
+)
 from rea_llms.models import set_seed
+from rea_llms.scoring import score_completion_tokens
 
 
 ScheduleValue = TypeVar("ScheduleValue")
@@ -231,160 +237,6 @@ def _step_value(row: Sequence[ScheduleValue], step_index: int) -> ScheduleValue:
     return row[0] if len(row) == 1 else row[step_index]
 
 
-# Batched language-model proposal primitives
-
-
-def _base_model_parts(model) -> tuple[Any | None, Any | None]:
-    base_model = getattr(model, "base_model", None)
-    get_output_embeddings = getattr(model, "get_output_embeddings", None)
-    output_embeddings = get_output_embeddings() if callable(get_output_embeddings) else None
-    if base_model is None or base_model is model or output_embeddings is None:
-        return None, None
-    return base_model, output_embeddings
-
-
-def _project_hidden(model, output_embeddings, hidden: torch.Tensor) -> torch.Tensor:
-    logits = output_embeddings(hidden)
-    final_bias = getattr(model, "final_logits_bias", None)
-    return logits if final_bias is None else logits + final_bias
-
-
-def _full_inputs(prompt_ids: torch.Tensor, completions: torch.Tensor) -> torch.Tensor:
-    prompt = prompt_ids.unsqueeze(0).expand(completions.shape[0], -1)
-    return torch.cat((prompt, completions), dim=1)
-
-
-def _selected_next_token_logits(model, input_ids: torch.Tensor) -> torch.Tensor:
-    base_model, output_embeddings = _base_model_parts(model)
-    if base_model is not None:
-        outputs = base_model(input_ids=input_ids, use_cache=False, return_dict=True)
-        return _project_hidden(model, output_embeddings, outputs.last_hidden_state[:, -1])
-    return model(input_ids=input_ids).logits[:, -1]
-
-
-def _is_cuda_oom(exc: BaseException) -> bool:
-    return isinstance(exc, torch.OutOfMemoryError) or "out of memory" in str(exc).lower()
-
-
-def _generate_suffix_chunk(
-    model,
-    context_ids: torch.Tensor,
-    *,
-    suffix_size: int,
-    generator: torch.Generator,
-) -> torch.Tensor:
-    """Generate an exact fixed-length LM suffix for an equal-length batch.
-
-    Particles in the batch are sampled in parallel, but future tokens of one
-    completion remain sequential because every next-token distribution depends
-    on the tokens already sampled. For GPT-Neo, ``base_model`` exposes the KV
-    cache and the output head can be applied only to the latest hidden state.
-    The fallback is semantically equivalent but recomputes the growing prefix.
-
-    ``model.generate`` is not assumed equivalent or faster automatically. An
-    equivalent replacement would need unrestricted multinomial sampling at
-    temperature one, no EOS stopping, penalties, beams, top-k/top-p filtering,
-    or length normalization, plus validation of cache and RNG behavior.
-    """
-    base_model, output_embeddings = _base_model_parts(model)
-    # Length is fixed, so write each autoregressive draw directly into its final
-    # column instead of retaining one allocation per token for a final cat.
-    generated = torch.empty(
-        (context_ids.shape[0], suffix_size),
-        dtype=context_ids.dtype,
-        device=context_ids.device,
-    )
-    if base_model is not None:
-        outputs = base_model(input_ids=context_ids, use_cache=True, return_dict=True)
-        hidden = outputs.last_hidden_state[:, -1]
-        past = getattr(outputs, "past_key_values", None)
-        work = context_ids
-        for step in range(suffix_size):
-            logits = _project_hidden(model, output_embeddings, hidden)
-            token = torch.multinomial(
-                torch.softmax(logits, dim=-1),
-                num_samples=1,
-                generator=generator,
-            )
-            generated[:, step : step + 1].copy_(token)
-            if step + 1 == suffix_size:
-                break
-            if past is not None:
-                # Only the newly sampled token crosses the transformer when a
-                # model supplies a usable KV cache.
-                outputs = base_model(
-                    input_ids=token,
-                    past_key_values=past,
-                    use_cache=True,
-                    return_dict=True,
-                )
-                hidden = outputs.last_hidden_state[:, -1]
-                past = getattr(outputs, "past_key_values", None)
-            else:
-                # Cache-less models must re-evaluate the growing context. This
-                # preserves the proposal distribution but is substantially
-                # more expensive for long suffixes.
-                work = torch.cat((work, token), dim=1)
-                hidden = base_model(
-                    input_ids=work,
-                    use_cache=False,
-                    return_dict=True,
-                ).last_hidden_state[:, -1]
-        return generated
-
-    work = context_ids
-    for step in range(suffix_size):
-        logits = _selected_next_token_logits(model, work)
-        token = torch.multinomial(
-            torch.softmax(logits, dim=-1),
-            num_samples=1,
-            generator=generator,
-        )
-        generated[:, step : step + 1].copy_(token)
-        work = torch.cat((work, token), dim=1)
-    return generated
-
-
-def _generate_suffix_with_backoff(
-    model,
-    context_ids: torch.Tensor,
-    *,
-    suffix_size: int,
-    batch_size: int,
-    generator: torch.Generator,
-) -> torch.Tensor:
-    """Generate in configurable chunks, retrying smaller chunks after CUDA OOM.
-
-    Chunking changes random-number consumption relative to particlewise code,
-    but every returned suffix is still sampled from the same LM proposal.
-    """
-    chunks: list[torch.Tensor] = []
-    start = 0
-    active_batch_size = min(batch_size, context_ids.shape[0])
-    while start < context_ids.shape[0]:
-        stop = min(start + active_batch_size, context_ids.shape[0])
-        try:
-            chunks.append(
-                _generate_suffix_chunk(
-                    model,
-                    context_ids[start:stop],
-                    suffix_size=suffix_size,
-                    generator=generator,
-                )
-            )
-            start = stop
-        except (RuntimeError, torch.OutOfMemoryError) as exc:
-            if not _is_cuda_oom(exc) or active_batch_size == 1:
-                raise RuntimeError(
-                    f"CUDA OOM while generating suffix size {suffix_size} at batch size "
-                    f"{active_batch_size}; reduce --batch-size"
-                ) from exc
-            active_batch_size = max(1, active_batch_size // 2)
-            if context_ids.device.type == "cuda":
-                torch.cuda.empty_cache()
-    return torch.cat(chunks, dim=0)
-
-
 def propose_suffixes_parallel(
     model,
     prompt_ids: torch.Tensor,
@@ -409,7 +261,7 @@ def propose_suffixes_parallel(
         current_group = current.index_select(0, indices)
         prompt = prompt_ids.unsqueeze(0).expand(indices.numel(), -1)
         context = torch.cat((prompt, current_group[:, :prefix_size]), dim=1)
-        proposed_suffix = _generate_suffix_with_backoff(
+        proposed_suffix = generate_fixed_length_suffixes(
             model,
             context,
             suffix_size=int(suffix_size),
@@ -458,36 +310,13 @@ def score_observable(
     punctuation, repeated tokens, and concatenated words make token-local ARI
     arithmetic unsafe unless exact textual equivalence is proved.
     """
-    # Include prompt token IDs so score_token_sequences can slice and decode
-    # the completion exactly as the repository's final ARI implementation.
-    full_ids = _full_inputs(prompt_ids, completions).detach().cpu().tolist()
-    score_batch = getattr(observable, "score_token_sequences", None)
-    if callable(score_batch):
-        scores = score_batch(
-            tokenizer=tokenizer,
-            prompt=prompt,
-            token_sequences=full_ids,
-            prompt_token_count=int(prompt_ids.numel()),
-        )
-    else:
-        completion_ids = completions.detach().cpu().tolist()
-        texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
-        scores = [observable.score_completion(prompt, text) for text in texts]
-    phi = torch.tensor(
-        [float(score.value) for score in scores],
-        dtype=torch.float32,
-        device=completions.device,
+    return score_completion_tokens(
+        tokenizer,
+        observable,
+        prompt=prompt,
+        prompt_ids=prompt_ids,
+        completions=completions,
     )
-    raw_ari = torch.tensor(
-        [float(score.metadata["raw_ari"]) for score in scores],
-        dtype=torch.float32,
-        device=completions.device,
-    )
-    if not bool(torch.isfinite(phi).all().item()) or not bool(
-        torch.isfinite(raw_ari).all().item()
-    ):
-        raise ValueError("Observable returned a non-finite value")
-    return phi, raw_ari, scores
 
 
 def generate_base_completions(
@@ -500,11 +329,11 @@ def generate_base_completions(
     generator: torch.Generator,
 ) -> torch.Tensor:
     """Initialize all particles from p_M using the batched autoregressive path."""
-    contexts = prompt_ids.unsqueeze(0).expand(num_particles, -1)
-    return _generate_suffix_with_backoff(
+    return generate_fixed_length_completions(
         model,
-        contexts,
-        suffix_size=max_new_tokens,
+        prompt_ids,
+        num_sequences=num_particles,
+        max_new_tokens=max_new_tokens,
         batch_size=batch_size,
         generator=generator,
     )
@@ -777,13 +606,6 @@ def apply_suffix_direct_mh_mutation(
     )
 
 
-def _prompt_token_ids(tokenizer, prompt: str, device: torch.device) -> torch.Tensor:
-    encoded = tokenizer(prompt, return_tensors="pt")["input_ids"]
-    if not isinstance(encoded, torch.Tensor):
-        encoded = torch.tensor(encoded, dtype=torch.long)
-    return encoded[0].to(device=device, dtype=torch.long)
-
-
 def _synchronize(device: torch.device) -> None:
     if device.type == "cuda":
         torch.cuda.synchronize(device)
@@ -866,7 +688,7 @@ def run_suffix_direct_mh_smc(
     set_seed(config.seed)
     device = next(model.parameters()).device
     generator = torch.Generator(device=device).manual_seed(config.seed)
-    prompt_ids = _prompt_token_ids(tokenizer, prompt, device)
+    prompt_ids = prompt_token_ids(tokenizer, prompt, device)
     uniform_log_weight = -math.log(config.num_particles)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
