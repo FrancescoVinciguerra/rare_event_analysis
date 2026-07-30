@@ -30,14 +30,13 @@ from rea_llms.tail_estimation import (  # noqa: E402
     estimate_base_tails_from_final_samples,
     overlap_is_usable,
 )
-from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
-    SuffixBalancedSMCConfig,
-    metropolis_fast_path_enabled,
+from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
+    SuffixDirectMHSMCConfig,
     parse_float_list,
     parse_float_schedule,
     parse_int_list,
     parse_int_schedule,
-    run_suffix_balanced_smc,
+    run_suffix_direct_mh_smc,
     write_json,
 )
 
@@ -73,25 +72,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mcmc-steps-per-level", type=int, default=5)
     parser.add_argument("--ess-threshold", type=float, default=0.5)
     parser.add_argument(
-        "--mask-mode",
+        "--suffix-mode",
         choices=["stochastic", "deterministic"],
         default="stochastic",
-        help="Notebook-compatible name for the state-independent suffix-size mode.",
+        help="State-independent suffix-size selection mode.",
     )
     parser.add_argument(
-        "--mask-sizes",
+        "--suffix-sizes",
         default="1,2,4,8,16,32,64,100",
         help=(
             "Stochastic suffix support, or a deterministic suffix-size schedule. "
-            "The name is retained for notebook parameter compatibility."
+            "Use semicolon-separated rows for deterministic schedules."
         ),
     )
     parser.add_argument(
-        "--mask-rho-schedule",
+        "--suffix-rho-schedule",
         default="0.20,0.18,0.16,0.14,0.12,0.10,0.06,0.04",
         help="Semicolon-separated suffix-size probability rows.",
     )
-    parser.add_argument("--proposal-temperature", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--tail-thresholds", default="6,8,10,12,15,20")
     parser.add_argument("--min-corrected-ess-over-n", type=float, default=0.10)
@@ -156,7 +154,7 @@ def _config_for_seed(
     seed: int,
     lambdas: tuple[float, ...],
     thresholds: tuple[float, ...],
-) -> SuffixBalancedSMCConfig:
+) -> SuffixDirectMHSMCConfig:
     common: dict[str, Any] = {
         "num_particles": args.num_particles,
         "max_new_tokens": args.max_new_tokens,
@@ -164,19 +162,15 @@ def _config_for_seed(
         "mcmc_steps_per_level": args.mcmc_steps_per_level,
         "ess_threshold": args.ess_threshold,
         "resampling": True,
-        "suffix_mode": args.mask_mode,
-        "balancing_function": "metropolis",
-        "metropolis_fast_path": True,
-        "proposal_temperature": args.proposal_temperature,
+        "suffix_mode": args.suffix_mode,
         "batch_size": args.batch_size,
-        "implementation": "parallel",
         "seed": seed,
         "tail_thresholds": thresholds,
     }
-    if args.mask_mode == "stochastic":
+    if args.suffix_mode == "stochastic":
         common.update(
-            suffix_sizes=parse_int_list(args.mask_sizes),
-            suffix_rho_schedule=parse_float_schedule(args.mask_rho_schedule),
+            suffix_sizes=parse_int_list(args.suffix_sizes),
+            suffix_rho_schedule=parse_float_schedule(args.suffix_rho_schedule),
         )
     else:
         common.update(
@@ -184,17 +178,14 @@ def _config_for_seed(
                 sorted(
                     {
                         value
-                        for row in parse_int_schedule(args.mask_sizes)
+                        for row in parse_int_schedule(args.suffix_sizes)
                         for value in row
                     }
                 )
             ),
-            suffix_size_schedule=parse_int_schedule(args.mask_sizes),
+            suffix_size_schedule=parse_int_schedule(args.suffix_sizes),
         )
-    config = SuffixBalancedSMCConfig(**common)
-    if not metropolis_fast_path_enabled(config):
-        raise RuntimeError("tail estimation requires the exact direct-Metropolis fast path")
-    return config
+    return SuffixDirectMHSMCConfig(**common)
 
 
 def _run_action(
@@ -459,7 +450,7 @@ def _run_seed(
         progress.update(1)
 
     try:
-        result = run_suffix_balanced_smc(
+        result = run_suffix_direct_mh_smc(
             model,
             tokenizer,
             observable,

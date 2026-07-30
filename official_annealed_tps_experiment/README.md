@@ -32,8 +32,9 @@ is uniform on `0,...,T-1`. Consequently:
 - the empty-suffix case does not occur;
 - generated completions remain exactly length `T` with EOS disabled.
 
-The adapter uses the repository's tested cached suffix generator instead of a
-scalar call to `model.generate`. Both generate exactly from
+The adapter uses the repository's tested batched suffix generator, with a KV
+cache when the model exposes one, instead of a scalar call to `model.generate`.
+Both generate exactly from
 `p_M(suffix | prompt, retained prefix)` at temperature one.
 
 For the observable, both benchmark methods deliberately call the same shared

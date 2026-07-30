@@ -33,13 +33,12 @@ from rea_llms.models import (  # noqa: E402
     load_model_and_tokenizer,
 )
 from rea_llms.observables import create_observable  # noqa: E402
-from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
-    SuffixBalancedSMCConfig,
-    metropolis_fast_path_enabled,
+from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
+    SuffixDirectMHSMCConfig,
     parse_float_list,
     parse_int_list,
     render_report,
-    run_suffix_balanced_smc,
+    run_suffix_direct_mh_smc,
     write_json,
     write_jsonl,
 )
@@ -143,11 +142,8 @@ def _fingerprint_payload(
             "suffix_rhos": list(parse_float_list(args.smc_suffix_rhos)),
             "ess_threshold": args.smc_ess_threshold,
             "resampling": "systematic_before_final_only",
-            "balancing_function": "metropolis",
-            "metropolis_fast_path": True,
             "batch_size": args.smc_batch_size,
-            "score_token_chunk_size": 8,
-            "implementation": "parallel",
+            "mutation_kernel": "suffix_direct_mh",
         }
     return {
         **common,
@@ -185,7 +181,7 @@ def _run_smc(
     observable = create_observable(
         "ari", mode=args.ari_mode, cap=args.ari_cap, backend="exact_cached"
     )
-    config = SuffixBalancedSMCConfig(
+    config = SuffixDirectMHSMCConfig(
         num_particles=args.smc_num_particles,
         max_new_tokens=args.max_new_tokens,
         lambdas=lambdas,
@@ -194,15 +190,10 @@ def _run_smc(
         suffix_mode="stochastic",
         suffix_sizes=parse_int_list(args.smc_suffix_sizes),
         suffix_rhos=parse_float_list(args.smc_suffix_rhos),
-        balancing_function="metropolis",
-        metropolis_fast_path=True,
-        proposal_temperature=1.0,
         batch_size=args.smc_batch_size,
         seed=seed,
         tail_thresholds=thresholds,
     )
-    if not metropolis_fast_path_enabled(config):
-        raise RuntimeError("benchmark requires the exact Metropolis fast path")
     progress = tqdm(total=max(0, len(lambdas) - 1), desc=f"SMC seed {seed}")
 
     def update(row: dict) -> None:
@@ -210,7 +201,7 @@ def _run_smc(
         progress.update(1)
 
     try:
-        result = run_suffix_balanced_smc(
+        result = run_suffix_direct_mh_smc(
             model,
             tokenizer,
             observable,
@@ -225,7 +216,7 @@ def _run_smc(
     summary = {
         **result.summary,
         "algorithm": "suffix_direct_mh_smc",
-        "core_algorithm": "suffix_balanced_smc",
+        "core_algorithm": "suffix_direct_mh_smc",
         "seed": seed,
         "ari_mode": args.ari_mode,
         "ari_cap": args.ari_cap if args.ari_mode == "capped" else None,

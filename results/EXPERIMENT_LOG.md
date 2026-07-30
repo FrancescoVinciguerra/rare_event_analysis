@@ -1,9 +1,15 @@
 # Experiment Log
 
-This file is the cumulative index of selected runs intended for GitHub review.
+This is the cumulative index of research runs selected for review. Raw outputs,
+model caches, and smoke runs are intentionally excluded from Git.
 
-## Placeholder
+No run is currently selected. For each future entry record:
 
-- Status: no selected research run has been committed yet.
-- Use `--experiment-log results/EXPERIMENT_LOG.md` when a run should be documented.
-- Use `--publish-result-dir results/selected_runs` to copy only `summary.json`, `report.md`, and a small `samples_preview.*`.
+- commit, date, model, tokenizer, prompt, and seed;
+- lambda schedule, particles, MCMC steps, suffix-size law, and token length;
+- runtime, final SMC ESS/N, corrected importance ESS/N, mean/max ARI, and the
+  reported tail thresholds;
+- the conclusion supported by the run and the path under `selected_runs/`.
+
+Only small `summary.json`, `report.md`, and sample previews belong in
+`selected_runs/`. Keep complete `samples.jsonl` files outside version control.

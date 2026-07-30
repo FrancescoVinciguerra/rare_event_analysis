@@ -1,215 +1,201 @@
-# REA of LLMs - Minimal Research Workspace
+# Rare language-model completions with suffix SMC
 
-This repository contains a small, readable workspace for rare-event experiments with language-model completions. It is intentionally limited to the code needed to run and document the experimental samplers, plus selected results that are suitable for review.
+## What problem are we solving?
 
-Default model setup:
+Direct sampling from a language model rarely visits very unusual completions.
+This repository studies whether a fixed compute budget can be directed toward
+high Automated Readability Index (ARI) completions, and whether those tilted
+samples still contain enough overlap to estimate tail probabilities under the
+original model distribution.
 
-- model: `roneneldan/TinyStories-8M`
-- tokenizer: `EleutherAI/gpt-neo-125M`
-- default prompt: `Once upon a time, in a big forest, there lived a rhinoc`
-- observable: exact `textstat` Automated Readability Index (ARI)
+The two questions are related but different:
 
-## Implemented Algorithms
+1. Can the sampler discover and represent high-ARI completions?
+2. Can self-normalized importance sampling (SNIS) reliably correct the final
+   tilted population back to the base model?
 
-### Mixture MCMC proposal + SNIS to `p_M`
+The current experiments show useful high-ARI sampling in some configurations.
+Tail estimates are only credible when independent-seed stability and corrected
+importance ESS also support them. This repository does not claim that the
+method is generally more efficient than Transition Path Sampling (TPS).
 
-`mixture_mcmc_experiment/` samples from an unnormalized mixture of tilted full-completion distributions,
+## Inspiration and starting point
+
+[Rare Event Analysis of Large Language Models](https://arxiv.org/abs/2602.06791)
+introduced the project problem, exponentially tilted completion targets, and
+an annealed TPS/MBAR workflow. We retain the exponential tilt but investigate a
+particle method on complete completions.
+
+[Zanella (2020)](https://doi.org/10.1080/01621459.2019.1585255) motivated earlier
+experiments with local informed proposals and balancing functions. The active
+sampler does **not** use a locally normalized balancing function and is not
+presented as an application of a theorem from that paper. It uses an asymmetric
+language-model suffix proposal with an ordinary, directly derived MH correction.
+
+The SMC and importance-sampling terminology follows standard Monte Carlo work,
+including [Del Moral, Doucet, and Jasra (2006)](https://doi.org/10.1111/j.1467-9868.2006.00553.x).
+These references provide context and inspiration; they do not replace checking
+the exact kernel implemented here.
+
+## What we changed
+
+The active method keeps each particle as a complete, fixed-length generation.
+Across a schedule of bias parameters it:
+
+- mutates every particle by retaining a prefix and regenerating a suffix from
+  the base LM at temperature one;
+- applies the exact direct Metropolis-Hastings acceptance probability;
+- updates incremental SMC weights in log-space;
+- resamples systematically when ESS is low, except at the final level;
+- batches suffix generation by suffix length on the model device;
+- uses the final weighted population for tilted expectations and SNIS tail
+  estimates under the original model.
+
+Legacy Barker, balanced-proposal, mixture-MCMC, and duplicate full-sequence SMC
+implementations have been removed. They remain recoverable from Git history.
+
+## Current algorithm
+
+For a prompt `c`, completion `x`, and observable `phi`, the target is
 
 ```text
-Gamma_mix(x) = sum_k rho_k p_M(x | c) exp(-lambda_k phi(x)).
+pi_lambda(x) proportional to p_M(x | c) exp(-lambda phi(x)).
 ```
 
-Samples are then reweighted with self-normalized importance sampling (SNIS) to estimate quantities under the base model `p_M`. Direct ancestral sampling is not run by default. It is opt-in with `--run-direct-baseline`.
+Negative `lambda` favors larger ARI. At SMC transition `k`, mutation targets
+`pi_(lambda[k-1])`; particles are then reweighted from `lambda[k-1]` to
+`lambda[k]`. The direct-MH suffix acceptance is
 
-### Full-sequence SMC sampler to `p_lambda`
-
-`full_sequence_smc_experiment/` keeps each particle as a complete generated completion. It mutates particles with full-sequence independence proposals from the base model and updates weights across a lambda schedule. It reports ESS/N, acceptance rates, and ARI tail summaries for the final weighted population.
-
-This is not token-level SIS, does not use vocabulary-wide tilted proposals, and does not run TPS or MBAR.
-
-### Masked Barker full-sequence SMC
-
-`masked_barker_smc_experiment/` is an independent SMC pipeline over complete,
-fixed-length completions. At each mutation step it draws a state-independent
-token mask, resamples the selected tokens left-to-right with the LLM, evaluates
-the exact forward and reverse masked-proposal probabilities, symmetrizes the
-proposal, and applies Barker acceptance for the current tilted target.
-
-Weights are updated across the lambda schedule in log-space. Systematic
-ESS-adaptive resampling is enabled by default. The implementation does not
-evaluate target normalizers, does not construct a normalized `Q_g`, and does
-not depend on TPS, MBAR, direct sampling, mixture MCMC, or the earlier
-full-sequence SMC pipeline. See
-`masked_barker_smc_experiment/README.md` for the detailed-balance argument and
-mask schedule syntax.
-
-### Suffix-balanced full-sequence SMC
-
-`suffix_balanced_smc_experiment/` adds a separately selectable SMC pipeline
-whose mutation keeps a completion prefix fixed and regenerates an exact
-language-model suffix. It evaluates forward and reverse suffix probabilities
-by batched teacher forcing when needed and supports Barker, direct Metropolis,
-and safely scaled square-root balancing functions. Direct Metropolis uses the
-exact suffix cancellation and skips all forward/reverse proposal scoring.
-
-Unlike the masked sampler, which may update arbitrary non-contiguous token
-positions, this proposal changes one contiguous suffix and preserves every
-earlier completion token.
-
-The parallel implementation groups particles by suffix length and is the
-default in its dedicated Colab notebook. It mutates at the previous lambda,
-then performs the incremental SMC weight update, ESS check, and optional
-systematic resampling. It never resamples after the final level and does not
-depend on direct sampling, mixture MCMC, TPS, MBAR, or either earlier SMC
-pipeline. See `suffix_balanced_smc_experiment/README.md` for the formulas,
-schedule syntax, square-root limits, and output schema.
-
-The dedicated `run_tail_estimation.py` runner fixes this sampler to its exact
-direct-Metropolis configuration and uses only the final weighted population to
-estimate base-model tail probabilities by self-normalized importance sampling.
-Its terminal-lambda sweep keeps every configuration separate and aggregates
-only independent seeds with matching parameters. It does not run direct
-sampling, TPS, MBAR, or any other sampler.
-
-### Raw-ARI SMC versus official annealed TPS
-
-`official_annealed_tps_experiment/` provides a minimal adapter for Algorithm 2
-from the pinned official notebook. `smc_tps_comparison/` runs it against the
-existing suffix direct-MH SMC on the same raw-ARI target, without direct
-sampling, MBAR, mixture MCMC, or another sampler. Each method can run alone.
-The comparison reports final-target estimators, separate temporal/weight ESS,
-full-schedule runtime and proposal-token accounting. See the package READMEs
-and `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`.
-
-## Repository Map
-
-- `rea_llms/models.py`: model/tokenizer loading and device selection.
-- `rea_llms/observables/`: ARI observable and score container.
-- `rea_llms/experiment_log.py`: shared result logging, ARI tail summaries, and selected-result publishing.
-- `full_sequence_smc_experiment/run_smc_sampler.py`: CLI for full-sequence SMC.
-- `masked_barker_smc_experiment/run_experiment.py`: CLI for masked Barker SMC.
-- `suffix_balanced_smc_experiment/run_experiment.py`: CLI for suffix-balanced SMC.
-- `suffix_balanced_smc_experiment/run_tail_estimation.py`: final-population SNIS tail estimation under `p_M`.
-- `suffix_balanced_smc_experiment/run_benchmark.py`: reference/parallel and direct-MH fast-path benchmarks.
-- `rea_llms/tail_estimation.py`: reusable log-space SNIS expectation and tail functions.
-- `official_annealed_tps_experiment/run_experiment.py`: official Algorithm 2 TPS adapter.
-- `smc_tps_comparison/run_comparison.py`: raw-ARI multi-seed comparison runner.
-- `mixture_mcmc_experiment/run_experiment.py`: CLI for mixture MCMC.
-- `notebooks/REA_Colab_Quickstart.ipynb`: Colab quickstart.
-- `notebooks/REA_Suffix_Balanced_SMC_Quickstart.ipynb`: standalone suffix-balanced SMC Colab quickstart.
-- `notebooks/REA_Suffix_SMC_Tail_Estimation_Quickstart.ipynb`: suffix direct-MH SMC and base-model tail estimation.
-- `notebooks/REA_SMC_vs_Official_TPS_Comparison.ipynb`: SMC/TPS comparison and optional stability study.
-- `results/EXPERIMENT_LOG.md`: cumulative log of selected runs.
-- `results/selected_runs/`: only curated run summaries and small sample previews.
-- `tests/`: lightweight unit tests.
-
-## Colab Quickstart
-
-Upload or clone the repository in Colab, then run:
-
-```bash
-pip install -r requirements-colab.txt
+```text
+min(1, exp(-lambda * (phi(proposal) - phi(current)))).
 ```
 
-Open `notebooks/REA_Colab_Quickstart.ipynb` for a clean end-to-end notebook with GPU checks, independent multi-seed masked Barker SMC runs, weighted target statistics, validation plots, resumable Drive output paths, and selected-result publishing instructions.
+This simplification is exact here because completion length is fixed, suffix
+length selection is state-independent, and the proposal is exactly the base LM
+conditional at temperature one, without top-k/top-p filtering or penalties.
+The full derivation, detailed balance proof, SMC weights, and assumptions are in
+[THEORY.md](THEORY.md).
 
-The quickstart uses an `ALGORITHMS_TO_RUN` list and defaults to
-`["masked_barker_smc"]`, so the new pipeline can run by itself.
+## Why the current algorithm is correct
 
-To compare against the official supplementary code from the paper, clone with submodules:
+Correctness is established directly for this code, not inherited from a cited
+algorithm. [THEORY.md](THEORY.md) writes the implemented suffix proposal,
+computes its forward/reverse MH ratio, shows the LM cancellation, proves
+detailed balance and stationarity, derives the SMC incremental weights, and
+derives the SNIS correction including cancellation of `Z_lambda`.
 
-```bash
-git clone --recurse-submodules https://github.com/FrancescoVinciguerra/rea_of_llms_supplementary_code-main
+Tests also compare the simplified acceptance with the unsimplified MH ratio and
+check stationarity on a finite enumerable state space. These checks support the
+derivation but do not by themselves guarantee efficient finite runs.
+
+## Estimating tail probabilities
+
+For the final weighted particles, the SNIS correction back to the base model is
+
+```text
+log r_i = log W_i + lambda_final * phi_i
+R_i     = exp(log r_i - logsumexp(log r))
+P_hat_pM(phi >= a) = sum_i R_i 1{phi_i >= a}.
 ```
 
-The official paper code is tracked as a Git submodule at `external/rea_of_llms_official`. Open `notebooks/compare_with_official_colab.ipynb` in Colab to run this repository's SMC pipeline and the official notebook-based TPS/MBAR examples in the same runtime, with shared seeds and comparable small-example budgets.
+The output distinguishes final SMC ESS from corrected importance ESS. The first
+diagnoses degeneracy while representing the tilted target; the second diagnoses
+overlap after correcting back to `p_M`. An aggressive tilt can improve discovery
+while making the corrected estimate unusable.
 
-## Smoke Runs
+## Repository structure
 
-Full-sequence SMC:
+```text
+rea_llms/                              shared model, ARI, diagnostics, and SNIS
+suffix_direct_mh_smc_experiment/       active sampler and command-line runners
+notebooks/REA_Suffix_SMC_Quickstart.ipynb
+                                       primary Colab workflow
+official_annealed_tps_experiment/      optional adapter to the official TPS code
+smc_tps_comparison/                    optional, separate SMC/TPS benchmark
+notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb
+tests/                                 focused numerical and pipeline tests
+results/                               curated summaries only
+external/rea_of_llms_official/         pinned official repository submodule
+```
+
+The TPS benchmark is optional. Neither the SMC runner nor tail-estimation runner
+imports or executes TPS, MBAR, direct sampling, or a mixture sampler.
+
+## Colab quickstart
+
+Open the primary notebook directly:
+
+[Open REA Suffix SMC in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Suffix_SMC_Quickstart.ipynb)
+
+Its parameter cell controls seeds, particles, token length, lambda schedule,
+MCMC steps, suffix sizes, ESS threshold, and tail thresholds. It installs the
+minimal Colab requirements and runs the active tail-estimation pipeline only.
+
+The optional comparison notebook is
+[REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
+Clone submodules before that benchmark with `git submodule update --init`.
+
+## Running one experiment locally
+
+Install the project and run one SMC population:
 
 ```bash
-python full_sequence_smc_experiment/run_smc_sampler.py \
+uv sync
+uv run python suffix_direct_mh_smc_experiment/run_experiment.py \
   --device auto \
-  --num-particles 2 \
-  --max-new-tokens 2 \
-  --lambdas 0,0 \
-  --mcmc-steps-per-level 1 \
-  --output-dir outputs/full_sequence_smoke
+  --num-particles 64 \
+  --max-new-tokens 100 \
+  --lambdas 0,-0.25,-0.5,-1 \
+  --mcmc-steps-per-level 5 \
+  --suffix-sizes 1,2,4,8,16,32,64,100 \
+  --seed 12345
 ```
 
-Mixture MCMC:
+Run independent seeds and estimate base-model tails:
 
 ```bash
-python mixture_mcmc_experiment/run_experiment.py \
+uv run python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
   --device auto \
-  --num-iterations 2 \
-  --burn-in 0 \
-  --thinning 1 \
-  --max-new-tokens 2 \
-  --lambdas=-0.5,0.0 \
-  --output-dir outputs/mixture_smoke
+  --seeds 12345,12346,12347 \
+  --num-particles 256 \
+  --max-new-tokens 100 \
+  --lambdas 0,-0.25,-0.5,-0.75,-1,-1.5,-2 \
+  --mcmc-steps-per-level 10 \
+  --tail-thresholds 8,10,12,15
 ```
 
-Masked Barker SMC:
+Use `--help` for output paths, resume behavior, suffix schedules, overlap
+criteria, and terminal-lambda sweep options.
 
-```bash
-python masked_barker_smc_experiment/run_experiment.py \
-  --device auto \
-  --num-particles 4 \
-  --max-new-tokens 4 \
-  --lambdas 0,0 \
-  --mcmc-steps-per-level 1 \
-  --mask-mode deterministic \
-  --mask-sizes 1 \
-  --deterministic-mask-size-schedule 1 \
-  --output-dir outputs/masked_barker_smoke
-```
+## Outputs and minimal metrics
 
-Suffix-balanced SMC:
+A single SMC run writes `summary.json`, `samples.jsonl`, and `report.md` under
+the chosen output directory. The summary reports:
 
-```bash
-python suffix_balanced_smc_experiment/run_experiment.py \
-  --device auto \
-  --num-particles 4 \
-  --max-new-tokens 4 \
-  --lambdas 0,0 \
-  --mcmc-steps-per-level 1 \
-  --suffix-mode deterministic \
-  --suffix-sizes 4 \
-  --suffix-size-schedule 4 \
-  --balancing-function barker \
-  --output-dir outputs/suffix_balanced_smoke
-```
+- weighted and unweighted final ARI statistics;
+- raw and weighted tilted-target tail summaries;
+- acceptance rate, resampling count, ESS/N, ancestry, and runtime;
+- generated suffix-token count and peak CUDA memory when available.
 
-## Logging and Selected Results
+Tail estimation adds per-threshold SNIS estimates under `p_M`, corrected
+importance ESS/N, overlap flags, and independent-seed aggregate summaries.
+Generated outputs are ignored by Git. Only compact results that support a stated
+conclusion should be recorded in `results/EXPERIMENT_LOG.md`.
 
-Every run always writes to its `--output-dir`. To document a run for GitHub review:
+## Current limitations
 
-```bash
-python mixture_mcmc_experiment/run_experiment.py \
-  --run-name mixture_example \
-  --experiment-log results/EXPERIMENT_LOG.md \
-  --publish-result-dir results/selected_runs
-```
+- ARI evaluation uses exact decoded text and `textstat`, so it remains a CPU
+  boundary inside each MCMC step.
+- Suffix moves can be highly autocorrelated, especially at strong tilts.
+- Resampling introduces genealogical dependence among particles.
+- SNIS is generally biased at finite particle count and can fail under poor
+  overlap even when the SMC population has healthy target ESS.
+- A finite run has no automatic convergence or efficiency guarantee. Use
+  independent seeds and inspect acceptance, ancestry, both ESS diagnostics,
+  and sensitivity to the lambda/suffix schedules.
 
-The selected result directory receives only:
+## References
 
-- `summary.json`
-- `report.md`
-- `samples_preview.jsonl`
-
-Large full sample files are intentionally not copied to `results/selected_runs/`.
-
-## What Not To Commit
-
-Do not commit:
-
-- virtual environments;
-- Python caches;
-- Hugging Face caches or model weights;
-- complete large `samples.jsonl` files;
-- temporary run directories;
-- unreviewed raw results.
-
-Commit only selected result summaries that support a stated conclusion in `results/EXPERIMENT_LOG.md`.
+Full bibliographic entries and the role of each source are listed in
+[THEORY.md](THEORY.md). The principal starting-point paper is Dorman et al.,
+*Rare Event Analysis of Large Language Models* (2026).

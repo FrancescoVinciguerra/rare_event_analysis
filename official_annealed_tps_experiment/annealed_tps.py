@@ -11,9 +11,9 @@ import torch
 
 from rea_llms.benchmarking import temporal_ess_initial_positive
 from rea_llms.models import set_seed
-from suffix_balanced_smc_experiment.smc_sampler import (
+from suffix_direct_mh_smc_experiment.smc_sampler import (
     generate_base_completions,
-    metropolis_log_acceptance_fast,
+    metropolis_log_acceptance,
     propose_suffixes_parallel,
     score_observable,
 )
@@ -104,7 +104,7 @@ def official_tps_log_acceptance(
     *,
     target_lambda: float,
 ) -> torch.Tensor:
-    return metropolis_log_acceptance_fast(
+    return metropolis_log_acceptance(
         current_phi,
         proposal_phi,
         target_lambda=target_lambda,
@@ -130,17 +130,14 @@ def generate_official_tps_proposal(
     suffix_sizes = torch.tensor(
         [suffix_size], dtype=torch.long, device=current_tokens.device
     )
-    proposal_tokens, log_forward, log_reverse = propose_suffixes_parallel(
+    proposal_tokens = propose_suffixes_parallel(
         model,
         prompt_ids,
         current_tokens,
         suffix_sizes,
         batch_size=batch_size,
-        token_chunk_size=1,
         generator=generator,
-        score_probabilities=False,
     )
-    assert log_forward is None and log_reverse is None
     return proposal_tokens, suffix_size
 
 

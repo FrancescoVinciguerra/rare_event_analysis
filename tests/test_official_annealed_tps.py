@@ -238,7 +238,7 @@ def test_comparison_algorithms_are_selectable_independently() -> None:
 
 
 def test_comparison_notebook_is_valid_and_calls_shared_runner() -> None:
-    path = ROOT / "notebooks" / "REA_SMC_vs_Official_TPS_Comparison.ipynb"
+    path = ROOT / "notebooks" / "REA_SMC_vs_Official_TPS_Benchmark.ipynb"
     notebook = json.loads(path.read_text(encoding="utf-8"))
     assert notebook["nbformat"] == 4
     code = []

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from typing import Any
 
 import numpy as np
 import torch
@@ -13,6 +14,8 @@ DEFAULT_TOKENIZER_NAME = "EleutherAI/gpt-neo-125M"
 
 
 def resolve_device(device: str = "auto") -> torch.device:
+    """Resolve a CLI device request and reject unavailable explicit CUDA."""
+
     if device not in {"auto", "cuda", "cpu"}:
         raise ValueError("device must be one of {'auto', 'cuda', 'cpu'}")
     if device == "cuda" and not torch.cuda.is_available():
@@ -23,6 +26,8 @@ def resolve_device(device: str = "auto") -> torch.device:
 
 
 def set_seed(seed: int) -> None:
+    """Seed Python, NumPy, PyTorch, CUDA, and Transformers RNGs."""
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -37,7 +42,9 @@ def load_model_and_tokenizer(
     *,
     local_files_only: bool = False,
     device: str = "auto",
-):
+) -> tuple[Any, Any]:
+    """Load the shared Hugging Face model/tokenizer pair on one device."""
+
     selected_device = resolve_device(device)
     tokenizer_name = tokenizer_name or model_name
     tokenizer = transformers.AutoTokenizer.from_pretrained(
@@ -50,6 +57,9 @@ def load_model_and_tokenizer(
     )
     model.to(selected_device)
     model.eval()
-    if getattr(tokenizer, "pad_token_id", None) is None and getattr(tokenizer, "eos_token_id", None) is not None:
+    if (
+        getattr(tokenizer, "pad_token_id", None) is None
+        and getattr(tokenizer, "eos_token_id", None) is not None
+    ):
         tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer

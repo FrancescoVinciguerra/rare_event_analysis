@@ -1,3 +1,5 @@
+"""Command-line entry point for suffix direct-MH SMC."""
+
 from __future__ import annotations
 
 import argparse
@@ -17,24 +19,26 @@ from rea_llms.models import (  # noqa: E402
     load_model_and_tokenizer,
 )
 from rea_llms.observables import create_observable  # noqa: E402
-from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
-    SuffixBalancedSMCConfig,
+from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
+    SuffixDirectMHSMCConfig,
     parse_float_list,
     parse_float_schedule,
     parse_int_list,
     parse_int_schedule,
     render_report,
-    run_suffix_balanced_smc,
+    run_suffix_direct_mh_smc,
     write_json,
     write_jsonl,
 )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse one independent SMC run configuration."""
+
     parser = argparse.ArgumentParser(
         description=(
-            "Run full-sequence SMC with exact state-independent suffix regeneration "
-            "and a configurable balanced acceptance function."
+            "Run full-completion SMC with exact temperature-one LM suffix "
+            "proposals and direct Metropolis-Hastings acceptance."
         )
     )
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
@@ -43,22 +47,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument("--output-root", type=Path, default=Path("outputs"))
-    parser.add_argument("--experiment-label", default="suffix_balanced_smc")
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=None,
-        help="Override outputs/<experiment-label>/seed_<seed>.",
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Allow replacing an existing completed run in the selected output directory.",
-    )
+    parser.add_argument("--experiment-label", default="suffix_direct_mh_smc")
+    parser.add_argument("--output-dir", type=Path, default=None)
+    parser.add_argument("--overwrite", action="store_true")
 
     parser.add_argument("--num-particles", type=int, default=64)
     parser.add_argument("--max-new-tokens", type=int, default=100)
-    parser.add_argument("--lambdas", default="0,-0.25,-0.5,-1.0")
+    parser.add_argument("--lambdas", default="0,-0.25,-0.5,-1")
     parser.add_argument("--mcmc-steps-per-level", type=int, default=5)
     parser.add_argument("--ess-threshold", type=float, default=0.5)
     parser.add_argument("--disable-resampling", action="store_true")
@@ -69,88 +64,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="stochastic",
     )
     parser.add_argument("--suffix-sizes", default=None)
-    parser.add_argument(
-        "--suffix-rhos",
-        default=None,
-        help="Fixed comma-separated probabilities for stochastic suffix sizes.",
-    )
-    parser.add_argument(
-        "--suffix-size-schedule",
-        default=None,
-        help=(
-            "Deterministic sizes: semicolon-separated rows by transition, with one "
-            "size or one size per MCMC step in each row."
-        ),
-    )
-    parser.add_argument(
-        "--suffix-rho-schedule",
-        default=None,
-        help="Semicolon-separated probability rows, one fixed row or one per transition.",
-    )
+    parser.add_argument("--suffix-rhos", default=None)
+    parser.add_argument("--suffix-size-schedule", default=None)
+    parser.add_argument("--suffix-rho-schedule", default=None)
     parser.add_argument(
         "--allow-local-suffix-support",
         action="store_true",
-        help="Allow schedules without m=T. Such kernels are not globally irreducible.",
+        help="Allow a suffix-size law without positive probability for m=T.",
     )
 
-    parser.add_argument(
-        "--balancing-function",
-        choices=["barker", "metropolis", "sqrt"],
-        default="barker",
-    )
-    parser.add_argument(
-        "--disable-metropolis-fast-path",
-        action="store_true",
-        help=(
-            "Evaluate the algebraically equivalent full suffix-MH ratio. "
-            "Intended only for validation and benchmarking."
-        ),
-    )
-    parser.add_argument("--phi-min", type=float, default=None)
-    parser.add_argument("--phi-max", type=float, default=None)
-    parser.add_argument("--sqrt-scale", type=float, default=None)
-    parser.add_argument("--proposal-temperature", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--score-token-chunk-size", type=int, default=8)
-    parser.add_argument(
-        "--implementation",
-        choices=["parallel", "reference"],
-        default="parallel",
-    )
     parser.add_argument("--seed", type=int, default=12345)
-    parser.add_argument("--tail-thresholds", default="8,10,12")
-
+    parser.add_argument("--tail-thresholds", default="6,8,10,12,15")
     parser.add_argument("--ari-cap", type=float, default=15.0)
-    parser.add_argument("--ari-mode", choices=["raw", "capped"], default="capped")
+    parser.add_argument("--ari-mode", choices=["raw", "capped"], default="raw")
     parser.add_argument("--observable-backend", default="exact_cached")
     parser.add_argument("--disable-score-cache", action="store_true")
     return parser.parse_args(argv)
 
 
-def _progress(row: dict) -> None:
-    acceptance = row["acceptance_rate"]
-    acceptance_text = "n/a" if acceptance is None else f"{acceptance:.3f}"
-    print(
-        f"level {row['level']}: lambda={row['lambda']:g}, "
-        f"mutation_lambda={row['mutation_target_lambda']:g}, "
-        f"ESS/N={row['ess_over_n_before_resampling']:.3f}, "
-        f"resampled={row['resampled']}, acceptance={acceptance_text}, "
-        f"runtime={row['runtime_seconds']:.1f}s",
-        flush=True,
-    )
+def config_from_args(args: argparse.Namespace) -> SuffixDirectMHSMCConfig:
+    """Build the exact direct-MH configuration represented by CLI arguments."""
 
-
-def main() -> None:
-    args = parse_args()
-    output_dir = args.output_dir or (
-        args.output_root / args.experiment_label / f"seed_{args.seed}"
-    )
-    if (output_dir / "summary.json").exists() and not args.overwrite:
-        raise FileExistsError(
-            f"A completed run already exists at {output_dir}. Choose another "
-            "--experiment-label/--seed or pass --overwrite explicitly."
-        )
-    config = SuffixBalancedSMCConfig(
+    return SuffixDirectMHSMCConfig(
         num_particles=args.num_particles,
         max_new_tokens=args.max_new_tokens,
         lambdas=parse_float_list(args.lambdas),
@@ -171,18 +107,24 @@ def main() -> None:
             else None
         ),
         require_global_irreducibility=not args.allow_local_suffix_support,
-        balancing_function=args.balancing_function,
-        metropolis_fast_path=not args.disable_metropolis_fast_path,
-        phi_min=args.phi_min,
-        phi_max=args.phi_max,
-        sqrt_scale=args.sqrt_scale,
-        proposal_temperature=args.proposal_temperature,
         batch_size=args.batch_size,
-        score_token_chunk_size=args.score_token_chunk_size,
-        implementation=args.implementation,
         seed=args.seed,
         tail_thresholds=parse_float_list(args.tail_thresholds),
     )
+
+
+def main() -> None:
+    args = parse_args()
+    config = config_from_args(args)
+    output_dir = args.output_dir or (
+        args.output_root / args.experiment_label / f"seed_{config.seed}"
+    )
+    if (output_dir / "summary.json").exists() and not args.overwrite:
+        raise FileExistsError(
+            f"A completed run already exists at {output_dir}; choose another "
+            "experiment label/seed or pass --overwrite."
+        )
+
     observable = create_observable(
         "ari",
         mode=args.ari_mode,
@@ -197,22 +139,21 @@ def main() -> None:
         device=args.device,
     )
     model_device = next(model.parameters()).device
-    print(f"model device: {model_device}", flush=True)
     if args.device == "cuda" and model_device.type != "cuda":
         raise RuntimeError("--device cuda was requested, but the model is not on CUDA")
+    print(f"model device: {model_device}", flush=True)
 
-    level_progress = tqdm(total=max(0, len(config.lambdas) - 1), desc=f"SMC seed {config.seed}")
+    progress = tqdm(total=max(0, len(config.lambdas) - 1), desc=f"SMC seed {config.seed}")
 
     def update_progress(row: dict) -> None:
-        _progress(row)
-        level_progress.set_postfix(
+        progress.set_postfix(
             lambda_value=f"{row['lambda']:g}",
             ess=f"{row['ess_over_n_before_resampling']:.3f}",
         )
-        level_progress.update(1)
+        progress.update(1)
 
     try:
-        result = run_suffix_balanced_smc(
+        result = run_suffix_direct_mh_smc(
             model,
             tokenizer,
             observable,
@@ -221,7 +162,8 @@ def main() -> None:
             progress_callback=update_progress,
         )
     finally:
-        level_progress.close()
+        progress.close()
+
     output_dir.mkdir(parents=True, exist_ok=True)
     run_config = {
         **result.config,
@@ -246,7 +188,7 @@ def main() -> None:
         render_report(result.summary, result.diagnostics),
         encoding="utf-8",
     )
-    print((output_dir / "summary.json").resolve())
+    print((output_dir / "summary.json").resolve(), flush=True)
 
 
 if __name__ == "__main__":

@@ -1,17 +1,14 @@
 [project]
 name = "rea-of-llms-supplementary-code"
 version = "0.1.0"
-description = "Local reproducibility workspace for Rare Event Analysis of LLMs supplementary experiments."
+description = "Suffix direct-MH SMC for rare language-model completions and SNIS tail estimation."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "ipykernel>=6.29",
     "matplotlib>=3.8",
     "numpy>=1.26",
     "pandas>=2.0",
     "pytest>=8.0",
-    "pymbar>=4.0.3",
-    "scipy>=1.11",
     "textstat>=0.7.3",
     "torch>=2.3",
     "tqdm>=4.66",
@@ -27,3 +24,7 @@ explicit = true
 torch = [
     { index = "pytorch-cu130", marker = "sys_platform == 'win32'" },
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

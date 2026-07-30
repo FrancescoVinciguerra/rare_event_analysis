@@ -1,7 +1,7 @@
 # Raw-ARI SMC versus official annealed TPS
 
 `run_comparison.py` is a minimal orchestrator. It calls the existing
-`suffix_balanced_smc` implementation with direct Metropolis fast path and the
+`suffix_direct_mh_smc` implementation and the
 official TPS adapter; it contains no sampler copy.
 
 Both methods target the same final raw-ARI tilted distribution. SMC estimates

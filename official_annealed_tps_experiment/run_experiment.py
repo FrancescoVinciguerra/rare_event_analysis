@@ -29,7 +29,7 @@ from rea_llms.models import (  # noqa: E402
     resolve_device,
 )
 from rea_llms.observables import create_observable  # noqa: E402
-from suffix_balanced_smc_experiment.smc_sampler import (  # noqa: E402
+from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     parse_float_list,
     write_json,
 )

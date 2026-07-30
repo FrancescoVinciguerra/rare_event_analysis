@@ -9,6 +9,8 @@ from rea_llms.observables.base import ObservableScore
 
 @dataclass
 class ARIObservable:
+    """Exact textstat ARI evaluated on decoded prompt-plus-completion text."""
+
     mode: str = "capped"
     cap: float = 15.0
     backend: str = "exact_cached"
@@ -23,6 +25,8 @@ class ARIObservable:
             raise ValueError("ARI backend must be one of {'exact', 'exact_cached', 'textstat'}")
 
     def score_text(self, text: str) -> ObservableScore:
+        """Score one exact text, optionally reusing an exact-text cache entry."""
+
         if self.cache_enabled and self.backend == "exact_cached" and text in self._cache:
             return self._cache[text]
         raw = float(automated_readability_index(text))
@@ -43,9 +47,20 @@ class ARIObservable:
         return score
 
     def score_completion(self, prompt: str, completion: str) -> ObservableScore:
+        """Score a completion with the repository's prompt concatenation rule."""
+
         return self.score_text(prompt + completion)
 
-    def score_token_sequences(self, *, tokenizer, prompt: str, token_sequences: list[list[int]], prompt_token_count: int):
+    def score_token_sequences(
+        self,
+        *,
+        tokenizer,
+        prompt: str,
+        token_sequences: list[list[int]],
+        prompt_token_count: int,
+    ) -> list[ObservableScore]:
+        """Decode completion-token suffixes and score them with final-eval semantics."""
+
         scores = []
         for ids in token_sequences:
             completion = tokenizer.decode(ids[prompt_token_count:], skip_special_tokens=True)

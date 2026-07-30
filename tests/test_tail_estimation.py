@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import ast
+import json
 import math
+from pathlib import Path
 
 import pytest
 import torch
@@ -12,12 +15,15 @@ from rea_llms.tail_estimation import (
     estimate_base_tail_probabilities,
     estimate_base_tails_from_final_samples,
 )
-from suffix_balanced_smc_experiment.run_tail_estimation import (
+from suffix_direct_mh_smc_experiment.run_tail_estimation import (
     _config_for_seed,
     parse_args,
     parse_lambda_schedules,
     tail_run_directory,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_lambda_zero_preserves_normalized_smc_weights() -> None:
@@ -134,9 +140,9 @@ def test_tail_runner_builds_only_exact_direct_metropolis_smc() -> None:
             "0,-0.5",
             "--mcmc-steps-per-level",
             "1",
-            "--mask-sizes",
+            "--suffix-sizes",
             "1,4",
-            "--mask-rho-schedule",
+            "--suffix-rho-schedule",
             "0.5,0.5",
         ]
     )
@@ -146,11 +152,32 @@ def test_tail_runner_builds_only_exact_direct_metropolis_smc() -> None:
         lambdas=(0.0, -0.5),
         thresholds=(2.0, 4.0),
     )
-    assert config.balancing_function == "metropolis"
-    assert config.metropolis_fast_path
-    assert config.proposal_temperature == 1.0
     assert config.resampling
-    assert config.implementation == "parallel"
+    assert not hasattr(config, "balancing_function")
+    assert not hasattr(config, "proposal_temperature")
+
+
+def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
+    path = ROOT / "notebooks" / "REA_Suffix_SMC_Quickstart.ipynb"
+    notebook = json.loads(path.read_text(encoding="utf-8"))
+    assert notebook["nbformat"] == 4
+    code_cells = []
+    for index, cell in enumerate(notebook["cells"]):
+        if cell.get("cell_type") != "code":
+            continue
+        source = "".join(cell.get("source", []))
+        python_source = "\n".join(
+            "pass" if line.lstrip().startswith(("%", "!")) else line
+            for line in source.splitlines()
+        )
+        ast.parse(python_source, filename=f"{path.name}:cell-{index}")
+        code_cells.append(source)
+    joined = "\n".join(code_cells)
+    assert "EDIT PARAMETERS HERE" in joined
+    assert "suffix_direct_mh_smc_experiment/run_tail_estimation.py" in joined
+    assert "SUFFIX_MODE" in joined
+    assert "--suffix-mode" in joined
+    assert "official_annealed_tps" not in joined
 
 
 def _completed_sweep_payload(
