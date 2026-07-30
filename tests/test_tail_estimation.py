@@ -724,6 +724,8 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "--smoke-mode" in joined
     assert "--audit-only" in joined
     assert "Loaded component archives" not in joined
+    assert "HAS_AUDITED_PRODUCTION_RESULTS" in joined
+    assert "suffix SMC mixture versus official direct sampling" in joined
     assert "SEED_GROUPS = [200]" in joined
     assert "official_annealed_tps" not in joined
 
