@@ -13,6 +13,7 @@ from suffix_direct_mh_smc_experiment.run_experiment import config_from_args, par
 from suffix_direct_mh_smc_experiment.smc_sampler import (
     SuffixDirectMHSMCConfig,
     incremental_log_weight_update,
+    incremental_log_weight_update_with_normalizer,
     metropolis_log_acceptance,
     propose_suffixes_parallel,
     run_suffix_direct_mh_smc,
@@ -242,6 +243,25 @@ def test_incremental_weight_update_is_the_adjacent_gamma_ratio() -> None:
     assert torch.allclose(actual, expected)
 
 
+def test_log_normalizing_constant_matches_exact_finite_space() -> None:
+    base_probability = torch.tensor([0.1, 0.2, 0.3, 0.4], dtype=torch.float64)
+    phi = torch.tensor([0.0, 1.0, 2.0, 3.0], dtype=torch.float64)
+    log_weights = torch.log(base_probability)
+    log_z = torch.zeros((), dtype=torch.float64)
+    for previous_lambda, current_lambda in ((0.0, -0.5), (-0.5, -1.0)):
+        log_weights, increment = incremental_log_weight_update_with_normalizer(
+            log_weights,
+            phi,
+            previous_lambda=previous_lambda,
+            current_lambda=current_lambda,
+        )
+        log_z += increment
+    exact = torch.logsumexp(torch.log(base_probability) + phi, dim=0)
+    assert torch.allclose(log_z, exact, atol=1e-12)
+    exact_final = torch.log(base_probability) + phi - exact
+    assert torch.allclose(log_weights, exact_final, atol=1e-12)
+
+
 def test_lambda_zero_keeps_equal_weights_and_never_resamples() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),
@@ -252,6 +272,7 @@ def test_lambda_zero_keeps_equal_weights_and_never_resamples() -> None:
     )
     assert result.summary["final_ess_over_n"] == pytest.approx(1.0)
     assert result.summary["resampling_steps"] == 0
+    assert result.summary["log_normalizing_constant_estimate"] == pytest.approx(0.0)
     assert all(row["normalized_weight"] == pytest.approx(1 / 8) for row in result.samples)
 
 

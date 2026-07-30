@@ -46,6 +46,8 @@ Across a schedule of bias parameters it:
   the base LM at temperature one;
 - applies the exact direct Metropolis-Hastings acceptance probability;
 - updates incremental SMC weights in log-space;
+- accumulates each tilted normalizing-constant estimate before weight
+  normalization and resampling;
 - resamples systematically when ESS is low, except at the final level;
 - batches suffix generation by suffix length on the model device;
 - uses the final weighted population for tilted expectations and SNIS tail
@@ -90,7 +92,7 @@ derivation but do not by themselves guarantee efficient finite runs.
 
 ## Estimating tail probabilities
 
-For the final weighted particles, the SNIS correction back to the base model is
+For one final weighted population, the SNIS correction back to the base model is
 
 ```text
 log r_i = log W_i + lambda_final * phi_i
@@ -103,13 +105,20 @@ diagnoses degeneracy while representing the tilted target; the second diagnoses
 overlap after correcting back to `p_M`. An aggressive tilt can improve discovery
 while making the corrected estimate unusable.
 
+The official-reference validation combines independent capped-ARI terminal
+populations as a normalized deterministic mixture. Its balance heuristic uses
+both the final SMC weights and the estimated component normalizers; all events
+are still evaluated with raw ARI. This is a plug-in SNIS estimator, not an
+exactly unbiased finite-sample estimator. The direct formula is in
+[THEORY.md](THEORY.md).
+
 ## Repository structure
 
 ```text
 rea_llms/                              shared model, ARI, diagnostics, and SNIS
 suffix_direct_mh_smc_experiment/       active sampler and command-line runners
 notebooks/REA_Suffix_SMC_Quickstart.ipynb
-                                       primary Colab workflow
+                                       primary Colab validation workflow
 notebooks/REA_Official_Direct_Data_Quickstart.ipynb
                                        official direct-data analysis, no sampling
 official_annealed_tps_experiment/      optional adapter to the official TPS code
@@ -120,8 +129,8 @@ results/                               curated summaries only
 external/rea_of_llms_official/         pinned official repository submodule
 ```
 
-The TPS benchmark is optional. Neither the SMC runner nor tail-estimation runner
-imports or executes TPS, MBAR, direct sampling, or a mixture sampler.
+The TPS benchmark is optional. The SMC and tail-validation runners do not import
+or execute TPS, MBAR, or direct sampling.
 
 ## Colab quickstart
 
@@ -129,9 +138,10 @@ Open the primary notebook directly:
 
 [Open REA Suffix SMC in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Suffix_SMC_Quickstart.ipynb)
 
-Its parameter cell controls seeds, particles, token length, lambda schedule,
-MCMC steps, suffix sizes, ESS threshold, and tail thresholds. It installs the
-minimal Colab requirements and runs the active tail-estimation pipeline only.
+Its single parameter cell controls cap/lambda components, seed groups,
+particles, token length, lambda step, MCMC steps, suffix-size distribution, ESS
+threshold, output location, and resume behavior. A CPU smoke test is separate
+from the optional CUDA production run. It runs only the active suffix sampler.
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
@@ -177,6 +187,19 @@ uv run python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
 Use `--help` for output paths, resume behavior, suffix schedules, overlap
 criteria, and terminal-lambda sweep options.
 
+Validate a deterministic mixture against the official direct reference:
+
+```bash
+uv run python suffix_direct_mh_smc_experiment/run_tail_validation.py \
+  --device cuda \
+  --seed-groups 200,300,400 \
+  --num-particles 256 \
+  --max-new-tokens 100 \
+  --lambda-step 0.25 \
+  --mcmc-steps-per-level 10 \
+  --thresholds 6,7,8,10
+```
+
 ## Outputs and minimal metrics
 
 A single SMC run writes `summary.json`, `samples.jsonl`, and `report.md` under
@@ -189,6 +212,8 @@ the chosen output directory. The summary reports:
 
 Tail estimation adds per-threshold SNIS estimates under `p_M`, corrected
 importance ESS/N, overlap flags, and independent-seed aggregate summaries.
+Mixture validation stores one compact archive per independent component,
+`comparison.csv`, a short report, and exactly two figures.
 Generated outputs are ignored by Git. Only compact results that support a stated
 conclusion should be recorded in `results/EXPERIMENT_LOG.md`.
 

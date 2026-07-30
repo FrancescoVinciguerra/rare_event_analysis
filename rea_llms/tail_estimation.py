@@ -48,11 +48,241 @@ class BaseTailEstimates:
         }
 
 
+@dataclass(frozen=True)
+class MixtureComponentPopulation:
+    """One independent terminal SMC population used by the MIS estimator."""
+
+    run_id: str
+    seed: int
+    cap: float
+    lambda_final: float
+    log_normalizing_constant: float
+    raw_ari: Any
+    final_log_weights: Any
+
+
+@dataclass(frozen=True)
+class DeterministicMixtureTailEstimates:
+    """Plug-in SNIS estimates from a normalized deterministic mixture."""
+
+    thresholds: torch.Tensor
+    estimated_probabilities: torch.Tensor
+    corrected_log_weights: torch.Tensor
+    corrected_ess: torch.Tensor
+    corrected_ess_over_n: torch.Tensor
+    mixture_coefficients: torch.Tensor
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "weight_ess": float(self.corrected_ess.detach().cpu()),
+            "weight_ess_over_n": float(self.corrected_ess_over_n.detach().cpu()),
+            "mixture_coefficients": self.mixture_coefficients.detach().cpu().tolist(),
+            "tails": [
+                {
+                    "threshold": float(threshold),
+                    "estimated_probability_under_p_m": float(probability),
+                }
+                for threshold, probability in zip(
+                    self.thresholds.detach().cpu().tolist(),
+                    self.estimated_probabilities.detach().cpu().tolist(),
+                )
+            ],
+        }
+
+
 def _as_vector(values, *, name: str, device: torch.device | None = None) -> torch.Tensor:
     tensor = torch.as_tensor(values, dtype=torch.float64, device=device)
     if tensor.ndim != 1 or tensor.numel() == 0:
         raise ValueError(f"{name} must be a non-empty one-dimensional array")
     return tensor
+
+
+def capped_potential(raw_ari, cap: float) -> torch.Tensor:
+    """Return ``psi_c = min(raw_ari, c)`` without changing the raw values."""
+
+    if not math.isfinite(float(cap)):
+        raise ValueError("cap must be finite")
+    raw = _as_vector(raw_ari, name="raw_ari")
+    if not bool(torch.isfinite(raw).all().item()):
+        raise ValueError("raw_ari must contain only finite values")
+    return torch.clamp(raw, max=float(cap))
+
+
+def effective_sample_size_from_log_weights(log_weights) -> torch.Tensor:
+    """Compute standard ESS after stable log-space normalization."""
+
+    values = _as_vector(log_weights, name="log_weights")
+    valid = ~torch.isnan(values) & ~torch.isposinf(values)
+    if not bool(valid.all().item()) or not bool(torch.isfinite(values).any().item()):
+        raise ValueError("log_weights must be finite or -inf, with one finite value")
+    normalized = values - torch.logsumexp(values, dim=0)
+    return torch.exp(-torch.logsumexp(2.0 * normalized, dim=0))
+
+
+def log_mixture_density_ratio(
+    raw_ari,
+    caps,
+    lambdas,
+    log_normalizing_constants,
+    mixture_coefficients,
+) -> torch.Tensor:
+    """Return ``log(q_mix(x) / p_M(x))`` for every raw-ARI value.
+
+    Component ``j`` contributes
+    ``rho_j * exp(-lambda_j * min(raw_ari, cap_j)) / Z_j``. All component
+    terms are combined with one ``torch.logsumexp`` over the mixture axis.
+    """
+
+    raw = _as_vector(raw_ari, name="raw_ari")
+    device = raw.device
+    cap_values = _as_vector(caps, name="caps", device=device)
+    lambda_values = _as_vector(lambdas, name="lambdas", device=device)
+    log_z = _as_vector(
+        log_normalizing_constants,
+        name="log_normalizing_constants",
+        device=device,
+    )
+    rho = _as_vector(
+        mixture_coefficients,
+        name="mixture_coefficients",
+        device=device,
+    )
+    if not (cap_values.shape == lambda_values.shape == log_z.shape == rho.shape):
+        raise ValueError("all mixture parameter vectors must have the same length")
+    if not bool(torch.isfinite(raw).all().item()):
+        raise ValueError("raw_ari must contain only finite values")
+    if not bool(torch.isfinite(cap_values).all().item()) or not bool(
+        torch.isfinite(lambda_values).all().item()
+    ) or not bool(torch.isfinite(log_z).all().item()):
+        raise ValueError("caps, lambdas, and log normalizers must be finite")
+    if not bool(torch.isfinite(rho).all().item()) or not bool((rho > 0.0).all().item()):
+        raise ValueError("mixture coefficients must be finite and strictly positive")
+    rho = rho / rho.sum()
+    potentials = torch.minimum(raw.unsqueeze(0), cap_values.unsqueeze(1))
+    component_terms = (
+        torch.log(rho).unsqueeze(1)
+        - lambda_values.unsqueeze(1) * potentials
+        - log_z.unsqueeze(1)
+    )
+    return torch.logsumexp(component_terms, dim=0)
+
+
+def _validate_independent_components(
+    components: Sequence[MixtureComponentPopulation],
+) -> None:
+    if not components:
+        raise ValueError("at least one mixture component is required")
+    run_ids = [str(component.run_id) for component in components]
+    seeds = [int(component.seed) for component in components]
+    if len(run_ids) != len(set(run_ids)):
+        raise ValueError("mixture components must have distinct run IDs")
+    if len(seeds) != len(set(seeds)):
+        raise ValueError("mixture components must have distinct seeds")
+
+
+def estimate_base_tails_from_deterministic_mixture(
+    components: Sequence[MixtureComponentPopulation],
+    *,
+    thresholds: Sequence[float],
+    mixture_coefficients: Sequence[float] | None = None,
+) -> DeterministicMixtureTailEstimates:
+    """Combine independent weighted SMC populations with a balance heuristic.
+
+    For a particle ``i`` from component ``j``, its stratified empirical mass is
+    ``rho_j W_ji``. Multiplying that mass by ``p_M/q_mix`` gives the unnormalized
+    deterministic-mixture contribution. Estimated component normalizers make
+    this a plug-in, self-normalized estimator rather than a finite-sample
+    unbiased estimator.
+    """
+
+    _validate_independent_components(components)
+    raw_parts: list[torch.Tensor] = []
+    normalized_component_log_weights: list[torch.Tensor] = []
+    particle_counts: list[int] = []
+    for component in components:
+        raw = _as_vector(component.raw_ari, name=f"raw_ari[{component.run_id}]")
+        log_weights = _as_vector(
+            component.final_log_weights,
+            name=f"final_log_weights[{component.run_id}]",
+            device=raw.device,
+        )
+        if raw.shape != log_weights.shape:
+            raise ValueError("raw ARI and final log weights must match per component")
+        if not bool(torch.isfinite(raw).all().item()):
+            raise ValueError("component raw ARI values must be finite")
+        valid = ~torch.isnan(log_weights) & ~torch.isposinf(log_weights)
+        if not bool(valid.all().item()) or not bool(torch.isfinite(log_weights).any().item()):
+            raise ValueError("component log weights must be finite or -inf")
+        if not all(
+            math.isfinite(float(value))
+            for value in (
+                component.cap,
+                component.lambda_final,
+                component.log_normalizing_constant,
+            )
+        ):
+            raise ValueError("component cap, lambda, and log normalizer must be finite")
+        raw_parts.append(raw.to(torch.float64))
+        normalized_component_log_weights.append(
+            log_weights.to(torch.float64) - torch.logsumexp(log_weights, dim=0)
+        )
+        particle_counts.append(raw.numel())
+
+    device = raw_parts[0].device
+    if any(part.device != device for part in raw_parts):
+        raw_parts = [part.to(device) for part in raw_parts]
+        normalized_component_log_weights = [
+            part.to(device) for part in normalized_component_log_weights
+        ]
+    if mixture_coefficients is None:
+        rho = torch.as_tensor(particle_counts, dtype=torch.float64, device=device)
+    else:
+        rho = _as_vector(
+            mixture_coefficients,
+            name="mixture_coefficients",
+            device=device,
+        )
+        if rho.numel() != len(components):
+            raise ValueError("one mixture coefficient is required per component")
+    if not bool(torch.isfinite(rho).all().item()) or not bool((rho > 0.0).all().item()):
+        raise ValueError("mixture coefficients must be finite and strictly positive")
+    rho = rho / rho.sum()
+
+    raw_all = torch.cat(raw_parts)
+    log_q_over_p = log_mixture_density_ratio(
+        raw_all,
+        [component.cap for component in components],
+        [component.lambda_final for component in components],
+        [component.log_normalizing_constant for component in components],
+        rho,
+    )
+    stratified_log_mass = torch.cat(
+        [
+            torch.log(rho[index]) + component_log_weights
+            for index, component_log_weights in enumerate(
+                normalized_component_log_weights
+            )
+        ]
+    )
+    corrected = stratified_log_mass - log_q_over_p
+    corrected -= torch.logsumexp(corrected, dim=0)
+    threshold_values = _as_vector(thresholds, name="thresholds", device=device)
+    if not bool(torch.isfinite(threshold_values).all().item()):
+        raise ValueError("thresholds must contain only finite values")
+    events = raw_all.unsqueeze(0) >= threshold_values.unsqueeze(1)
+    probabilities = torch.sum(
+        events.to(torch.float64) * torch.exp(corrected).unsqueeze(0),
+        dim=1,
+    )
+    ess = effective_sample_size_from_log_weights(corrected)
+    return DeterministicMixtureTailEstimates(
+        thresholds=threshold_values,
+        estimated_probabilities=probabilities,
+        corrected_log_weights=corrected,
+        corrected_ess=ess,
+        corrected_ess_over_n=ess / raw_all.numel(),
+        mixture_coefficients=rho,
+    )
 
 
 def corrected_base_log_weights(

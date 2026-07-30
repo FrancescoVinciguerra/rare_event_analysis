@@ -235,6 +235,14 @@
         "wilson_95_upper": 0.008213710606667115
       },
       {
+        "count": 6497,
+        "empirical_probability": 0.0013525847129822318,
+        "rule_of_three_upper": null,
+        "threshold": 7.0,
+        "wilson_95_lower": 0.0013201139305669594,
+        "wilson_95_upper": 0.0013858530694388482
+      },
+      {
         "count": 940,
         "empirical_probability": 0.00019569487920629487,
         "rule_of_three_upper": null,

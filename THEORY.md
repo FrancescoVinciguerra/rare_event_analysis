@@ -251,6 +251,21 @@ It duplicates particles in proportion to normalized weights and resets the new
 weights to uniform. This can reduce weight degeneracy but introduces shared
 genealogy.
 
+The same pre-normalization calculation estimates the adjacent normalizing-
+constant ratio. With normalized incoming weights, the code computes
+
+```text
+ell_k = logsumexp_i(log W_(k-1)^i + log G_k(X_k^i)),
+log Z_hat_k = log Z_hat_(k-1) + ell_k,
+log W_k^i = log W_(k-1)^i + log G_k(X_k^i) - ell_k.
+```
+
+The initial value is `log Z_hat_0=0` because `lambda_0=0` and `p_M` is
+normalized. The increment is recorded before any resampling at level `k`;
+resampling then resets particle weights but does not alter the accumulated
+normalizer estimate. This is exactly the weighting/resampling order implemented
+in `run_suffix_direct_mh_smc`.
+
 There is no final resampling. Keeping `W_K` preserves the information required
 for final expectations and for correction back to the base model:
 
@@ -333,9 +348,10 @@ collapse.
 
 ## 6. Mixtures and multiple tilted distributions
 
-The repository currently implements **A** and an independent-run terminal
-lambda sweep based on **B**. It does not implement a normalized mixture MIS
-estimator (**C**) or an unnormalized mixture target (**D**).
+The repository implements single-component SNIS (**A**), independent terminal
+lambda studies (**B**), and the normalized deterministic-mixture validation in
+`run_tail_validation.py` (**C**). The unnormalized construction in **D** is not
+used by the active validation pipeline.
 
 ### A. One tilted distribution with SNIS
 
@@ -349,28 +365,66 @@ not require its own `Z_lambda`. Comparing or summarizing independent estimates
 is not automatically multiple importance sampling and is not described as a
 mixture in this repository.
 
-### C. A true normalized mixture
+### C. Implemented normalized deterministic mixture
+
+Component `j` uses its own cap and independent full SMC run:
+
+```text
+psi_j(x) = min(raw_ari(x), c_j),
+q_j(x)   = p_M(x) exp[-lambda_j psi_j(x)] / Z_j.
+```
+
+Runs do not share particles, ancestry, or RNG state. An intermediate population
+from a schedule ending at another lambda is not a component. For prescribed
+positive coefficients `rho_j` summing to one,
 
 For prescribed coefficients `rho_k`, a normalized mixture is
 
 ```text
-q(x) = sum_k rho_k pi_(lambda_k)(x)
-     = p_M(x) sum_k rho_k exp[-lambda_k phi(x)] / Z_k.
+q_mix(x) = sum_j rho_j q_j(x)
+         = p_M(x) sum_j rho_j exp[-lambda_j psi_j(x)] / Z_j.
 ```
 
 Therefore
 
 ```text
-p_M(x)/q(x)
-  = 1 / sum_k rho_k exp[-lambda_k phi(x)] / Z_k.
+p_M(x)/q_mix(x)
+  = 1 / sum_j rho_j exp[-lambda_j psi_j(x)] / Z_j.
 ```
 
-The different `Z_k` occur inside a sum and do not share one multiplicative
-factor that self-normalization can remove. A true mixture with fixed normalized
-coefficients requires these normalizers or valid estimates of their ratios.
-Veach and Guibas (1995) is a primary source for combining multiple sampling
-techniques and the balance heuristic; it is methodological context, not an
-implementation claim about this repository.
+The different `Z_j` occur inside a sum, so one common self-normalization cannot
+remove them. The implementation inserts the independently estimated
+`Z_hat_j` from each SMC run and evaluates this denominator with `logsumexp`.
+
+The final SMC population for component `j` is itself weighted. Its empirical
+mass is `W_ji`, not one unweighted count. For sample `x_ji`, the implemented
+unnormalized deterministic-mixture contribution is
+
+```text
+log d_ji = log rho_j + log W_ji
+           - logsumexp_l(
+               log rho_l - lambda_l psi_l(x_ji) - log Z_hat_l
+             ).
+```
+
+After normalizing all `d_ji` together, the tail estimate is
+
+```text
+p_hat_a = sum_(j,i) D_ji 1{raw_ari(x_ji) >= a}.
+```
+
+Thus the cap affects only component construction and the mixture denominator;
+the event always uses raw ARI. When component particles are equally weighted
+and `rho_j=n_j/sum_l n_l`, this reduces to the usual balance-heuristic sample
+weight. With nonuniform final SMC weights, the `W_ji` factor preserves the
+weighted empirical approximation instead of treating particles as independent
+unweighted draws.
+
+Because `Z_hat_j` and the component empirical measures are random, this is a
+plug-in self-normalized estimator. It is not exactly unbiased at finite particle
+count. Independent seed groups, rather than particles within one run, are the
+replication unit. Veach and Guibas (1995) supplies multiple-importance-sampling
+context; the formula above is the direct derivation used by this code.
 
 ### D. An unnormalized mixture potential
 

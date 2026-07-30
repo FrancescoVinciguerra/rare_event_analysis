@@ -11,6 +11,7 @@ hf_cache/
 huggingface/
 models/
 external_data/
+/results/tail_probability_validation/
 *.bin
 *.safetensors
 data/

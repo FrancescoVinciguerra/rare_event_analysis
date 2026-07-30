@@ -16,6 +16,7 @@ from rea_llms.models import set_seed
 
 
 ScheduleValue = TypeVar("ScheduleValue")
+ALGORITHM_VERSION = "suffix_direct_mh_smc_v3_log_normalizer"
 
 
 # Configuration and result containers
@@ -628,8 +629,40 @@ def incremental_log_weight_update(
     The LM factor is shared by adjacent targets, so their ratio is only
     ``exp(-(lambda_k - lambda_{k-1}) * phi)``.
     """
-    updated = normalized_log_weights - (current_lambda - previous_lambda) * phi.to(torch.float64)
-    return normalize_log_weights(updated)
+    updated, _ = incremental_log_weight_update_with_normalizer(
+        normalized_log_weights,
+        phi,
+        previous_lambda=previous_lambda,
+        current_lambda=current_lambda,
+    )
+    return updated
+
+
+def incremental_log_weight_update_with_normalizer(
+    normalized_log_weights: torch.Tensor,
+    phi: torch.Tensor,
+    *,
+    previous_lambda: float,
+    current_lambda: float,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Update normalized weights and estimate the adjacent normalizer ratio.
+
+    Because the input weights sum to one, the log average incremental
+    potential is the particle estimate of ``log(Z_k / Z_(k-1))``. Returning it
+    before normalization lets the SMC driver accumulate ``log Z_k`` without
+    changing the existing mutation, weighting, or resampling order.
+    """
+
+    if normalized_log_weights.shape != phi.shape:
+        raise ValueError("normalized_log_weights and phi must have the same shape")
+    log_increment = -(
+        float(current_lambda) - float(previous_lambda)
+    ) * phi.to(dtype=torch.float64, device=normalized_log_weights.device)
+    unnormalized = normalized_log_weights.to(torch.float64) + log_increment
+    log_normalizer_increment = torch.logsumexp(unnormalized, dim=0)
+    if not bool(torch.isfinite(log_normalizer_increment).item()):
+        raise ValueError("non-finite SMC normalizing-constant increment")
+    return unnormalized - log_normalizer_increment, log_normalizer_increment
 
 
 # Full SMC mutation, reweighting, ESS, and resampling
@@ -821,6 +854,7 @@ def run_suffix_direct_mh_smc(
     prompt: str,
     config: SuffixDirectMHSMCConfig,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
+    track_discovery_diagnostics: bool = True,
 ) -> SuffixDirectMHSMCResult:
     """Run full-sequence SMC with an exact direct-MH suffix mutation.
 
@@ -898,7 +932,8 @@ def run_suffix_direct_mh_smc(
             prompt_ids=prompt_ids,
             completions=completion_tokens,
         )
-        track_discoveries(completion_tokens, raw_ari, float(config.lambdas[0]))
+        if track_discovery_diagnostics:
+            track_discoveries(completion_tokens, raw_ari, float(config.lambdas[0]))
         particles = ParticleBatch(
             completion_token_ids=completion_tokens,
             phi=phi,
@@ -918,6 +953,8 @@ def run_suffix_direct_mh_smc(
                 "level": 0,
                 "lambda": float(config.lambdas[0]),
                 "mutation_target_lambda": None,
+                "log_normalizing_constant_increment": 0.0,
+                "log_normalizing_constant_estimate": 0.0,
                 "ess_over_n_before_resampling": 1.0,
                 "ess_over_n_after_resampling": 1.0,
                 "resampled": False,
@@ -936,6 +973,7 @@ def run_suffix_direct_mh_smc(
         total_regenerated_tokens = 0
         resampling_steps = 0
         min_ess_over_n = 1.0
+        log_normalizing_constant = torch.zeros((), dtype=torch.float64, device=device)
 
         for level in range(1, len(config.lambdas)):
             _synchronize(device)
@@ -955,7 +993,9 @@ def run_suffix_direct_mh_smc(
                 transition_index=level - 1,
                 config=config,
                 generator=generator,
-                discovery_callback=track_discoveries,
+                discovery_callback=(
+                    track_discoveries if track_discovery_diagnostics else None
+                ),
             )
             total_accepted += mutation.accepted
             total_proposals += mutation.proposals
@@ -963,12 +1003,15 @@ def run_suffix_direct_mh_smc(
 
             # 2. Since p_M is common to adjacent targets, only the exponential
             # potential ratio is needed to move from gamma_{k-1} to gamma_k.
-            log_weights = incremental_log_weight_update(
-                log_weights,
-                particles.phi,
-                previous_lambda=previous_lambda,
-                current_lambda=current_lambda,
+            log_weights, log_normalizer_increment = (
+                incremental_log_weight_update_with_normalizer(
+                    log_weights,
+                    particles.phi,
+                    previous_lambda=previous_lambda,
+                    current_lambda=current_lambda,
+                )
             )
+            log_normalizing_constant += log_normalizer_increment
             # 3. Diagnose normalized weights and resample only before the final
             # level, where equal weights can benefit subsequent mutation.
             ess = ess_from_normalized_log_weights(log_weights)
@@ -1007,6 +1050,12 @@ def run_suffix_direct_mh_smc(
                 "previous_lambda": previous_lambda,
                 "delta_lambda": current_lambda - previous_lambda,
                 "mutation_target_lambda": previous_lambda,
+                "log_normalizing_constant_increment": float(
+                    log_normalizer_increment.item()
+                ),
+                "log_normalizing_constant_estimate": float(
+                    log_normalizing_constant.item()
+                ),
                 "ess_over_n_before_resampling": ess_over_n_before,
                 "ess_over_n_after_resampling": ess_over_n_after,
                 "resampled": resampled,
@@ -1065,6 +1114,7 @@ def run_suffix_direct_mh_smc(
     summary = {
         "method": "suffix_direct_mh_smc",
         "algorithm": "suffix_direct_mh_smc",
+        "algorithm_version": ALGORITHM_VERSION,
         "mutation_kernel": "suffix_direct_mh",
         "num_particles": config.num_particles,
         "max_new_tokens": config.max_new_tokens,
@@ -1077,6 +1127,9 @@ def run_suffix_direct_mh_smc(
         "resampling_method": config.resampling_method,
         "resample_final": False,
         "resampling_steps": resampling_steps,
+        "log_normalizing_constant_estimate": float(
+            log_normalizing_constant.item()
+        ),
         "runtime_total_seconds": float(elapsed),
         "runtime_seconds_per_final_particle": float(elapsed / config.num_particles),
         "particles_per_second": float(config.num_particles / elapsed),
@@ -1132,7 +1185,7 @@ def run_suffix_direct_mh_smc(
         samples=samples,
         summary=summary,
         diagnostics=diagnostics,
-        config=asdict(config),
+        config={**asdict(config), "algorithm_version": ALGORITHM_VERSION},
     )
 
 

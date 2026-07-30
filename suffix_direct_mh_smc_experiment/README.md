@@ -17,6 +17,9 @@ or a vocabulary-wide proposal normalizer.
 - `run_experiment.py`: one independent SMC run.
 - `run_tail_estimation.py`: multi-seed SNIS tail estimates and optional terminal
   lambda schedule sweep.
+- `run_tail_validation.py`: independent cap/lambda components, SMC normalizer
+  estimates, deterministic-mixture MIS, and comparison with official direct
+  statistics.
 
 ## One run
 
@@ -44,3 +47,19 @@ python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
 Each seed is an independent SMC population. The report keeps final SMC ESS and
 corrected importance ESS separate. Generated run directories are ignored by
 Git; curate only compact, interpretable summaries under `results/`.
+
+## Official-reference validation
+
+```bash
+python suffix_direct_mh_smc_experiment/run_tail_validation.py \
+  --device cuda --seed-groups 200,300,400 \
+  --num-particles 256 --max-new-tokens 100 \
+  --lambda-step 0.25 --mcmc-steps-per-level 10 \
+  --thresholds 6,7,8,10
+```
+
+Every `(cap, terminal lambda, seed)` component is a separate complete SMC run.
+The runner stores one compact `.npz` archive per component and reuses it only
+when its full algorithm/configuration metadata matches. It combines final SMC
+weights with estimated normalizing constants in log-space; no final resampling,
+direct generation, TPS, or MBAR is performed.

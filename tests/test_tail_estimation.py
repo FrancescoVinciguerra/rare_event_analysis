@@ -5,15 +5,30 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 import torch
 
 from rea_llms.tail_estimation import (
+    MixtureComponentPopulation,
     aggregate_terminal_lambda_runs,
+    capped_potential,
     corrected_base_log_weights,
+    effective_sample_size_from_log_weights,
     estimate_base_expectation,
     estimate_base_tail_probabilities,
+    estimate_base_tails_from_deterministic_mixture,
     estimate_base_tails_from_final_samples,
+    log_mixture_density_ratio,
+)
+from suffix_direct_mh_smc_experiment.run_tail_validation import (
+    ComponentSpec,
+    _load_component_archive,
+    _save_component_archive,
+    build_lambda_schedule,
+    cache_metadata_matches,
+    component_run_id,
+    component_seed,
 )
 from suffix_direct_mh_smc_experiment.run_tail_estimation import (
     _config_for_seed,
@@ -24,6 +39,144 @@ from suffix_direct_mh_smc_experiment.run_tail_estimation import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_capped_potential_preserves_raw_values() -> None:
+    raw = torch.tensor([2.0, 6.0, 9.0], dtype=torch.float64)
+    capped = capped_potential(raw, 6.0)
+    assert torch.equal(capped, torch.tensor([2.0, 6.0, 6.0], dtype=torch.float64))
+    assert torch.equal(raw, torch.tensor([2.0, 6.0, 9.0], dtype=torch.float64))
+
+
+def test_log_mixture_density_ratio_matches_direct_formula() -> None:
+    raw = torch.tensor([1.0, 4.0], dtype=torch.float64)
+    caps = torch.tensor([2.0, 5.0], dtype=torch.float64)
+    lambdas = torch.tensor([-0.5, -1.0], dtype=torch.float64)
+    log_z = torch.log(torch.tensor([1.4, 3.2], dtype=torch.float64))
+    rho = torch.tensor([0.25, 0.75], dtype=torch.float64)
+    actual = log_mixture_density_ratio(raw, caps, lambdas, log_z, rho)
+    expected = []
+    for value in raw.tolist():
+        terms = [
+            float(rho[index])
+            * math.exp(-float(lambdas[index]) * min(value, float(caps[index])))
+            / math.exp(float(log_z[index]))
+            for index in range(2)
+        ]
+        expected.append(math.log(sum(terms)))
+    assert torch.allclose(
+        actual,
+        torch.tensor(expected, dtype=torch.float64),
+        atol=1e-12,
+    )
+
+
+def test_standard_ess_on_known_weights() -> None:
+    log_weights = torch.log(torch.tensor([0.5, 0.25, 0.25], dtype=torch.float64))
+    ess = effective_sample_size_from_log_weights(log_weights)
+    assert float(ess) == pytest.approx(1.0 / (0.5**2 + 0.25**2 + 0.25**2))
+
+
+def test_deterministic_mixture_recovers_exact_toy_probability() -> None:
+    base = torch.tensor([0.1, 0.2, 0.3, 0.4], dtype=torch.float64)
+    raw = torch.tensor([0.0, 1.0, 2.0, 3.0], dtype=torch.float64)
+    components = []
+    for index, (cap, lambda_final) in enumerate(((2.0, -0.5), (3.0, -1.0))):
+        potential = torch.clamp(raw, max=cap)
+        unnormalized = base * torch.exp(-lambda_final * potential)
+        z_value = unnormalized.sum()
+        tilted = unnormalized / z_value
+        components.append(
+            MixtureComponentPopulation(
+                run_id=f"run-{index}",
+                seed=100 + index,
+                cap=cap,
+                lambda_final=lambda_final,
+                log_normalizing_constant=float(torch.log(z_value)),
+                raw_ari=raw,
+                final_log_weights=torch.log(tilted),
+            )
+        )
+    estimates = estimate_base_tails_from_deterministic_mixture(
+        components,
+        thresholds=[2.0],
+    )
+    assert float(estimates.estimated_probabilities[0]) == pytest.approx(0.7, abs=1e-12)
+    assert float(torch.exp(estimates.corrected_log_weights).sum()) == pytest.approx(1.0)
+
+
+def test_components_require_distinct_seed_and_run_id() -> None:
+    component = MixtureComponentPopulation(
+        run_id="same-run",
+        seed=17,
+        cap=6.0,
+        lambda_final=-1.0,
+        log_normalizing_constant=0.0,
+        raw_ari=[1.0, 2.0],
+        final_log_weights=[math.log(0.5), math.log(0.5)],
+    )
+    with pytest.raises(ValueError, match="run IDs"):
+        estimate_base_tails_from_deterministic_mixture(
+            [component, component], thresholds=[1.0]
+        )
+    second = MixtureComponentPopulation(
+        **{**component.__dict__, "run_id": "other-run"}
+    )
+    with pytest.raises(ValueError, match="seeds"):
+        estimate_base_tails_from_deterministic_mixture(
+            [component, second], thresholds=[1.0]
+        )
+
+
+def test_component_seed_schedule_and_run_ids_are_independent() -> None:
+    seeds = [component_seed(group, index) for group in (200, 300) for index in range(3)]
+    assert len(seeds) == len(set(seeds))
+    assert build_lambda_schedule(-0.6, 0.25) == (0.0, -0.25, -0.5, -0.6)
+    metadata = {
+        "seed_group": 200,
+        "component_index": 0,
+        "ari_cap": 6.0,
+        "lambda_final": -1.0,
+        "seed": seeds[0],
+    }
+    other = {**metadata, "seed": seeds[1], "component_index": 1}
+    assert component_run_id(metadata) != component_run_id(other)
+
+
+def test_component_cache_requires_exact_metadata(tmp_path) -> None:
+    metadata = {
+        "num_particles": 2,
+        "seed_group": 200,
+        "seed": component_seed(200, 0),
+        "prompt": "Once",
+    }
+    path = tmp_path / "component.npz"
+    _save_component_archive(
+        path,
+        metadata=metadata,
+        raw_ari=np.asarray([5.0, 7.0]),
+        phi=np.asarray([5.0, 6.0]),
+        final_log_weights=np.log(np.asarray([0.4, 0.6])),
+        log_normalizing_constant=1.2,
+        runtime_seconds=3.0,
+    )
+    spec = ComponentSpec(cap=6.0, lambda_final=-1.0)
+    loaded = _load_component_archive(
+        path,
+        expected_metadata=metadata,
+        spec=spec,
+        reused=True,
+    )
+    assert loaded.reused
+    incompatible = {**metadata, "prompt": "Different"}
+    assert not cache_metadata_matches(metadata, incompatible)
+    with pytest.raises(ValueError, match="metadata mismatch"):
+        _load_component_archive(
+            path,
+            expected_metadata=incompatible,
+            spec=spec,
+            reused=True,
+        )
 
 
 def test_lambda_zero_preserves_normalized_smc_weights() -> None:
@@ -173,10 +326,15 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
         ast.parse(python_source, filename=f"{path.name}:cell-{index}")
         code_cells.append(source)
     joined = "\n".join(code_cells)
-    assert "EDIT PARAMETERS HERE" in joined
-    assert "suffix_direct_mh_smc_experiment/run_tail_estimation.py" in joined
-    assert "SUFFIX_MODE" in joined
-    assert "--suffix-mode" in joined
+    assert joined.count("EDIT PARAMETERS HERE") == 1
+    assert "suffix_direct_mh_smc_experiment/run_tail_validation.py" in joined
+    assert "COMPONENTS" in joined
+    assert "SEED_GROUPS" in joined
+    assert "LAMBDA_STEP" in joined
+    assert "SKIP_COMPLETED_RUNS" in joined
+    assert "RUN_SMOKE_TEST" in joined
+    assert "RUN_PRODUCTION" in joined
+    assert "--components-json" in joined
     assert "official_annealed_tps" not in joined
 
 
