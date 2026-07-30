@@ -1,0 +1,340 @@
+{
+  "archive_manifest": [
+    {
+      "compressed_bytes": 33427028,
+      "crc32": "65d5deee",
+      "format": "JSON",
+      "path": "log_probs_unbiased_samples.json",
+      "uncompressed_bytes": 98116953
+    },
+    {
+      "compressed_bytes": 40805044,
+      "crc32": "5ef3c51e",
+      "format": "JSON",
+      "path": "ari_trajectories.json",
+      "uncompressed_bytes": 154377164
+    },
+    {
+      "compressed_bytes": 29259859,
+      "crc32": "130bfaff",
+      "format": "JSON",
+      "path": "ari_unbiased_samples.json",
+      "uncompressed_bytes": 94039904
+    },
+    {
+      "compressed_bytes": 41537014,
+      "crc32": "617903ec",
+      "format": "JSON",
+      "path": "log_probs_trajectories.json",
+      "uncompressed_bytes": 162027631
+    }
+  ],
+  "comparability": {
+    "central_boxplot_usable": true,
+    "ground_truth_assessment": "High-precision empirical baseline for the official direct-sampling observable, but not exact ground truth for this repository's textstat raw-ARI convention until observable equivalence is established.",
+    "lost_information_due_to_cap_in_direct_file": "none; direct ARI is raw",
+    "raw_maximum_available": true,
+    "reason_observable_match_unverified": "The archive has no completions or token IDs, and the paper's custom ARI edge-case implementation is not published. The official demo also decodes the full sequence and removes the prompt by character slicing, whereas this repository decodes completion token IDs separately. Recalculation with the repository textstat backend is impossible.",
+    "sampling_setup_match": "Model name, tokenizer name, prompt, 100-token fixed length, and temperature-one ancestral sampling match the current experiment.",
+    "strict_observable_match_verified": false,
+    "thresholds_6_8_10_12_15_preserved_under_min_cap": true
+  },
+  "dataset_inventory": [
+    {
+      "compressed_bytes": 33427028,
+      "contains_completions": false,
+      "contains_metadata": false,
+      "count": 4803396,
+      "format": "JSON",
+      "max": -29.09723472595215,
+      "min": -423.3458557128906,
+      "nonfinite": 0,
+      "nonnumeric": 0,
+      "observable": "log_probability",
+      "path": "log_probs_unbiased_samples.json",
+      "role": "direct_iid",
+      "shape": [
+        4803396
+      ],
+      "uncompressed_bytes": 98116953,
+      "value_types": [
+        "float"
+      ]
+    },
+    {
+      "biases": [
+        [
+          -0.1,
+          -0.2,
+          -0.3,
+          -0.4,
+          -0.5,
+          -0.6,
+          -0.7,
+          -0.8,
+          -0.9,
+          -1.0
+        ],
+        [
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.9,
+          1.0
+        ]
+      ],
+      "compressed_bytes": 40805044,
+      "contains_completions": false,
+      "contains_metadata": true,
+      "count": 8000020,
+      "format": "JSON",
+      "max": 15.0,
+      "min": -6.140417098999023,
+      "nonfinite": 0,
+      "nonnumeric": 0,
+      "observable": "ari",
+      "path": "ari_trajectories.json",
+      "role": "tps_markov_chain_states",
+      "shape": [
+        2,
+        [
+          10
+        ],
+        [
+          400001
+        ]
+      ],
+      "steps_per_bias": 40000,
+      "uncompressed_bytes": 154377164,
+      "value_types": [
+        "float"
+      ]
+    },
+    {
+      "compressed_bytes": 29259859,
+      "contains_completions": false,
+      "contains_metadata": false,
+      "count": 4803396,
+      "format": "JSON",
+      "max": 45.65370178222656,
+      "min": -6.106250762939453,
+      "nonfinite": 0,
+      "nonnumeric": 0,
+      "observable": "ari",
+      "path": "ari_unbiased_samples.json",
+      "role": "direct_iid",
+      "shape": [
+        4803396
+      ],
+      "uncompressed_bytes": 94039904,
+      "value_types": [
+        "float"
+      ]
+    },
+    {
+      "biases": [
+        [
+          -0.01,
+          -0.02,
+          -0.03,
+          -0.04,
+          -0.05,
+          -0.06,
+          -0.07,
+          -0.08,
+          -0.09,
+          -0.1
+        ],
+        [
+          0.005,
+          0.01,
+          0.015,
+          0.02,
+          0.025,
+          0.03,
+          0.035,
+          0.04,
+          0.045,
+          0.05
+        ]
+      ],
+      "compressed_bytes": 41537014,
+      "contains_completions": false,
+      "contains_metadata": true,
+      "count": 8000020,
+      "format": "JSON",
+      "max": 0.0,
+      "min": -530.0416259765625,
+      "nonfinite": 0,
+      "nonnumeric": 0,
+      "observable": "log_probability",
+      "path": "log_probs_trajectories.json",
+      "role": "tps_markov_chain_states",
+      "shape": [
+        2,
+        [
+          10
+        ],
+        [
+          400001
+        ]
+      ],
+      "steps_per_bias": 40000,
+      "uncompressed_bytes": 162027631,
+      "value_types": [
+        "float"
+      ]
+    }
+  ],
+  "direct_ari": {
+    "analysis_dtype": "float64",
+    "ari_representation": "raw",
+    "boxplot": {
+      "iqr": 1.8135700225830078,
+      "median": 2.493633270263672,
+      "outlier_count": 37844,
+      "q1": 1.6016101837158203,
+      "q3": 3.415180206298828,
+      "whisker_high": 6.135332107543945,
+      "whisker_low": -1.1184539794921875
+    },
+    "cap_applied_in_file": false,
+    "count": 4803396,
+    "max": 45.65370178222656,
+    "mean": 2.533904356848511,
+    "min": -6.106250762939453,
+    "nonfinite": 0,
+    "nonnumeric": 0,
+    "quantile_method": "numpy linear interpolation",
+    "quantiles": {
+      "q0.9": 4.284446716308594,
+      "q0.95": 4.817087173461914,
+      "q0.99": 5.8752899169921875,
+      "q0.999": 7.1618194580078125,
+      "q0.9999": 8.379019659042516
+    },
+    "quartiles": {
+      "q25": 1.6016101837158203,
+      "q50": 2.493633270263672,
+      "q75": 3.415180206298828
+    },
+    "standard_deviation_population": 1.3490264966333982,
+    "stored_type": "JSON number",
+    "tails": [
+      {
+        "count": 39066,
+        "empirical_probability": 0.008132995905396932,
+        "rule_of_three_upper": null,
+        "threshold": 6.0,
+        "wilson_95_lower": 0.00805306793307035,
+        "wilson_95_upper": 0.008213710606667115
+      },
+      {
+        "count": 940,
+        "empirical_probability": 0.00019569487920629487,
+        "rule_of_three_upper": null,
+        "threshold": 8.0,
+        "wilson_95_lower": 0.0001835792540576584,
+        "wilson_95_upper": 0.00020860992881256474
+      },
+      {
+        "count": 48,
+        "empirical_probability": 9.992930002023568e-06,
+        "rule_of_three_upper": null,
+        "threshold": 10.0,
+        "wilson_95_lower": 7.537702430373545e-06,
+        "wilson_95_upper": 1.3247879056919777e-05
+      },
+      {
+        "count": 17,
+        "empirical_probability": 3.539162709050014e-06,
+        "rule_of_three_upper": null,
+        "threshold": 12.0,
+        "wilson_95_lower": 2.2097849211797923e-06,
+        "wilson_95_upper": 5.6682723028054285e-06
+      },
+      {
+        "count": 15,
+        "empirical_probability": 3.122790625632365e-06,
+        "rule_of_three_upper": null,
+        "threshold": 15.0,
+        "wilson_95_lower": 1.8925348196049262e-06,
+        "wilson_95_upper": 5.152778903521707e-06
+      }
+    ],
+    "values_above_15": 15,
+    "values_equal_15": 0
+  },
+  "documentation_discrepancies": [
+    "The data README describes both log-probability files as containing ARI scores; their numeric ranges and filenames show they contain log-probabilities.",
+    "The repository README says USE_EXAMPLE_DATA=True selects extracted paper data, while reweighting_example.ipynb uses True for data/example and False for data/paper.",
+    "The paper states a cap of 15 for ARI, but the Zenodo direct ARI array contains values above 15; only the TPS ARI array is capped."
+  ],
+  "official_configuration": {
+    "ari_formula": "4.71 * characters/words + 0.5 * words/sentences - 21.43",
+    "completion_tokens": 100,
+    "dataset_seed": "not published",
+    "decode_convention": "decode the full prompt-token plus completion-token sequence with skip_special_tokens=True, then remove len(prompt) characters",
+    "demo_ari_implementation": "textstat.automated_readability_index, uncapped",
+    "demo_python_seed": 1234,
+    "demo_torch_seed": 42,
+    "do_sample": true,
+    "eos_token_id": null,
+    "fixed_length_asserted": true,
+    "log_probability_observable": "re-tokenize decoded prompt plus completion, compute model log-softmax, zero prompt-token contributions, gather observed token IDs, and sum",
+    "model": "roneneldan/TinyStories-8M",
+    "model_revision": "not published",
+    "observable_scope": "decoded prompt plus completion",
+    "pad_token_id": null,
+    "paper_ari_cap": 15.0,
+    "paper_ari_implementation": "custom py-readability implementation with edge-case handling; implementation not published",
+    "paper_cap_operation": "described as a hard cap at 15 and consistent with min(raw_ari, 15), but the implementation and paired raw/capped TPS values are unavailable",
+    "paper_data_use": "Figure 3b direct ARI/log-probability curves, direct data incorporated into MBAR, and Figure 4 direct-sampling Wilson error analysis",
+    "paper_generation_implementation": "not published",
+    "prompt": "Once upon a time, in a big forest, there lived a rhinoc",
+    "prompt_token_count": 16,
+    "public_demo_batching": "one completion at a time",
+    "temperature": 1.0,
+    "tokenizer": "EleutherAI/gpt-neo-125M",
+    "tokenizer_revision": "not published",
+    "top_k": null,
+    "top_p": "not explicitly set; Hugging Face default"
+  },
+  "published_count_discrepancy": {
+    "figure_3b_caption": "4.1 million direct completions",
+    "paper_setup_text": "4.2 million direct completions",
+    "reweighting_notebook_current_histogram_formula": 2200000,
+    "sampling_notebook_comment": 4200000,
+    "sampling_notebook_markdown": "10^6 completions plus the ARI cap gives approximate paper results",
+    "zenodo_array_count": 4803396
+  },
+  "schema_version": 1,
+  "source": {
+    "archive": "paper_data.zip",
+    "archive_bytes": 145029767,
+    "archive_md5": "83ad4e8f245edf5f45d879ae08450c3e",
+    "direct_ari_member": "ari_unbiased_samples.json",
+    "doi": "10.5281/zenodo.20395631",
+    "official_repository": "https://github.com/MLiS-Research/rea_of_llms_supplementary_code",
+    "official_repository_commit_inspected": "9a2ae06323db98496d179cefb294db60a6cd9535",
+    "paper": "Rare Event Analysis of Large Language Models",
+    "paper_url": "https://arxiv.org/abs/2602.06791",
+    "published_archive_md5": "83ad4e8f245edf5f45d879ae08450c3e",
+    "zenodo_creators": [
+      "Jake McAllister Dorman",
+      "Edward Gillman",
+      "Dominic C. Rose",
+      "Jamie F. Mair",
+      "Juan P. Garrahan"
+    ],
+    "zenodo_publication_date": "2026-05-26",
+    "zenodo_record": "20395631",
+    "zenodo_relation": "isSupplementTo arXiv:2602.06791",
+    "zenodo_url": "https://zenodo.org/records/20395631"
+  }
+}

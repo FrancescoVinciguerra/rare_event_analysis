@@ -110,6 +110,8 @@ rea_llms/                              shared model, ARI, diagnostics, and SNIS
 suffix_direct_mh_smc_experiment/       active sampler and command-line runners
 notebooks/REA_Suffix_SMC_Quickstart.ipynb
                                        primary Colab workflow
+notebooks/REA_Official_Direct_Data_Quickstart.ipynb
+                                       official direct-data analysis, no sampling
 official_annealed_tps_experiment/      optional adapter to the official TPS code
 smc_tps_comparison/                    optional, separate SMC/TPS benchmark
 notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb
@@ -134,6 +136,14 @@ minimal Colab requirements and runs the active tail-estimation pipeline only.
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
 Clone submodules before that benchmark with `git submodule update --init`.
+
+The published direct-sampling reference can be inspected without a model or GPU:
+
+[Open official direct data in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Official_Direct_Data_Quickstart.ipynb)
+
+Its reusable CLI is `python -m rea_llms.official_direct_data`. The verified
+reference statistics and comparability limits are recorded in
+[`results/REFERENCE_DIRECT_SAMPLING.md`](results/REFERENCE_DIRECT_SAMPLING.md).
 
 ## Running one experiment locally
 
