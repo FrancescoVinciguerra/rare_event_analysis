@@ -120,8 +120,6 @@ rea_llms/                              shared generation, ARI, diagnostics, and 
 suffix_direct_mh_smc_experiment/       active sampler and command-line runners
 notebooks/REA_Suffix_SMC_Quickstart.ipynb
                                        primary Colab validation workflow
-notebooks/REA_Official_Direct_Data_Quickstart.ipynb
-                                       official direct-data analysis, no sampling
 official_annealed_tps_experiment/      optional adapter to the official TPS code
 smc_tps_comparison/                    optional, separate SMC/TPS benchmark
 notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb
@@ -149,29 +147,16 @@ switch performs read-only metadata inspection.
 
 Only resumable scientific data are persisted under
 `MyDrive/rea_official_public_validation`: `component_runs/*.npz` and the
-official-public direct ARI reference. The main table compares thresholds 6, 7,
-and 8 across the released official archive, newly generated official-public
-direct samples, and the SMC mixture. Component reverse diagnostics and exactly
-two plots are displayed inline; no analysis CSV, PNG, or report is written.
-
-The archive comparison is explicitly empirical: the paper's custom ARI
-edge-case implementation is unpublished, so agreement does not prove code
-identity and disagreement does not by itself identify an SMC error.
-The exact decoding differences, official-data inventory, and reuse limits are
-documented in
+reproducible IID direct ARI reference. The main table compares IID direct and
+the SMC mixture at thresholds 6, 7, and 8. Component reverse diagnostics and
+exactly two plots are displayed inline; no analysis CSV, PNG, or report is
+written. The reason the released paper arrays are not used as a numerical
+baseline is documented in
 [`docs/DATA_REUSE_AND_ARI_AUDIT.md`](docs/DATA_REUSE_AND_ARI_AUDIT.md).
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
 Clone submodules before that benchmark with `git submodule update --init`.
-
-The published direct-sampling reference can be inspected without a model or GPU:
-
-[Open official direct data in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Official_Direct_Data_Quickstart.ipynb)
-
-Its reusable CLI is `python -m rea_llms.official_direct_data`. The verified
-reference statistics and comparability limits are recorded in
-[`results/REFERENCE_DIRECT_SAMPLING.md`](results/REFERENCE_DIRECT_SAMPLING.md).
 
 ## Running one experiment locally
 
@@ -205,7 +190,7 @@ uv run python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
 Use `--help` for output paths, resume behavior, suffix schedules, overlap
 criteria, and terminal-lambda sweep options.
 
-Build the one-time current-pipeline direct reference (the 200,000-sample default
+Build the one-time matching IID direct reference (the 200,000-sample default
 is not run by tests or setup):
 
 ```bash
@@ -218,8 +203,7 @@ uv run python -m rea_llms.current_direct_reference \
   --output-dir /path/to/rea_tail_probability_validation/current_direct_reference
 ```
 
-Validate a deterministic mixture against current direct when available and
-retain official direct as cross-implementation context:
+Validate a deterministic mixture against its matching IID direct reference:
 
 ```bash
 uv run python suffix_direct_mh_smc_experiment/run_tail_validation.py \

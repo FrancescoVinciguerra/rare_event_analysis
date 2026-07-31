@@ -31,17 +31,14 @@ from rea_llms.tail_estimation import (
 )
 from suffix_direct_mh_smc_experiment.run_tail_validation import (
     ComponentSpec,
-    ReferenceCompatibility,
     _component_metadata,
     _diagnostic_interpretation,
     _load_component_archive,
     _save_component_archive,
-    assess_reference_compatibility,
     build_lambda_schedule,
     cache_metadata_matches,
     component_run_id,
     component_seed,
-    enforce_reference_compatibility,
     main as run_validation_main,
     parse_args as parse_validation_args,
     run_validation,
@@ -57,64 +54,10 @@ from suffix_direct_mh_smc_experiment.run_tail_estimation import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_official_reference_preflight_blocks_unverified_exact_validation() -> None:
-    reference = json.loads(
-        (ROOT / "results" / "reference_direct_sampling_summary.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    args = parse_validation_args([])
-    compatibility = assess_reference_compatibility(reference, args)
-    assert compatibility.sampling_setup_match
-    assert not compatibility.strict_observable_match_verified
-    assert not compatibility.exact_reference_match
-    with pytest.raises(RuntimeError, match="strict equivalence"):
-        enforce_reference_compatibility(
-            compatibility,
-            smoke_mode=False,
-            allow_unverified_observable_reference=False,
-        )
-    enforce_reference_compatibility(
-        compatibility,
-        smoke_mode=False,
-        allow_unverified_observable_reference=True,
-    )
-
-
-def test_reference_preflight_rejects_sampling_mismatch_except_in_smoke() -> None:
-    reference = json.loads(
-        (ROOT / "results" / "reference_direct_sampling_summary.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    args = parse_validation_args(["--max-new-tokens", "8"])
-    compatibility = assess_reference_compatibility(reference, args)
-    assert not compatibility.sampling_checks["completion_tokens"]
-    with pytest.raises(RuntimeError, match="completion_tokens"):
-        enforce_reference_compatibility(
-            compatibility,
-            smoke_mode=False,
-            allow_unverified_observable_reference=True,
-        )
-    enforce_reference_compatibility(
-        compatibility,
-        smoke_mode=True,
-        allow_unverified_observable_reference=False,
-    )
-
-
 def test_smoke_diagnostics_never_report_scientific_validation() -> None:
-    compatibility = ReferenceCompatibility(
-        sampling_checks={"model": True},
-        sampling_setup_match=True,
-        strict_observable_match_verified=True,
-        exact_reference_match=True,
-        observable_limitation="none",
-    )
     messages = _diagnostic_interpretation(
         diagnostic_rows=[{"placeholder": True}],
         aggregate_rows=[{"placeholder": True}],
-        compatibility=compatibility,
         seed_group_count=1,
         smoke_mode=True,
     )
@@ -488,14 +431,11 @@ def test_audit_only_reuses_archive_without_loading_model(tmp_path, monkeypatch) 
     audit = pd.read_csv(output_root / "data_reuse_audit.csv")
     diagnostics = pd.read_csv(output_root / "component_diagnostics.csv")
     comparison = pd.read_csv(output_root / "comparison.csv")
-    report = (output_root / "REPORT.md").read_text(encoding="utf-8")
     assert audit["selected_for_mixture"].tolist() == [True]
     assert audit["included_in_complete_mixture"].tolist() == [True]
     assert not diagnostics.empty
-    assert not comparison.empty
-    assert "Candidate archives found: `1`" in report
-    assert "Exact cache candidates for requested seed groups: `1`" in report
-    assert "Included in complete seed-group mixtures: `1`" in report
+    assert comparison.empty
+    assert not (output_root / "REPORT.md").exists()
 
 
 def test_notebook_mode_returns_analysis_without_writing_report_files(
@@ -539,7 +479,7 @@ def test_notebook_mode_returns_analysis_without_writing_report_files(
     assert result.reusable_component_count == 1
     assert result.generated_component_count == 0
     assert result.component_status["status"].tolist() == ["reused"]
-    assert not result.comparison.empty
+    assert result.comparison.empty
     for filename in (
         "data_reuse_audit.csv",
         "component_diagnostics.csv",
@@ -606,7 +546,7 @@ def test_official_public_notebook_cache_smoke_is_read_only(tmp_path, monkeypatch
             "1,4",
             "--output-root",
             str(output_root),
-            "--current-direct-summary",
+            "--direct-summary",
             str(direct_root / "summary.json"),
         ]
     )
@@ -640,7 +580,7 @@ def test_official_public_notebook_cache_smoke_is_read_only(tmp_path, monkeypatch
     result = run_validation(args, persist_analysis=False, fast_cache=True)
 
     assert result.generated_component_count == 0
-    assert result.current_direct_summary["metadata"]["ari_convention"] == "official_public"
+    assert result.direct_summary["metadata"]["ari_convention"] == "official_public"
     assert result.comparison["generated_token_count"].dropna().eq(20).all()
     assert not (output_root / "comparison.csv").exists()
 
@@ -688,11 +628,10 @@ def test_audit_does_not_declare_partial_seed_group_complete(
     )
     audit = pd.read_csv(output_root / "data_reuse_audit.csv")
     comparison = pd.read_csv(output_root / "comparison.csv")
-    report = (output_root / "REPORT.md").read_text(encoding="utf-8")
     assert audit["selected_for_mixture"].tolist() == [True]
     assert audit["included_in_complete_mixture"].tolist() == [False]
     assert comparison.empty
-    assert "Planned components not yet present: `1` of `2`" in report
+    assert not (output_root / "REPORT.md").exists()
 
 
 def test_component_reverse_probability_and_log_z_on_toy_model() -> None:

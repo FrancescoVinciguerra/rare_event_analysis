@@ -29,7 +29,7 @@ from rea_llms.models import (
     set_seed,
 )
 from rea_llms.observables import create_observable
-from rea_llms.official_direct_data import (
+from rea_llms.statistics import (
     boxplot_statistics,
     rule_of_three_upper_bound,
     wilson_interval,

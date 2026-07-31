@@ -18,8 +18,8 @@ or a vocabulary-wide proposal normalizer.
 - `run_tail_estimation.py`: multi-seed SNIS tail estimates and optional terminal
   lambda schedule sweep.
 - `run_tail_validation.py`: independent cap/lambda components, SMC normalizer
-  estimates, deterministic-mixture MIS, and comparison with current-pipeline
-  and official direct statistics.
+  estimates, deterministic-mixture MIS, and comparison with a matching
+  reproducible IID direct reference.
 
 ## One run
 
@@ -65,13 +65,11 @@ weights with estimated normalizing constants in log-space; no final resampling,
 direct generation, TPS, or MBAR is performed.
 
 Before loading a model, the runner checks model, tokenizer, prompt, completion
-length, sampling temperature, truncation, EOS, and fixed-length settings against
-the official reference metadata. Exact official/current ARI equivalence remains
-unverified because the paper's custom edge-case implementation and original
-completions are unavailable. The official data are therefore a labelled
-cross-implementation comparison, never exact ground truth.
+length, sampling temperature, truncation, EOS, fixed-length settings, and ARI
+convention against the IID direct-reference metadata. Incompatible caches are
+reported and never enter the comparison.
 
-Generate the primary current-pipeline direct reference once, explicitly:
+Generate the matching IID direct reference once, explicitly:
 
 ```bash
 python -m rea_llms.current_direct_reference \
@@ -83,9 +81,8 @@ python -m rea_llms.current_direct_reference \
 This sampler shares fixed-length generation and exact completion-token scoring
 with SMC, writes only `direct_ari.npz` and `summary.json`, and strictly validates
 metadata before cache reuse. It is never launched by tests or by the validation
-runner. When absent, production validation remains blocked unless
-`--allow-unverified-observable-reference` explicitly requests the approximate
-official comparison.
+runner. Without a compatible direct summary, component caches can still be
+audited, but no direct-vs-SMC probability comparison is produced.
 
 Audit an existing cache without loading the model or generating missing runs:
 
