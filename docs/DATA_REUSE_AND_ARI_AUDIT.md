@@ -233,8 +233,8 @@ The quickstart exposes:
 
 ```python
 ARI_CONVENTION = 'official_public'
-RUN_DIRECT_CALIBRATION = False
-DIRECT_CALIBRATION_SAMPLES = 200_000
+RUN_OFFICIAL_PUBLIC_DIRECT = False
+OFFICIAL_PUBLIC_DIRECT_NUM_SAMPLES = 200_000
 ```
 
 When deliberately enabled, this creates a separate fixed-length IID direct
@@ -254,6 +254,11 @@ means TPS and SMC must be rerun under one common published convention.
    software environment.
 5. Keep MBAR inputs homogeneous in observable convention, prompt, model,
    tokenizer, length policy, and generation settings.
+
+The primary quickstart now prepares this calibration together with a separate
+nine-component official-public suffix-SMC validation at thresholds 6, 7, and
+8. It does not run TPS or MBAR, and both production flags remain false in the
+committed notebook.
 
 Unverifiable items remain: the exact unpublished paper ARI edge-case code,
 paper model/tokenizer revisions and seeds, per-step TPS cut points, TPS runtime

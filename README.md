@@ -139,24 +139,24 @@ Open the primary notebook directly:
 
 [Open REA Suffix SMC in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Suffix_SMC_Quickstart.ipynb)
 
-The notebook has one parameter cell. Its sampling switches
-`RUN_DIRECT_REFERENCE`, `RUN_DIRECT_CALIBRATION`, and `RUN_SMC` are false by
-default, so opening the notebook never starts an expensive run. The separate
-`RUN_DRIVE_AUDIT` switch performs only read-only metadata inspection. Select
-`ARI_CONVENTION='current'` or `'official_public'` explicitly. Requested
-component archives are loaded directly by their configuration fingerprint;
-partial seed groups are shown but never included in the mixture estimate.
+The notebook has one parameter cell and is fixed to
+`ARI_CONVENTION='official_public'`. Its two production switches,
+`RUN_OFFICIAL_PUBLIC_DIRECT` and `RUN_OFFICIAL_PUBLIC_SMC`, are false by
+default, so opening it never starts an expensive run. Run the direct phase
+once, then the SMC phase; with both switches false the notebook reloads the
+completed archives and performs analysis only. The separate `RUN_DRIVE_AUDIT`
+switch performs read-only metadata inspection.
 
-Only resumable scientific data are persisted on Drive:
-`component_runs/*.npz` and the current-pipeline direct ARI reference. The result
-table, interpretation, and four diagnostic plots are computed and displayed
-inline. The main comparison contains only the matching current-pipeline direct
-reference and the SMC mixture. This keeps the central correctness check easy to
-read.
+Only resumable scientific data are persisted under
+`MyDrive/rea_official_public_validation`: `component_runs/*.npz` and the
+official-public direct ARI reference. The main table compares thresholds 6, 7,
+and 8 across the released official archive, newly generated official-public
+direct samples, and the SMC mixture. Component reverse diagnostics and exactly
+two plots are displayed inline; no analysis CSV, PNG, or report is written.
 
-The official archive uses an incompletely published ARI/decode convention and
-is therefore kept out of the primary notebook. Its cross-implementation audit
-remains available in the separate official-direct notebook below.
+The archive comparison is explicitly empirical: the paper's custom ARI
+edge-case implementation is unpublished, so agreement does not prove code
+identity and disagreement does not by itself identify an SMC error.
 The exact decoding differences, official-data inventory, and reuse limits are
 documented in
 [`docs/DATA_REUSE_AND_ARI_AUDIT.md`](docs/DATA_REUSE_AND_ARI_AUDIT.md).

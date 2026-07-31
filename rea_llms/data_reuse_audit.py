@@ -118,6 +118,7 @@ class ArchiveFacts:
     has_phi: bool
     has_completions: bool
     runtime_seconds: float | None = None
+    generated_token_count: int | None = None
     read_error: str | None = None
 
 
@@ -197,6 +198,7 @@ class ArchiveAuditRecord:
             "log_z_smc": self.facts.log_normalizing_constant,
             "has_completions": self.facts.has_completions,
             "runtime_seconds": self.facts.runtime_seconds,
+            "generated_token_count": self.facts.generated_token_count,
             "resample_final": metadata.get("resample_final"),
             "run_complete": _archive_is_complete(self.facts),
         }
@@ -270,6 +272,11 @@ def read_archive_facts(path: Path) -> ArchiveFacts:
                     if "runtime_seconds" in archive
                     else None
                 )
+                generated_token_count = (
+                    int(np.asarray(archive["generated_token_count"]).item())
+                    if "generated_token_count" in archive
+                    else None
+                )
                 has_completions = any(
                     key in archive
                     for key in ("completion", "completions", "completion_token_ids")
@@ -284,6 +291,7 @@ def read_archive_facts(path: Path) -> ArchiveFacts:
                     has_phi="phi" in archive,
                     has_completions=has_completions,
                     runtime_seconds=runtime,
+                    generated_token_count=generated_token_count,
                 )
         if suffix == ".json":
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -786,8 +794,8 @@ def audit_run_directory(
             "runtime_seconds": facts.runtime_seconds,
             "has_hardware_metadata": _has_hardware_metadata(metadata),
             "has_configuration_metadata": _has_configuration_metadata(metadata),
-            "has_generated_token_count": False,
-            "generated_token_count": None,
+            "has_generated_token_count": facts.generated_token_count is not None,
+            "generated_token_count": facts.generated_token_count,
             "has_proposal_count": False,
             "proposal_count": None,
             "has_suffix_lengths": False,

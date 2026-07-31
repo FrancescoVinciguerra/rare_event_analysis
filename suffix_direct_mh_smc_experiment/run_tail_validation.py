@@ -45,6 +45,7 @@ from rea_llms.observables import (  # noqa: E402
     ARI_CONVENTIONS,
     create_observable,
 )
+from rea_llms.scoring import ari_decoding_description  # noqa: E402
 from rea_llms.official_direct_data import boxplot_statistics  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
     MixtureComponentPopulation,
@@ -97,6 +98,7 @@ class CompletedComponent:
     final_log_weights: np.ndarray
     log_normalizing_constant: float
     runtime_seconds: float
+    generated_token_count: int | None
     reused: bool
     path: Path
 
@@ -250,7 +252,22 @@ def _component_metadata(
     # Existing current-convention component archives predate this explicit
     # field. Preserve their fingerprints while separating every new convention.
     if args.ari_convention != ARI_CONVENTION_CURRENT:
-        metadata["ari_convention"] = args.ari_convention
+        metadata.update(
+            {
+                "ari_convention": args.ari_convention,
+                "prompt_sha256": prompt_sha256(args.prompt),
+                "decoding_convention": ari_decoding_description(
+                    args.ari_convention
+                ),
+                "skip_special_tokens": True,
+                "clean_up_tokenization_spaces": (
+                    "tokenizer default; not passed explicitly"
+                ),
+                "eos_stopping": False,
+                "top_k": None,
+                "top_p": None,
+            }
+        )
     return metadata
 
 
@@ -277,18 +294,30 @@ def _save_component_archive(
     final_log_weights: np.ndarray,
     log_normalizing_constant: float,
     runtime_seconds: float,
+    generated_token_count: int | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     with temporary.open("wb") as handle:
+        arrays = {
+            "metadata_json": np.asarray(canonical_json(metadata)),
+            "raw_ari": np.asarray(raw_ari, dtype=np.float64),
+            "phi": np.asarray(phi, dtype=np.float64),
+            "final_log_weights": np.asarray(final_log_weights, dtype=np.float64),
+            "log_normalizing_constant": np.asarray(
+                log_normalizing_constant,
+                dtype=np.float64,
+            ),
+            "runtime_seconds": np.asarray(runtime_seconds, dtype=np.float64),
+        }
+        if generated_token_count is not None:
+            arrays["generated_token_count"] = np.asarray(
+                generated_token_count,
+                dtype=np.int64,
+            )
         np.savez_compressed(
             handle,
-            metadata_json=np.asarray(canonical_json(metadata)),
-            raw_ari=np.asarray(raw_ari, dtype=np.float64),
-            phi=np.asarray(phi, dtype=np.float64),
-            final_log_weights=np.asarray(final_log_weights, dtype=np.float64),
-            log_normalizing_constant=np.asarray(log_normalizing_constant, dtype=np.float64),
-            runtime_seconds=np.asarray(runtime_seconds, dtype=np.float64),
+            **arrays,
         )
     os.replace(temporary, path)
 
@@ -311,6 +340,11 @@ def _load_component_archive(
         )
         log_z = float(archive["log_normalizing_constant"].item())
         runtime = float(archive["runtime_seconds"].item())
+        generated_token_count = (
+            int(archive["generated_token_count"].item())
+            if "generated_token_count" in archive
+            else None
+        )
     expected_count = int(expected_metadata["num_particles"])
     if raw_ari.shape != (expected_count,) or phi.shape != raw_ari.shape:
         raise ValueError(f"cached component has an invalid particle shape: {path}")
@@ -338,6 +372,7 @@ def _load_component_archive(
         final_log_weights=final_log_weights,
         log_normalizing_constant=log_z,
         runtime_seconds=runtime,
+        generated_token_count=generated_token_count,
         reused=reused,
         path=path,
     )
@@ -539,6 +574,10 @@ def _run_component(
     )
     log_z = float(result.summary["log_normalizing_constant_estimate"])
     runtime = float(result.summary["runtime_total_seconds"])
+    generated_token_count = (
+        args.num_particles * args.max_new_tokens
+        + int(result.summary["total_regenerated_tokens"])
+    )
     _save_component_archive(
         output_path,
         metadata=metadata,
@@ -547,6 +586,7 @@ def _run_component(
         final_log_weights=final_log_weights,
         log_normalizing_constant=log_z,
         runtime_seconds=runtime,
+        generated_token_count=generated_token_count,
     )
     return _load_component_archive(
         output_path,
@@ -710,6 +750,16 @@ def _comparison_rows(
         ess = float(estimate.corrected_ess.detach().cpu())
         ess_over_n = float(estimate.corrected_ess_over_n.detach().cpu())
         runtime = float(sum(component.runtime_seconds for component in components))
+        generated_counts = [
+            component.generated_token_count for component in components
+        ]
+        generated_token_count = (
+            None
+            if any(value is None for value in generated_counts)
+            else int(
+                sum(int(value) for value in generated_counts if value is not None)
+            )
+        )
         for threshold, probability in zip(thresholds, probabilities):
             official = official_rows[float(threshold)]
             official_probability = float(official["empirical_probability"])
@@ -751,6 +801,7 @@ def _comparison_rows(
                     "weight_ess": ess,
                     "weight_ess_over_n": ess_over_n,
                     "runtime_seconds": runtime,
+                    "generated_token_count": generated_token_count,
                 }
             )
     for threshold in thresholds:
@@ -815,6 +866,7 @@ def _comparison_rows(
                         float(row["runtime_seconds"]) for row in threshold_rows
                     )
                 ),
+                "generated_token_count": first["generated_token_count"],
             }
         )
     return rows, estimates_by_group
@@ -1652,12 +1704,13 @@ def run_validation(
         }
         current_direct_n = int(current_statistics["count"])
         print(
-            f"current-pipeline direct reference: compatible N={current_direct_n}",
+            f"matching {args.ari_convention} direct reference: compatible "
+            f"N={current_direct_n}",
             flush=True,
         )
     else:
         print(
-            "current-pipeline direct reference unavailable: "
+            f"matching {args.ari_convention} direct reference unavailable: "
             + "; ".join(current_direct_reasons),
             flush=True,
         )
@@ -1839,6 +1892,7 @@ def run_validation(
             "weight_ess",
             "weight_ess_over_n",
             "runtime_seconds",
+            "generated_token_count",
         ],
     )
     if persist_analysis:

@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 import torch
 
+import rea_llms.current_direct_reference as direct_reference
 from rea_llms.data_reuse_audit import (
     classify_component_archives,
     prompt_sha256,
@@ -30,7 +31,9 @@ from rea_llms.tail_estimation import (
 )
 from suffix_direct_mh_smc_experiment.run_tail_validation import (
     ComponentSpec,
+    ReferenceCompatibility,
     _component_metadata,
+    _diagnostic_interpretation,
     _load_component_archive,
     _save_component_archive,
     assess_reference_compatibility,
@@ -98,6 +101,27 @@ def test_reference_preflight_rejects_sampling_mismatch_except_in_smoke() -> None
         smoke_mode=True,
         allow_unverified_observable_reference=False,
     )
+
+
+def test_smoke_diagnostics_never_report_scientific_validation() -> None:
+    compatibility = ReferenceCompatibility(
+        sampling_checks={"model": True},
+        sampling_setup_match=True,
+        strict_observable_match_verified=True,
+        exact_reference_match=True,
+        observable_limitation="none",
+    )
+    messages = _diagnostic_interpretation(
+        diagnostic_rows=[{"placeholder": True}],
+        aggregate_rows=[{"placeholder": True}],
+        compatibility=compatibility,
+        seed_group_count=1,
+        smoke_mode=True,
+    )
+    joined = " ".join(messages).lower()
+    assert "execution only" in joined
+    assert "not used" in joined
+    assert "mutually compatible" not in joined
 
 
 def test_capped_potential_preserves_raw_values() -> None:
@@ -218,6 +242,7 @@ def test_component_cache_requires_exact_metadata(tmp_path) -> None:
         final_log_weights=np.log(np.asarray([0.4, 0.6])),
         log_normalizing_constant=1.2,
         runtime_seconds=3.0,
+        generated_token_count=1234,
     )
     spec = ComponentSpec(cap=6.0, lambda_final=-1.0)
     loaded = _load_component_archive(
@@ -227,6 +252,7 @@ def test_component_cache_requires_exact_metadata(tmp_path) -> None:
         reused=True,
     )
     assert loaded.reused
+    assert loaded.generated_token_count == 1234
     incompatible = {**metadata, "prompt": "Different"}
     assert not cache_metadata_matches(metadata, incompatible)
     with pytest.raises(ValueError, match="metadata mismatch"):
@@ -525,6 +551,100 @@ def test_notebook_mode_returns_analysis_without_writing_report_files(
         assert not (output_root / filename).exists()
 
 
+def test_official_public_notebook_cache_smoke_is_read_only(tmp_path, monkeypatch) -> None:
+    output_root = tmp_path / "official_public"
+    direct_root = output_root / "official_public_direct_reference"
+    direct_config = direct_reference.CurrentDirectConfig(
+        num_samples=2,
+        batch_size=2,
+        max_new_tokens=4,
+        seed=91_001,
+        thresholds=(6.0, 7.0, 8.0),
+        ari_convention="official_public",
+    )
+    direct_metadata = direct_reference.requested_metadata(
+        model_name="roneneldan/TinyStories-8M",
+        tokenizer_name="EleutherAI/gpt-neo-125M",
+        prompt="Once upon a time, in a big forest, there lived a rhinoc",
+        config=direct_config,
+        device_type="cpu",
+    )
+    direct_values = np.asarray([6.5, 8.5], dtype=np.float32)
+    running = direct_reference.RunningARIStatistics(direct_config.thresholds)
+    running.update(direct_values)
+    direct_path = direct_root / "direct_ari.npz"
+    direct_reference._write_npz_atomic(direct_path, direct_values)
+    direct_summary = direct_reference.build_summary(
+        direct_values,
+        running,
+        direct_metadata,
+        ari_file_sha256=direct_reference._sha256_file(direct_path),
+        runtime_seconds=1.0,
+        generated_token_count=8,
+    )
+    direct_reference._write_json_atomic(direct_root / "summary.json", direct_summary)
+
+    args = parse_validation_args(
+        [
+            "--audit-only",
+            "--smoke-mode",
+            "--ari-convention",
+            "official_public",
+            "--components-json",
+            json.dumps([{"cap": 8.0, "lambda": -0.5}]),
+            "--seed-groups",
+            "500",
+            "--thresholds",
+            "6,7,8",
+            "--num-particles",
+            "2",
+            "--max-new-tokens",
+            "4",
+            "--mcmc-steps-per-level",
+            "1",
+            "--suffix-sizes",
+            "1,4",
+            "--output-root",
+            str(output_root),
+            "--current-direct-summary",
+            str(direct_root / "summary.json"),
+        ]
+    )
+    spec = ComponentSpec(cap=8.0, lambda_final=-0.5)
+    metadata = _component_metadata(
+        args,
+        spec,
+        seed_group=500,
+        component_index=0,
+        seed=component_seed(500, 0),
+        schedule=build_lambda_schedule(-0.5, 0.25),
+    )
+    component_path = output_root / "component_runs" / f"{component_run_id(metadata)}.npz"
+    _save_component_archive(
+        component_path,
+        metadata=metadata,
+        raw_ari=np.asarray([6.5, 8.5]),
+        phi=np.asarray([6.5, 8.0]),
+        final_log_weights=np.log(np.asarray([0.5, 0.5])),
+        log_normalizing_constant=1.0,
+        runtime_seconds=2.0,
+        generated_token_count=20,
+    )
+
+    monkeypatch.setattr(
+        "suffix_direct_mh_smc_experiment.run_tail_validation.load_model_and_tokenizer",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("cache-only smoke must not load the model")
+        ),
+    )
+    result = run_validation(args, persist_analysis=False, fast_cache=True)
+
+    assert result.generated_component_count == 0
+    assert result.current_direct_summary["metadata"]["ari_convention"] == "official_public"
+    assert result.comparison["generated_token_count"].dropna().eq(20).all()
+    assert not (output_root / "comparison.csv").exists()
+
+
 def test_audit_does_not_declare_partial_seed_group_complete(
     tmp_path, monkeypatch
 ) -> None:
@@ -678,6 +798,55 @@ def test_component_weights_are_normalized_internally_and_rho_is_applied_once() -
     )
     assert float(combined.estimated_probabilities[0]) == pytest.approx(
         float(one.estimated_probabilities[0])
+    )
+
+
+def test_mixture_particle_mass_explicitly_contains_rho_times_smc_weight() -> None:
+    components = [
+        MixtureComponentPopulation(
+            run_id="first",
+            seed=31,
+            cap=2.0,
+            lambda_final=-0.5,
+            log_normalizing_constant=0.2,
+            raw_ari=[0.0, 2.0],
+            final_log_weights=np.log([0.9, 0.1]),
+        ),
+        MixtureComponentPopulation(
+            run_id="second",
+            seed=32,
+            cap=3.0,
+            lambda_final=-1.0,
+            log_normalizing_constant=0.4,
+            raw_ari=[1.0, 3.0],
+            final_log_weights=np.log([0.2, 0.8]),
+        ),
+    ]
+    rho = torch.tensor([0.25, 0.75], dtype=torch.float64)
+    estimate = estimate_base_tails_from_deterministic_mixture(
+        components,
+        thresholds=[2.5],
+        mixture_coefficients=rho,
+    )
+
+    raw = torch.tensor([0.0, 2.0, 1.0, 3.0], dtype=torch.float64)
+    log_q_over_p = log_mixture_density_ratio(
+        raw,
+        caps=[2.0, 3.0],
+        lambdas=[-0.5, -1.0],
+        log_normalizing_constants=[0.2, 0.4],
+        mixture_coefficients=rho,
+    )
+    stratified_mass = torch.tensor(
+        [0.25 * 0.9, 0.25 * 0.1, 0.75 * 0.2, 0.75 * 0.8],
+        dtype=torch.float64,
+    )
+    manual_log_weights = torch.log(stratified_mass) - log_q_over_p
+    manual_log_weights -= torch.logsumexp(manual_log_weights, dim=0)
+
+    assert torch.allclose(estimate.corrected_log_weights, manual_log_weights)
+    assert float(estimate.estimated_probabilities[0]) == pytest.approx(
+        float(torch.exp(manual_log_weights[3]))
     )
 
 
@@ -847,12 +1016,17 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "COMPONENTS" in joined
     assert "SEED_GROUPS" in joined
     assert "LAMBDA_STEP" in joined
-    assert "ARI_CONVENTION = 'current'" in joined
+    assert "ARI_CONVENTION = 'official_public'" in joined
     assert "RUN_DRIVE_AUDIT = False" in joined
-    assert "RUN_DIRECT_REFERENCE = False" in joined
-    assert "RUN_DIRECT_CALIBRATION = False" in joined
-    assert "DIRECT_CALIBRATION_SAMPLES = 200_000" in joined
-    assert "RUN_SMC = False" in joined
+    assert "RUN_OFFICIAL_PUBLIC_DIRECT = False" in joined
+    assert "RUN_OFFICIAL_PUBLIC_SMC = False" in joined
+    assert "OFFICIAL_PUBLIC_DIRECT_NUM_SAMPLES = 200_000" in joined
+    assert "OFFICIAL_PUBLIC_DIRECT_BATCH_SIZE = 256" in joined
+    assert "OFFICIAL_PUBLIC_DIRECT_SEED = 91_001" in joined
+    assert "OUTPUT_ROOT = Path('/content/drive/MyDrive/rea_official_public_validation')" in joined
+    assert "TAIL_THRESHOLDS = [6, 7, 8]" in joined
+    assert joined.count("{'cap':") == 9
+    assert "{'cap': 10" not in joined
     assert "audit_run_directory" in joined
     assert "target_ari_convention=ARI_CONVENTION" in joined
     assert "--components-json" in joined
@@ -861,14 +1035,16 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "persist_analysis=False" in joined
     assert "fast_cache=True" in joined
     assert "rea_llms.current_direct_reference" in joined
-    assert "DIRECT_NUM_SAMPLES = 200_000" in joined
     assert "plt.show()" in joined
+    assert "plt.subplots(1, 2" in joined
     assert "savefig" not in joined
     assert "to_csv" not in joined
     assert "REPORT.md" not in joined
     assert "RUN_SMOKE_TEST" not in joined
-    assert "SEED_GROUPS = [200, 300]" in joined
+    assert "SEED_GROUPS = [500]" in joined
     assert "official_annealed_tps" not in joined
+    assert "pymbar" not in joined.lower()
+    assert "--smoke-mode" not in joined
 
 
 def _completed_sweep_payload(

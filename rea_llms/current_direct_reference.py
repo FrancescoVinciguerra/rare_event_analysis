@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import time
 from dataclasses import dataclass
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -302,17 +303,17 @@ def load_scientifically_compatible_summary(
 
     path = Path(summary_path)
     if not path.is_file():
-        return None, ["current-pipeline direct summary is absent"]
+        return None, ["matching direct summary is absent"]
     try:
         summary = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:
-        return None, [f"current-pipeline direct summary is unreadable: {exc}"]
+        return None, [f"matching direct summary is unreadable: {exc}"]
     metadata = summary.get("metadata")
     reasons: list[str] = []
     if summary.get("complete") is not True or not isinstance(metadata, dict):
-        return None, ["current-pipeline direct summary is incomplete"]
+        return None, ["matching direct summary is incomplete"]
     if summary.get("metadata_sha256") != metadata_fingerprint(metadata):
-        reasons.append("current-pipeline direct metadata SHA-256 mismatch")
+        reasons.append("matching direct metadata SHA-256 mismatch")
     validate_ari_convention(ari_convention)
     expected = {
         "reference_type": (
@@ -345,15 +346,15 @@ def load_scientifically_compatible_summary(
         expected["ari_convention"] = ari_convention
     for key, value in expected.items():
         if metadata.get(key) != value:
-            reasons.append(f"current-pipeline direct metadata mismatch: {key}")
+            reasons.append(f"matching direct metadata mismatch: {key}")
     ari_path = path.parent / str(summary.get("ari_file", "direct_ari.npz"))
     if not ari_path.is_file():
-        reasons.append("current-pipeline direct ARI archive is absent")
+        reasons.append("matching direct ARI archive is absent")
     elif summary.get("ari_file_sha256") != _sha256_file(ari_path):
-        reasons.append("current-pipeline direct ARI archive SHA-256 mismatch")
+        reasons.append("matching direct ARI archive SHA-256 mismatch")
     statistics = summary.get("statistics")
     if not isinstance(statistics, dict) or int(statistics.get("count", 0)) <= 0:
-        reasons.append("current-pipeline direct statistics are absent")
+        reasons.append("matching direct statistics are absent")
     else:
         available = {
             float(row["threshold"])
@@ -362,7 +363,7 @@ def load_scientifically_compatible_summary(
         }
         missing = [float(value) for value in thresholds if float(value) not in available]
         if missing:
-            reasons.append(f"current-pipeline direct thresholds are absent: {missing}")
+            reasons.append(f"matching direct thresholds are absent: {missing}")
     return (summary if not reasons else None), reasons
 
 
@@ -432,6 +433,8 @@ def build_summary(
     metadata: dict[str, Any],
     *,
     ari_file_sha256: str,
+    runtime_seconds: float | None = None,
+    generated_token_count: int | None = None,
 ) -> dict[str, Any]:
     if running.count != values.size:
         raise ValueError("running statistics do not cover the stored ARI array")
@@ -442,6 +445,8 @@ def build_summary(
         "metadata_sha256": metadata_fingerprint(metadata),
         "ari_file": "direct_ari.npz",
         "ari_file_sha256": ari_file_sha256,
+        "runtime_seconds": runtime_seconds,
+        "generated_token_count": generated_token_count,
         "statistics": {
             "count": running.count,
             "mean": running.mean,
@@ -450,13 +455,19 @@ def build_summary(
             "min": running.minimum,
             "max": running.maximum,
             "boxplot": boxplot_statistics(np.asarray(values, dtype=np.float64)),
+            "quantiles": {
+                str(level): float(np.quantile(values, level, method="linear"))
+                for level in (0.5, 0.9, 0.95, 0.99, 0.995, 0.999)
+            },
             "tails": running.tail_statistics(),
         },
     }
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build one current-pipeline IID direct reference.")
+    parser = argparse.ArgumentParser(
+        description="Build one fixed-length IID direct reference."
+    )
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument("--tokenizer-name", default=DEFAULT_TOKENIZER_NAME)
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
@@ -503,11 +514,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     output_dir = Path(args.output_dir)
     existing = load_reusable_summary(output_dir, requested)
     if existing is not None and args.skip_completed:
-        print(f"reused complete current direct reference: {output_dir.resolve()}")
+        print(
+            f"reused complete {config.ari_convention} direct reference: "
+            f"{output_dir.resolve()}"
+        )
         return
     if args.skip_completed and (output_dir / "summary.json").exists():
         raise RuntimeError(
-            "existing current direct reference is incomplete or metadata-incompatible; "
+            "existing direct reference is incomplete or metadata-incompatible; "
             "use --no-skip-completed to replace it explicitly"
         )
 
@@ -532,7 +546,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         convention=config.ari_convention,
         cache_enabled=False,
     )
-    progress = tqdm(total=config.num_samples, desc="Current direct reference", unit="sample")
+    progress = tqdm(
+        total=config.num_samples,
+        desc=f"{config.ari_convention} direct reference",
+        unit="sample",
+    )
     previous = 0
 
     def update(done: int, total: int) -> None:
@@ -540,6 +558,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         progress.update(done - previous)
         previous = done
 
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    started = time.perf_counter()
     try:
         values, running = sample_current_direct_reference(
             model,
@@ -551,6 +572,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         )
     finally:
         progress.close()
+    if device.type == "cuda":
+        torch.cuda.synchronize(device)
+    runtime_seconds = time.perf_counter() - started
     ari_path = output_dir / "direct_ari.npz"
     _write_npz_atomic(ari_path, values)
     summary = build_summary(
@@ -558,9 +582,11 @@ def main(argv: Sequence[str] | None = None) -> None:
         running,
         metadata,
         ari_file_sha256=_sha256_file(ari_path),
+        runtime_seconds=runtime_seconds,
+        generated_token_count=config.num_samples * config.max_new_tokens,
     )
     _write_json_atomic(output_dir / "summary.json", summary)
-    print(f"current direct reference: {output_dir.resolve()}")
+    print(f"{config.ari_convention} direct reference: {output_dir.resolve()}")
 
 
 if __name__ == "__main__":
