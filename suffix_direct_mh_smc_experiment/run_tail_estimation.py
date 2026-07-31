@@ -24,7 +24,7 @@ from rea_llms.models import (  # noqa: E402
     DEFAULT_TOKENIZER_NAME,
     load_model_and_tokenizer,
 )
-from rea_llms.observables import create_observable  # noqa: E402
+from rea_llms.observables import ARI_CONVENTIONS, create_observable  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
     aggregate_terminal_lambda_runs,
     estimate_base_tails_from_final_samples,
@@ -92,6 +92,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--tail-thresholds", default="6,8,10,12,15,20")
+    parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--min-corrected-ess-over-n", type=float, default=0.10)
     parser.add_argument("--min-raw-event-fraction", type=float, default=0.05)
     parser.add_argument("--max-raw-event-fraction", type=float, default=0.95)
@@ -410,6 +411,7 @@ def _run_seed(
         "tokenizer_name": args.tokenizer_name,
         "prompt": args.prompt,
         "ari_mode": "raw",
+        "ari_convention": args.ari_convention,
         "observable_backend": "exact_cached",
         "requested_device": args.device,
         "model_device": str(next(model.parameters()).device),
@@ -439,7 +441,12 @@ def _run_seed(
         print(f"Reusing completed run: {run_path}", flush=True)
         return run_path
 
-    observable = create_observable("ari", mode="raw", backend="exact_cached")
+    observable = create_observable(
+        "ari",
+        mode="raw",
+        backend="exact_cached",
+        convention=args.ari_convention,
+    )
     progress = tqdm(total=max(0, len(lambdas) - 1), desc=f"SMC seed {seed}")
 
     def update_progress(row: dict[str, Any]) -> None:

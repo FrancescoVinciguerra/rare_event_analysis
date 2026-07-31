@@ -5,6 +5,11 @@ from dataclasses import dataclass, field
 from textstat import automated_readability_index
 
 from rea_llms.observables.base import ObservableScore
+from rea_llms.scoring import (
+    ARI_CONVENTION_CURRENT,
+    text_for_ari_from_token_ids,
+    validate_ari_convention,
+)
 
 
 @dataclass
@@ -14,6 +19,7 @@ class ARIObservable:
     mode: str = "capped"
     cap: float = 15.0
     backend: str = "exact_cached"
+    convention: str = ARI_CONVENTION_CURRENT
     cache_enabled: bool = True
     name: str = "ari"
     _cache: dict[str, ObservableScore] = field(default_factory=dict, init=False, repr=False)
@@ -23,6 +29,7 @@ class ARIObservable:
             raise ValueError("mode must be one of {'raw', 'capped'}")
         if self.backend not in {"exact", "exact_cached", "textstat"}:
             raise ValueError("ARI backend must be one of {'exact', 'exact_cached', 'textstat'}")
+        validate_ari_convention(self.convention)
 
     def score_text(self, text: str) -> ObservableScore:
         """Score one exact text, optionally reusing an exact-text cache entry."""
@@ -40,6 +47,7 @@ class ARIObservable:
                 "ari_mode": self.mode,
                 "ari_cap": float(self.cap),
                 "backend": self.backend,
+                "ari_convention": self.convention,
             },
         )
         if self.cache_enabled and self.backend == "exact_cached":
@@ -59,10 +67,16 @@ class ARIObservable:
         token_sequences: list[list[int]],
         prompt_token_count: int,
     ) -> list[ObservableScore]:
-        """Decode completion-token suffixes and score them with final-eval semantics."""
+        """Decode token sequences using the explicitly selected ARI convention."""
 
         scores = []
         for ids in token_sequences:
-            completion = tokenizer.decode(ids[prompt_token_count:], skip_special_tokens=True)
-            scores.append(self.score_completion(prompt, completion))
+            text = text_for_ari_from_token_ids(
+                tokenizer,
+                prompt=prompt,
+                token_ids=ids,
+                prompt_token_count=prompt_token_count,
+                convention=self.convention,
+            )
+            scores.append(self.score_text(text))
         return scores

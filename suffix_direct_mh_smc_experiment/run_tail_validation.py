@@ -40,7 +40,11 @@ from rea_llms.data_reuse_audit import (  # noqa: E402
 from rea_llms.current_direct_reference import (  # noqa: E402
     load_scientifically_compatible_summary,
 )
-from rea_llms.observables import create_observable  # noqa: E402
+from rea_llms.observables import (  # noqa: E402
+    ARI_CONVENTION_CURRENT,
+    ARI_CONVENTIONS,
+    create_observable,
+)
 from rea_llms.official_direct_data import boxplot_statistics  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
     MixtureComponentPopulation,
@@ -209,7 +213,7 @@ def _component_metadata(
 ) -> dict[str, Any]:
     suffix_sizes = parse_int_list(args.suffix_sizes)
     suffix_rhos = parse_float_list(args.suffix_rhos) if args.suffix_rhos else None
-    return {
+    metadata = {
         "schema_version": CACHE_SCHEMA_VERSION,
         "algorithm": "suffix_direct_mh_smc",
         "algorithm_version": ALGORITHM_VERSION,
@@ -243,6 +247,11 @@ def _component_metadata(
         "component_index": int(component_index),
         "seed": int(seed),
     }
+    # Existing current-convention component archives predate this explicit
+    # field. Preserve their fingerprints while separating every new convention.
+    if args.ari_convention != ARI_CONVENTION_CURRENT:
+        metadata["ari_convention"] = args.ari_convention
+    return metadata
 
 
 def component_run_id(metadata: dict[str, Any]) -> str:
@@ -478,6 +487,7 @@ def _run_component(
         mode="capped",
         cap=spec.cap,
         backend="exact_cached",
+        convention=args.ari_convention,
     )
     config = SuffixDirectMHSMCConfig(
         num_particles=args.num_particles,
@@ -1528,6 +1538,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--seed-groups", default="200,300,400")
     parser.add_argument("--thresholds", default="6,7,8,10")
+    parser.add_argument(
+        "--ari-convention",
+        choices=ARI_CONVENTIONS,
+        default=ARI_CONVENTION_CURRENT,
+    )
     parser.add_argument("--lambda-step", type=float, default=0.25)
     parser.add_argument("--num-particles", type=int, default=256)
     parser.add_argument("--mcmc-steps-per-level", type=int, default=10)
@@ -1626,6 +1641,7 @@ def run_validation(
         prompt=args.prompt,
         max_new_tokens=args.max_new_tokens,
         thresholds=thresholds,
+        ari_convention=args.ari_convention,
     )
     current_direct_rows = None
     current_direct_n = None

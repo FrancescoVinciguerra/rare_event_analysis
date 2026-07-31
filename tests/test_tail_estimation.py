@@ -847,9 +847,16 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "COMPONENTS" in joined
     assert "SEED_GROUPS" in joined
     assert "LAMBDA_STEP" in joined
+    assert "ARI_CONVENTION = 'current'" in joined
+    assert "RUN_DRIVE_AUDIT = False" in joined
     assert "RUN_DIRECT_REFERENCE = False" in joined
+    assert "RUN_DIRECT_CALIBRATION = False" in joined
+    assert "DIRECT_CALIBRATION_SAMPLES = 200_000" in joined
     assert "RUN_SMC = False" in joined
+    assert "audit_run_directory" in joined
+    assert "target_ari_convention=ARI_CONVENTION" in joined
     assert "--components-json" in joined
+    assert "--ari-convention" in joined
     assert "--audit-only" in joined
     assert "persist_analysis=False" in joined
     assert "fast_cache=True" in joined
@@ -859,7 +866,6 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "savefig" not in joined
     assert "to_csv" not in joined
     assert "REPORT.md" not in joined
-    assert "RUN_CACHE_AUDIT" not in joined
     assert "RUN_SMOKE_TEST" not in joined
     assert "SEED_GROUPS = [200, 300]" in joined
     assert "official_annealed_tps" not in joined

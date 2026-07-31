@@ -28,7 +28,7 @@ from rea_llms.models import (  # noqa: E402
     load_model_and_tokenizer,
     resolve_device,
 )
-from rea_llms.observables import create_observable  # noqa: E402
+from rea_llms.observables import ARI_CONVENTIONS, create_observable  # noqa: E402
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     parse_float_list,
     write_json,
@@ -49,6 +49,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--ari-mode", choices=["raw", "capped"], default="raw")
+    parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--ari-cap", type=float, default=15.0)
     parser.add_argument("--tail-thresholds", default="10,12,15,18")
     parser.add_argument("--output-root", type=Path, default=Path("outputs"))
@@ -89,6 +90,7 @@ def main() -> None:
         "completion_length": args.max_new_tokens,
         "ari_mode": args.ari_mode,
         "ari_cap": args.ari_cap if args.ari_mode == "capped" else None,
+        "ari_convention": args.ari_convention,
         "lambda_schedule": list(config.lambdas),
         "steps_per_bias": args.steps_per_bias,
         "suffix_configuration": "official_uniform_cut_indices_prompt_to_max_length_minus_1",
@@ -126,6 +128,7 @@ def main() -> None:
         mode=args.ari_mode,
         cap=args.ari_cap,
         backend="exact_cached",
+        convention=args.ari_convention,
     )
     progress = tqdm(total=len(config.lambdas), desc=f"TPS seed {args.seed}")
 
@@ -156,6 +159,7 @@ def main() -> None:
         "model_name": args.model_name,
         "tokenizer_name": args.tokenizer_name,
         "prompt": args.prompt,
+        "ari_convention": args.ari_convention,
         "model_device": str(next(model.parameters()).device),
         "config": result.config,
     }

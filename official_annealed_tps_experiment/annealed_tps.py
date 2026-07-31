@@ -11,6 +11,10 @@ import torch
 
 from rea_llms.benchmarking import temporal_ess_initial_positive
 from rea_llms.models import set_seed
+from rea_llms.scoring import (
+    ARI_CONVENTION_CURRENT,
+    text_for_ari_from_token_ids,
+)
 from suffix_direct_mh_smc_experiment.smc_sampler import (
     generate_base_completions,
     metropolis_log_acceptance,
@@ -198,11 +202,22 @@ def run_official_annealed_tps(
     _synchronize(device)
     start = time.perf_counter()
 
-    def track(completion_tokens: torch.Tensor, raw_ari: float, lambda_value: float) -> None:
-        completion = tokenizer.decode(
-            completion_tokens[0].detach().cpu().tolist(),
-            skip_special_tokens=True,
+    def decode_ari_completion(completion_tokens: torch.Tensor) -> str:
+        prompt_list = [int(value) for value in prompt_ids.detach().cpu().tolist()]
+        completion_list = [
+            int(value) for value in completion_tokens[0].detach().cpu().tolist()
+        ]
+        text = text_for_ari_from_token_ids(
+            tokenizer,
+            prompt=prompt,
+            token_ids=prompt_list + completion_list,
+            prompt_token_count=len(prompt_list),
+            convention=getattr(observable, "convention", ARI_CONVENTION_CURRENT),
         )
+        return text[len(prompt) :]
+
+    def track(completion_tokens: torch.Tensor, raw_ari: float, lambda_value: float) -> None:
+        completion = decode_ari_completion(completion_tokens)
         elapsed = time.perf_counter() - start
         existing = best_discoveries.get(completion)
         if existing is None or raw_ari > float(existing["raw_ari"]):
@@ -308,10 +323,7 @@ def run_official_annealed_tps(
                     }
                 )
 
-        final_completion = tokenizer.decode(
-            current_tokens[0].detach().cpu().tolist(),
-            skip_special_tokens=True,
-        )
+        final_completion = decode_ari_completion(current_tokens)
 
     _synchronize(device)
     elapsed = time.perf_counter() - start
@@ -328,6 +340,11 @@ def run_official_annealed_tps(
         "method": "official_annealed_tps",
         "seed": config.seed,
         "ari_mode": config.ari_mode,
+        "ari_convention": getattr(
+            observable,
+            "convention",
+            ARI_CONVENTION_CURRENT,
+        ),
         "ari_cap": config.ari_cap if config.ari_mode == "capped" else None,
         "lambdas": [float(value) for value in config.lambdas],
         "target_lambda": float(config.lambdas[-1]),
@@ -371,9 +388,14 @@ def run_official_annealed_tps(
             "this adapter ports only their cut, suffix proposal, acceptance, and annealing semantics.",
             "Suffix generation uses the repository's equivalent cached GPU generator instead of "
             "calling Hugging Face model.generate for each scalar proposal.",
-            "Both benchmark methods use the shared exact token-sequence ARI convention so they "
-            "target the same phi. The official notebook instead decodes the full sequence and "
-            "removes the first len(prompt) characters, which can differ at BPE boundaries.",
+            (
+                "The selected official_public ARI convention follows the public notebook's "
+                "full-sequence decode and len(prompt) character slice."
+                if getattr(observable, "convention", ARI_CONVENTION_CURRENT)
+                != ARI_CONVENTION_CURRENT
+                else "The current ARI convention decodes completion tokens separately; the "
+                "official notebook's full-sequence character slice can differ at BPE boundaries."
+            ),
             "Trajectory values are recorded after each accept/reject, whereas the official "
             "notebook's step_info current_obs field is captured before the transition.",
         ],

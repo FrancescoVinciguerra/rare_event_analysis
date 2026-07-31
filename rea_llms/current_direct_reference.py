@@ -33,7 +33,13 @@ from rea_llms.official_direct_data import (
     rule_of_three_upper_bound,
     wilson_interval,
 )
-from rea_llms.scoring import CURRENT_DECODING_CONVENTION, score_completion_tokens
+from rea_llms.scoring import (
+    ARI_CONVENTION_CURRENT,
+    ARI_CONVENTIONS,
+    ari_decoding_description,
+    score_completion_tokens,
+    validate_ari_convention,
+)
 
 
 CURRENT_DIRECT_SCHEMA_VERSION = 1
@@ -80,6 +86,7 @@ class CurrentDirectConfig:
     max_new_tokens: int = 100
     seed: int = 91_000
     thresholds: tuple[float, ...] = DEFAULT_THRESHOLDS
+    ari_convention: str = ARI_CONVENTION_CURRENT
 
     def __post_init__(self) -> None:
         if self.num_samples <= 0 or self.batch_size <= 0 or self.max_new_tokens <= 0:
@@ -90,6 +97,7 @@ class CurrentDirectConfig:
             not math.isfinite(float(value)) for value in self.thresholds
         ):
             raise ValueError("thresholds must be a non-empty finite sequence")
+        validate_ari_convention(self.ari_convention)
 
 
 @dataclass
@@ -160,9 +168,13 @@ def requested_metadata(
 ) -> dict[str, Any]:
     """Metadata known before loading a model, used for strict cache reuse."""
 
-    return {
+    metadata = {
         "schema_version": CURRENT_DIRECT_SCHEMA_VERSION,
-        "reference_type": "current_pipeline_iid_direct",
+        "reference_type": (
+            "current_pipeline_iid_direct"
+            if config.ari_convention == ARI_CONVENTION_CURRENT
+            else "official_public_iid_direct"
+        ),
         "model_name": model_name,
         "tokenizer_name": tokenizer_name,
         "prompt": prompt,
@@ -174,11 +186,15 @@ def requested_metadata(
         "top_k": None,
         "top_p": None,
         "generation_engine_version": GENERATION_ENGINE_VERSION,
-        "decoding_convention": CURRENT_DECODING_CONVENTION,
+        "decoding_convention": ari_decoding_description(config.ari_convention),
         "skip_special_tokens": True,
         "clean_up_tokenization_spaces": "tokenizer default; not passed explicitly",
         "observable": "textstat automated_readability_index",
-        "observable_scope": "exact prompt string plus separately decoded completion tokens",
+        "observable_scope": (
+            "exact prompt string plus separately decoded completion tokens"
+            if config.ari_convention == ARI_CONVENTION_CURRENT
+            else "exact prompt string plus character-sliced completion from full-sequence decoding"
+        ),
         "ari_representation": "raw",
         "ari_cap": None,
         "num_samples": config.num_samples,
@@ -187,6 +203,11 @@ def requested_metadata(
         "thresholds": [float(value) for value in config.thresholds],
         "device_type": device_type,
     }
+    # Legacy current-reference fingerprints predate the explicit field. Omitting
+    # it for that convention preserves exact reuse of those completed archives.
+    if config.ari_convention != ARI_CONVENTION_CURRENT:
+        metadata["ari_convention"] = config.ari_convention
+    return metadata
 
 
 def complete_metadata(
@@ -275,6 +296,7 @@ def load_scientifically_compatible_summary(
     prompt: str,
     max_new_tokens: int,
     thresholds: Sequence[float],
+    ari_convention: str = ARI_CONVENTION_CURRENT,
 ) -> tuple[dict[str, Any] | None, list[str]]:
     """Load a complete direct reference matching the active SMC distribution."""
 
@@ -291,8 +313,13 @@ def load_scientifically_compatible_summary(
         return None, ["current-pipeline direct summary is incomplete"]
     if summary.get("metadata_sha256") != metadata_fingerprint(metadata):
         reasons.append("current-pipeline direct metadata SHA-256 mismatch")
+    validate_ari_convention(ari_convention)
     expected = {
-        "reference_type": "current_pipeline_iid_direct",
+        "reference_type": (
+            "current_pipeline_iid_direct"
+            if ari_convention == ARI_CONVENTION_CURRENT
+            else "official_public_iid_direct"
+        ),
         "model_name": model_name,
         "tokenizer_name": tokenizer_name,
         "prompt": prompt,
@@ -304,12 +331,18 @@ def load_scientifically_compatible_summary(
         "top_k": None,
         "top_p": None,
         "generation_engine_version": GENERATION_ENGINE_VERSION,
-        "decoding_convention": CURRENT_DECODING_CONVENTION,
+        "decoding_convention": ari_decoding_description(ari_convention),
         "observable": "textstat automated_readability_index",
-        "observable_scope": "exact prompt string plus separately decoded completion tokens",
+        "observable_scope": (
+            "exact prompt string plus separately decoded completion tokens"
+            if ari_convention == ARI_CONVENTION_CURRENT
+            else "exact prompt string plus character-sliced completion from full-sequence decoding"
+        ),
         "ari_representation": "raw",
         "ari_cap": None,
     }
+    if ari_convention != ARI_CONVENTION_CURRENT:
+        expected["ari_convention"] = ari_convention
     for key, value in expected.items():
         if metadata.get(key) != value:
             reasons.append(f"current-pipeline direct metadata mismatch: {key}")
@@ -432,6 +465,11 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--seed", type=int, default=91_000)
     parser.add_argument("--thresholds", default="6,7,8,10")
+    parser.add_argument(
+        "--ari-convention",
+        choices=ARI_CONVENTIONS,
+        default=ARI_CONVENTION_CURRENT,
+    )
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -452,6 +490,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         max_new_tokens=args.max_new_tokens,
         seed=args.seed,
         thresholds=thresholds,
+        ari_convention=args.ari_convention,
     )
     device = resolve_device(args.device)
     requested = requested_metadata(
@@ -490,6 +529,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         mode="raw",
         cap=15.0,
         backend="exact_cached",
+        convention=config.ari_convention,
         cache_enabled=False,
     )
     progress = tqdm(total=config.num_samples, desc="Current direct reference", unit="sample")

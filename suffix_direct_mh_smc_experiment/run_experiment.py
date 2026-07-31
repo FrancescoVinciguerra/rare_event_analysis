@@ -18,7 +18,7 @@ from rea_llms.models import (  # noqa: E402
     DEFAULT_TOKENIZER_NAME,
     load_model_and_tokenizer,
 )
-from rea_llms.observables import create_observable  # noqa: E402
+from rea_llms.observables import ARI_CONVENTIONS, create_observable  # noqa: E402
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     SuffixDirectMHSMCConfig,
     parse_float_list,
@@ -78,6 +78,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tail-thresholds", default="6,8,10,12,15")
     parser.add_argument("--ari-cap", type=float, default=15.0)
     parser.add_argument("--ari-mode", choices=["raw", "capped"], default="raw")
+    parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--observable-backend", default="exact_cached")
     parser.add_argument("--disable-score-cache", action="store_true")
     return parser.parse_args(argv)
@@ -130,6 +131,7 @@ def main() -> None:
         mode=args.ari_mode,
         cap=args.ari_cap,
         backend=args.observable_backend,
+        convention=args.ari_convention,
         cache_enabled=not args.disable_score_cache,
     )
     model, tokenizer = load_model_and_tokenizer(
@@ -175,6 +177,7 @@ def main() -> None:
         "model_device": str(model_device),
         "ari_mode": args.ari_mode,
         "ari_cap": args.ari_cap,
+        "ari_convention": args.ari_convention,
         "observable_backend": args.observable_backend,
     }
     payload = {

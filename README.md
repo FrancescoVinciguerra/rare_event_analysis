@@ -139,11 +139,13 @@ Open the primary notebook directly:
 
 [Open REA Suffix SMC in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Suffix_SMC_Quickstart.ipynb)
 
-The notebook has one parameter cell and two explicit execution switches:
-`RUN_DIRECT_REFERENCE` and `RUN_SMC`. Both are false by default, so opening the
-notebook never starts an expensive run. Requested component archives are loaded
-directly by their configuration fingerprint; partial seed groups are shown but
-never included in the mixture estimate.
+The notebook has one parameter cell. Its sampling switches
+`RUN_DIRECT_REFERENCE`, `RUN_DIRECT_CALIBRATION`, and `RUN_SMC` are false by
+default, so opening the notebook never starts an expensive run. The separate
+`RUN_DRIVE_AUDIT` switch performs only read-only metadata inspection. Select
+`ARI_CONVENTION='current'` or `'official_public'` explicitly. Requested
+component archives are loaded directly by their configuration fingerprint;
+partial seed groups are shown but never included in the mixture estimate.
 
 Only resumable scientific data are persisted on Drive:
 `component_runs/*.npz` and the current-pipeline direct ARI reference. The result
@@ -155,6 +157,9 @@ read.
 The official archive uses an incompletely published ARI/decode convention and
 is therefore kept out of the primary notebook. Its cross-implementation audit
 remains available in the separate official-direct notebook below.
+The exact decoding differences, official-data inventory, and reuse limits are
+documented in
+[`docs/DATA_REUSE_AND_ARI_AUDIT.md`](docs/DATA_REUSE_AND_ARI_AUDIT.md).
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).

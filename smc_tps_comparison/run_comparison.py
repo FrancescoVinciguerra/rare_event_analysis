@@ -32,7 +32,7 @@ from rea_llms.models import (  # noqa: E402
     DEFAULT_TOKENIZER_NAME,
     load_model_and_tokenizer,
 )
-from rea_llms.observables import create_observable  # noqa: E402
+from rea_llms.observables import ARI_CONVENTIONS, create_observable  # noqa: E402
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     SuffixDirectMHSMCConfig,
     parse_float_list,
@@ -77,6 +77,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--ari-mode", choices=["raw", "capped"], default="raw")
+    parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--ari-cap", type=float, default=15.0)
     parser.add_argument("--tail-thresholds", default="10,12,15,18")
 
@@ -123,6 +124,7 @@ def _fingerprint_payload(
         "prompt": args.prompt,
         "completion_length": args.max_new_tokens,
         "ari_mode": args.ari_mode,
+        "ari_convention": args.ari_convention,
         "ari_cap": args.ari_cap if args.ari_mode == "capped" else None,
         "lambda_schedule": list(lambdas),
         "temperature": 1.0,
@@ -179,7 +181,11 @@ def _run_smc(
     if action == "skip":
         return json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
     observable = create_observable(
-        "ari", mode=args.ari_mode, cap=args.ari_cap, backend="exact_cached"
+        "ari",
+        mode=args.ari_mode,
+        cap=args.ari_cap,
+        backend="exact_cached",
+        convention=args.ari_convention,
     )
     config = SuffixDirectMHSMCConfig(
         num_particles=args.smc_num_particles,
@@ -219,6 +225,7 @@ def _run_smc(
         "core_algorithm": "suffix_direct_mh_smc",
         "seed": seed,
         "ari_mode": args.ari_mode,
+        "ari_convention": args.ari_convention,
         "ari_cap": args.ari_cap if args.ari_mode == "capped" else None,
         "completed_full_schedule": True,
         "mean_raw_ari_final_target": result.summary["weighted_mean_ari"],
@@ -276,7 +283,11 @@ def _run_tps(
     if action == "skip":
         return json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
     observable = create_observable(
-        "ari", mode=args.ari_mode, cap=args.ari_cap, backend="exact_cached"
+        "ari",
+        mode=args.ari_mode,
+        cap=args.ari_cap,
+        backend="exact_cached",
+        convention=args.ari_convention,
     )
     config = OfficialAnnealedTPSConfig(
         max_new_tokens=args.max_new_tokens,

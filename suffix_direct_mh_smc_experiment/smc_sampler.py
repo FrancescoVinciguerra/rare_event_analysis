@@ -18,11 +18,37 @@ from rea_llms.generation import (
     prompt_token_ids,
 )
 from rea_llms.models import set_seed
-from rea_llms.scoring import score_completion_tokens
+from rea_llms.scoring import (
+    ARI_CONVENTION_CURRENT,
+    score_completion_tokens,
+    text_for_ari_from_token_ids,
+)
 
 
 ScheduleValue = TypeVar("ScheduleValue")
 ALGORITHM_VERSION = "suffix_direct_mh_smc_v3_log_normalizer"
+
+
+def _ari_texts_from_completion_ids(
+    tokenizer,
+    observable,
+    *,
+    prompt: str,
+    prompt_ids: torch.Tensor,
+    completion_ids: Sequence[Sequence[int]],
+) -> list[str]:
+    prompt_list = [int(value) for value in prompt_ids.detach().cpu().tolist()]
+    convention = getattr(observable, "convention", ARI_CONVENTION_CURRENT)
+    return [
+        text_for_ari_from_token_ids(
+            tokenizer,
+            prompt=prompt,
+            token_ids=prompt_list + [int(value) for value in completion],
+            prompt_token_count=len(prompt_list),
+            convention=convention,
+        )
+        for completion in completion_ids
+    ]
 
 
 # Configuration and result containers
@@ -636,7 +662,14 @@ def _final_samples(
         completions=particles.completion_token_ids,
     )
     completion_ids = particles.completion_token_ids.detach().cpu().tolist()
-    completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+    ari_texts = _ari_texts_from_completion_ids(
+        tokenizer,
+        observable,
+        prompt=prompt,
+        prompt_ids=prompt_ids,
+        completion_ids=completion_ids,
+    )
+    completions = [text[len(prompt) :] for text in ari_texts]
     weights = torch.exp(normalized_log_weights).detach().cpu().tolist()
     log_weights = normalized_log_weights.detach().cpu().tolist()
     phi = particles.phi.detach().cpu().tolist()
@@ -651,7 +684,7 @@ def _final_samples(
                 "ancestor_id": int(roots[index]),
                 "root_ancestor": int(roots[index]),
                 "seed": int(seed),
-                "text": prompt + completion,
+                "text": ari_texts[index],
                 "completion": completion,
                 "phi": float(phi[index]),
                 "raw_ari": float(metadata["raw_ari"]),
@@ -712,7 +745,14 @@ def run_suffix_direct_mh_smc(
         # rejected. This requires a second token transfer/decode beyond ARI
         # scoring and is intentionally preserved as part of metric semantics.
         completion_ids = token_batch.detach().cpu().tolist()
-        completion_texts = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+        ari_texts = _ari_texts_from_completion_ids(
+            tokenizer,
+            observable,
+            prompt=prompt,
+            prompt_ids=prompt_ids,
+            completion_ids=completion_ids,
+        )
+        completion_texts = [text[len(prompt) :] for text in ari_texts]
         raw_values = raw_ari_batch.detach().cpu().tolist()
         elapsed_now = time.perf_counter() - start
         for completion, raw_value in zip(completion_texts, raw_values):
@@ -938,6 +978,11 @@ def run_suffix_direct_mh_smc(
         "algorithm": "suffix_direct_mh_smc",
         "algorithm_version": ALGORITHM_VERSION,
         "mutation_kernel": "suffix_direct_mh",
+        "ari_convention": getattr(
+            observable,
+            "convention",
+            ARI_CONVENTION_CURRENT,
+        ),
         "num_particles": config.num_particles,
         "max_new_tokens": config.max_new_tokens,
         "lambdas": [float(value) for value in config.lambdas],
