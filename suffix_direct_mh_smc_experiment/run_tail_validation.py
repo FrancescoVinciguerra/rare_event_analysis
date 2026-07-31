@@ -106,6 +106,22 @@ class ReferenceCompatibility:
     observable_limitation: str
 
 
+@dataclass
+class TailValidationResult:
+    """In-memory validation data used by the Colab notebook."""
+
+    comparison: pd.DataFrame
+    component_diagnostics: pd.DataFrame
+    component_status: pd.DataFrame
+    complete_grouped: dict[int, list[CompletedComponent]]
+    specs: tuple[ComponentSpec, ...]
+    thresholds: tuple[float, ...]
+    current_direct_summary: dict[str, Any] | None
+    generated_component_count: int
+    reusable_component_count: int
+    planned_missing_count: int
+
+
 def canonical_json(payload: Any) -> str:
     return json.dumps(
         payload,
@@ -357,6 +373,62 @@ def _load_selected_audit_components(
             )
         )
     return completed
+
+
+def _load_expected_components(
+    plans: Sequence[
+        tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]
+    ],
+) -> list[CompletedComponent]:
+    """Load only exact expected cache paths without scanning a remote directory."""
+
+    completed: list[CompletedComponent] = []
+    for _, _, spec, _, _, metadata, path in plans:
+        if path.is_file():
+            completed.append(
+                _load_component_archive(
+                    path,
+                    expected_metadata=metadata,
+                    spec=spec,
+                    reused=True,
+                )
+            )
+    return completed
+
+
+def _component_status_frame(
+    plans: Sequence[
+        tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]
+    ],
+    completed: Sequence[CompletedComponent],
+    complete_grouped: dict[int, list[CompletedComponent]],
+) -> pd.DataFrame:
+    completed_by_id = {component.run_id: component for component in completed}
+    included_ids = {
+        component.run_id
+        for components in complete_grouped.values()
+        for component in components
+    }
+    rows = []
+    for seed_group, _, spec, seed, _, _, path in plans:
+        component = completed_by_id.get(path.stem)
+        rows.append(
+            {
+                "seed_group": seed_group,
+                "cap": spec.cap,
+                "lambda_final": spec.lambda_final,
+                "seed": seed,
+                "status": (
+                    "missing"
+                    if component is None
+                    else "reused"
+                    if component.reused
+                    else "generated"
+                ),
+                "included_in_mixture": path.stem in included_ids,
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def _write_audit_csv(
@@ -1508,8 +1580,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Sequence[str] | None = None) -> None:
-    args = parse_args(argv)
+def run_validation(
+    args: argparse.Namespace,
+    *,
+    persist_analysis: bool = True,
+    fast_cache: bool = False,
+) -> TailValidationResult:
+    """Run or load components and return the validation analysis in memory.
+
+    ``fast_cache`` checks only the deterministic paths for the requested
+    configurations. It is intended for high-latency Colab Drive mounts. The
+    normal CLI keeps the broader archive audit for provenance work.
+    """
+
     specs = parse_components(args.components_json)
     seed_groups = parse_int_list(args.seed_groups)
     thresholds = parse_float_list(args.thresholds)
@@ -1571,15 +1654,16 @@ def main(argv: Sequence[str] | None = None) -> None:
             or current_direct_summary is not None
         ),
     )
-    print(
-        "reference preflight: "
-        f"sampling_setup_match={reference_compatibility.sampling_setup_match}, "
-        "strict_official_observable_match_verified="
-        f"{reference_compatibility.strict_observable_match_verified}, "
-        f"current_direct_available={current_direct_summary is not None}, "
-        f"smoke_mode={args.smoke_mode}",
-        flush=True,
-    )
+    if persist_analysis or not fast_cache:
+        print(
+            "reference preflight: "
+            f"sampling_setup_match={reference_compatibility.sampling_setup_match}, "
+            "strict_official_observable_match_verified="
+            f"{reference_compatibility.strict_observable_match_verified}, "
+            f"current_direct_available={current_direct_summary is not None}, "
+            f"smoke_mode={args.smoke_mode}",
+            flush=True,
+        )
 
     plans: list[tuple[int, int, ComponentSpec, int, tuple[float, ...], dict[str, Any], Path]] = []
     for seed_group in seed_groups:
@@ -1611,8 +1695,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     if len({item[6].stem for item in plans}) != len(plans):
         raise AssertionError("derived component run IDs are not unique")
 
-    audit_records = _audit_component_cache(component_root, plans)
-    selected_before_run = selected_archive_paths(audit_records)
+    audit_records: list[ArchiveAuditRecord] = []
+    cached_components: list[CompletedComponent] = []
+    if fast_cache:
+        cached_components = _load_expected_components(plans)
+        selected_before_run = {
+            component.run_id: component.path for component in cached_components
+        }
+    else:
+        audit_records = _audit_component_cache(component_root, plans)
+        selected_before_run = selected_archive_paths(audit_records)
     if args.audit_only:
         missing = []
     elif args.skip_completed_runs:
@@ -1632,30 +1724,40 @@ def main(argv: Sequence[str] | None = None) -> None:
             raise RuntimeError("--device cuda requested, but model is not on CUDA")
         print(f"model device: {model_device}", flush=True)
     started = time.perf_counter()
+    generated_components: list[CompletedComponent] = []
     progress = tqdm(missing, desc="Independent SMC components") if missing else missing
     for plan in progress:
         seed_group, component_index, spec, seed, schedule, metadata, path = plan
-        _run_component(
-            args,
-            model,
-            tokenizer,
-            spec=spec,
-            schedule=schedule,
-            seed_group=seed_group,
-            component_index=component_index,
-            seed=seed,
-            metadata=metadata,
-            output_path=path,
+        generated_components.append(
+            _run_component(
+                args,
+                model,
+                tokenizer,
+                spec=spec,
+                schedule=schedule,
+                seed_group=seed_group,
+                component_index=component_index,
+                seed=seed,
+                metadata=metadata,
+                output_path=path,
+            )
         )
 
-    audit_records = _audit_component_cache(component_root, plans)
-    completed = _load_selected_audit_components(
-        audit_records,
-        plans,
-        reused_run_ids=(
-            set(selected_before_run) if args.skip_completed_runs else set()
-        ),
-    )
+    if fast_cache:
+        completed = (
+            cached_components + generated_components
+            if args.skip_completed_runs
+            else generated_components
+        )
+    else:
+        audit_records = _audit_component_cache(component_root, plans)
+        completed = _load_selected_audit_components(
+            audit_records,
+            plans,
+            reused_run_ids=(
+                set(selected_before_run) if args.skip_completed_runs else set()
+            ),
+        )
     grouped: dict[int, list[CompletedComponent]] = {}
     index_by_spec = {
         (component_seed(seed_group, index), seed_group): index
@@ -1676,11 +1778,16 @@ def main(argv: Sequence[str] | None = None) -> None:
         for components in complete_grouped.values()
         for component in components
     }
-    audit_frame = _write_audit_csv(
-        output_root / "data_reuse_audit.csv",
-        audit_records,
-        included_paths=included_paths,
-    )
+    if fast_cache:
+        audit_frame = _component_status_frame(plans, completed, complete_grouped)
+    elif persist_analysis:
+        audit_frame = _write_audit_csv(
+            output_root / "data_reuse_audit.csv",
+            audit_records,
+            included_paths=included_paths,
+        )
+    else:
+        audit_frame = pd.DataFrame([record.to_row() for record in audit_records])
 
     comparison_rows: list[dict[str, Any]] = []
     if complete_grouped:
@@ -1718,12 +1825,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             "runtime_seconds",
         ],
     )
-    comparison.to_csv(output_root / "comparison.csv", index=False)
+    if persist_analysis:
+        comparison.to_csv(output_root / "comparison.csv", index=False)
     aggregate_rows = [
         row for row in comparison_rows if row["row_type"] == "aggregate"
     ]
     component_diagnostics = _component_diagnostic_rows(completed, thresholds)
-    pd.DataFrame(
+    component_diagnostics_frame = pd.DataFrame(
         component_diagnostics,
         columns=[
             "run_id",
@@ -1739,11 +1847,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             "log_z_reverse",
             "delta_log_z_smc_minus_reverse",
         ],
-    ).to_csv(
-        output_root / "component_diagnostics.csv",
-        index=False,
     )
-    if complete_grouped:
+    if persist_analysis:
+        component_diagnostics_frame.to_csv(
+            output_root / "component_diagnostics.csv",
+            index=False,
+        )
+    if persist_analysis and complete_grouped:
         _write_ari_boxplots(
             output_root / "ari_boxplots.png",
             direct_summary,
@@ -1764,35 +1874,54 @@ def main(argv: Sequence[str] | None = None) -> None:
         len(complete_grouped),
         smoke_mode=args.smoke_mode,
     )
-    (output_root / "REPORT.md").write_text(
-        _render_report(
-            args,
-            specs,
-            complete_grouped,
-            aggregate_rows,
-            reference_path,
-            direct_summary,
-            reference_compatibility,
-            current_direct_path,
-            current_direct_summary,
-            current_direct_reasons,
-            audit_records,
-            component_diagnostics,
-            interpretation,
-        ),
-        encoding="utf-8",
-    )
+    if persist_analysis:
+        (output_root / "REPORT.md").write_text(
+            _render_report(
+                args,
+                specs,
+                complete_grouped,
+                aggregate_rows,
+                reference_path,
+                direct_summary,
+                reference_compatibility,
+                current_direct_path,
+                current_direct_summary,
+                current_direct_reasons,
+                audit_records,
+                component_diagnostics,
+                interpretation,
+            ),
+            encoding="utf-8",
+        )
     reusable_count = len(completed)
     planned_missing_count = len(plans) - reusable_count
     included_count = sum(len(rows) for rows in complete_grouped.values())
+    cache_label = "requested components" if fast_cache else "archives"
     print(
-        f"audit found {len(audit_frame)} archives; {reusable_count} exactly reusable; "
+        f"found {len(audit_frame)} {cache_label}; {reusable_count} available; "
         f"{included_count} included in complete mixtures; {planned_missing_count} "
         f"planned components missing; generated {len(missing)} in "
         f"{time.perf_counter() - started:.1f} s",
         flush=True,
     )
-    print((output_root / "comparison.csv").resolve(), flush=True)
+    if persist_analysis:
+        print((output_root / "comparison.csv").resolve(), flush=True)
+    return TailValidationResult(
+        comparison=comparison,
+        component_diagnostics=component_diagnostics_frame,
+        component_status=audit_frame,
+        complete_grouped=complete_grouped,
+        specs=specs,
+        thresholds=thresholds,
+        current_direct_summary=current_direct_summary,
+        generated_component_count=len(missing),
+        reusable_component_count=reusable_count,
+        planned_missing_count=planned_missing_count,
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    run_validation(parse_args(argv))
 
 
 if __name__ == "__main__":

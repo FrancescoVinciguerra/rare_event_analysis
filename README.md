@@ -139,24 +139,22 @@ Open the primary notebook directly:
 
 [Open REA Suffix SMC in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/notebooks/REA_Suffix_SMC_Quickstart.ipynb)
 
-Its single parameter cell controls cap/lambda components, seed groups,
-particles, token length, lambda step, MCMC steps, suffix-size distribution, ESS
-threshold, output location, and resume behavior. A CPU smoke test is separate
-from optional CUDA work. The default audit requests seed groups `[200, 300]`,
-reuses exact cached components, and reports partial groups without including
-them in a mixture. `RUN_CURRENT_DIRECT_REFERENCE=False` and
-`RUN_PRODUCTION=False` keep both expensive stages opt-in. The notebook runs
-only the active suffix sampler plus the independent current-pipeline direct
-reference when explicitly requested.
+The notebook has one parameter cell and two explicit execution switches:
+`RUN_DIRECT_REFERENCE` and `RUN_SMC`. Both are false by default, so opening the
+notebook never starts an expensive run. Requested component archives are loaded
+directly by their configuration fingerprint; partial seed groups are shown but
+never included in the mixture estimate.
 
-The official archive matches the sampling setup but does not publish enough
-information to verify exact equivalence of its custom ARI/decode convention with
-this repository's `textstat` convention. It is therefore labelled as a
-cross-implementation comparison. A compatible current-pipeline direct reference
-is the primary correctness benchmark. Without one,
-`ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE=True` enables only an explicitly labelled
-official comparison, not an exact-ground-truth claim. Smoke probabilities are
-hidden because a tiny integration run cannot validate estimator accuracy.
+Only resumable scientific data are persisted on Drive:
+`component_runs/*.npz` and the current-pipeline direct ARI reference. The result
+table, interpretation, and four diagnostic plots are computed and displayed
+inline. The main comparison contains only the matching current-pipeline direct
+reference and the SMC mixture. This keeps the central correctness check easy to
+read.
+
+The official archive uses an incompletely published ARI/decode convention and
+is therefore kept out of the primary notebook. Its cross-implementation audit
+remains available in the separate official-direct notebook below.
 
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
@@ -241,10 +239,9 @@ the chosen output directory. The summary reports:
 
 Tail estimation adds per-threshold SNIS estimates under `p_M`, corrected
 importance ESS/N, overlap flags, and independent-seed aggregate summaries.
-Mixture validation stores one compact archive per independent component,
-`data_reuse_audit.csv`, `component_diagnostics.csv`, `comparison.csv`, a short
-report, and exactly two figures. `--audit-only` regenerates these diagnostics
-from compatible archives without loading the model or sampling.
+The Colab notebook keeps these analyses in memory and displays them inline.
+The command-line validator can still write CSV, report, and figure artifacts
+when a persistent machine-readable audit is specifically needed.
 Generated outputs are ignored by Git. Only compact results that support a stated
 conclusion should be recorded in `results/EXPERIMENT_LOG.md`.
 

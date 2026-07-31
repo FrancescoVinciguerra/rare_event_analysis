@@ -41,6 +41,7 @@ from suffix_direct_mh_smc_experiment.run_tail_validation import (
     enforce_reference_compatibility,
     main as run_validation_main,
     parse_args as parse_validation_args,
+    run_validation,
 )
 from suffix_direct_mh_smc_experiment.run_tail_estimation import (
     _config_for_seed,
@@ -471,6 +472,59 @@ def test_audit_only_reuses_archive_without_loading_model(tmp_path, monkeypatch) 
     assert "Included in complete seed-group mixtures: `1`" in report
 
 
+def test_notebook_mode_returns_analysis_without_writing_report_files(
+    tmp_path, monkeypatch
+) -> None:
+    output_root = tmp_path / "notebook"
+    component_root = output_root / "component_runs"
+    metadata = _audit_metadata(num_particles=2)
+    archive_path = component_root / f"{component_run_id(metadata)}.npz"
+    _write_audit_archive(archive_path, metadata)
+
+    def fail_model_load(*args, **kwargs):
+        raise AssertionError("notebook cache loading must not load the model")
+
+    monkeypatch.setattr(
+        "suffix_direct_mh_smc_experiment.run_tail_validation.load_model_and_tokenizer",
+        fail_model_load,
+    )
+    args = parse_validation_args(
+        [
+            "--audit-only",
+            "--smoke-mode",
+            "--components-json",
+            json.dumps([{"cap": 6.0, "lambda": -0.5}]),
+            "--seed-groups",
+            "200",
+            "--num-particles",
+            "2",
+            "--max-new-tokens",
+            "4",
+            "--mcmc-steps-per-level",
+            "1",
+            "--suffix-sizes",
+            "1,4",
+            "--output-root",
+            str(output_root),
+        ]
+    )
+    result = run_validation(args, persist_analysis=False, fast_cache=True)
+
+    assert result.reusable_component_count == 1
+    assert result.generated_component_count == 0
+    assert result.component_status["status"].tolist() == ["reused"]
+    assert not result.comparison.empty
+    for filename in (
+        "data_reuse_audit.csv",
+        "component_diagnostics.csv",
+        "comparison.csv",
+        "ari_boxplots.png",
+        "probability_comparison.png",
+        "REPORT.md",
+    ):
+        assert not (output_root / filename).exists()
+
+
 def test_audit_does_not_declare_partial_seed_group_complete(
     tmp_path, monkeypatch
 ) -> None:
@@ -788,25 +842,25 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
         code_cells.append(source)
     joined = "\n".join(code_cells)
     assert joined.count("EDIT PARAMETERS HERE") == 1
-    assert "suffix_direct_mh_smc_experiment/run_tail_validation.py" in joined
+    assert "from suffix_direct_mh_smc_experiment.run_tail_validation import" in joined
+    assert "run_validation" in joined
     assert "COMPONENTS" in joined
     assert "SEED_GROUPS" in joined
     assert "LAMBDA_STEP" in joined
-    assert "SKIP_COMPLETED_RUNS" in joined
-    assert "ALLOW_UNVERIFIED_OBSERVABLE_REFERENCE" in joined
-    assert "RUN_CACHE_AUDIT" in joined
-    assert "RUN_SMOKE_TEST" in joined
-    assert "RUN_CURRENT_DIRECT_REFERENCE = False" in joined
-    assert "RUN_PRODUCTION" in joined
+    assert "RUN_DIRECT_REFERENCE = False" in joined
+    assert "RUN_SMC = False" in joined
     assert "--components-json" in joined
-    assert "--smoke-mode" in joined
     assert "--audit-only" in joined
-    assert "Loaded component archives" not in joined
-    assert "HAS_AUDITED_PRODUCTION_RESULTS" in joined
+    assert "persist_analysis=False" in joined
+    assert "fast_cache=True" in joined
     assert "rea_llms.current_direct_reference" in joined
-    assert "CURRENT_DIRECT_NUM_SAMPLES = 200_000" in joined
-    assert "Planned components still missing:" in joined
-    assert "suffix SMC mixture versus current direct" in joined
+    assert "DIRECT_NUM_SAMPLES = 200_000" in joined
+    assert "plt.show()" in joined
+    assert "savefig" not in joined
+    assert "to_csv" not in joined
+    assert "REPORT.md" not in joined
+    assert "RUN_CACHE_AUDIT" not in joined
+    assert "RUN_SMOKE_TEST" not in joined
     assert "SEED_GROUPS = [200, 300]" in joined
     assert "official_annealed_tps" not in joined
 
