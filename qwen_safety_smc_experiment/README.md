@@ -7,9 +7,14 @@ with a configurable completion observable.
 ## Full in-memory Colab notebook
 
 [`notebooks/safety_smc_experiment.ipynb`](notebooks/safety_smc_experiment.ipynb)
-contains the direct-versus-SMC experiment, ARI-style diagnostics adapted to
-harmfulness, the validated SNIS correction back to the base model, and prefix
-trajectories. It never mounts Drive and never writes experiment outputs, plots,
+contains the direct-versus-SMC experiment, standard SMC diagnostics for
+harmfulness, the validated SNIS correction back to the base model, and paired
+prefix-robustness trajectories. The paired analysis re-scores the same direct
+continuations with an affirmative prefix and without it; it performs no new LM
+generation. This experiment uses no ARI observable and remains fully separate
+from the repository's readability/complexity experiments.
+
+The notebook never mounts Drive and never writes experiment outputs, plots,
 tables, or completions. The central sampler already returns an in-memory result,
 so no persistence flag or duplicate sampler was introduced.
 

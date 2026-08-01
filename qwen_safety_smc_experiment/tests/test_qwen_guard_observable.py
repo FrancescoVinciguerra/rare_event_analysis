@@ -11,11 +11,13 @@ import pytest
 import torch
 
 from rea_llms.observables import create_observable
+from rea_llms.observables.base import ObservableScore
 from rea_llms.observables.qwen_guard import QwenGuardHarmfulnessObservable
 from qwen_safety_smc_experiment.in_memory import (
     PrefixedCompletionObservable,
     SafetyPromptContext,
     build_qwen_fixed_context,
+    evaluate_paired_prefix_robustness,
     run_direct_in_memory,
 )
 from suffix_direct_mh_smc_experiment.smc_sampler import run_suffix_direct_mh_smc
@@ -210,6 +212,78 @@ def test_direct_helper_is_reproducible_in_memory_and_preserves_prefix(tmp_path, 
     assert list(tmp_path.iterdir()) == []
 
 
+def test_paired_prefix_robustness_reuses_fixed_tokens_without_generation() -> None:
+    class TextTokenizer:
+        @staticmethod
+        def batch_decode(rows, skip_special_tokens=True):
+            return ["".join(str(token) for token in row) for row in rows]
+
+    class PrefixSensitiveObservable:
+        def __init__(self):
+            self.requests = []
+
+        def score_batch(self, prompt, completions):
+            self.requests.append((prompt, list(completions)))
+            return [
+                ObservableScore(
+                    value=min(1.0, 0.05 * len(text) + 0.2 * text.startswith("Yes ")),
+                    metadata={},
+                )
+                for text in completions
+            ]
+
+    token_rows = [[1, 2, 3, 4], [4, 5, 6, 7]]
+    original_rows = [row.copy() for row in token_rows]
+    observable = PrefixSensitiveObservable()
+    result = evaluate_paired_prefix_robustness(
+        TextTokenizer(),
+        observable,
+        prompt="fixed prompt",
+        token_sequences=token_rows,
+        affirmative_prefix="Yes ",
+        event_threshold=0.5,
+        trajectory_checkpoints=(1, 2, 4),
+        trajectory_sample_limit=1,
+        existing_affirmative_terminal_phi=(0.8, 0.7),
+    )
+
+    assert token_rows == original_rows
+    assert result.evaluated_sample_count == 2
+    assert result.trajectory_sample_count == 1
+    assert result.trajectory_checkpoints == (1, 2, 4)
+    assert len(result.terminal_rows) == 2
+    assert len(result.trajectory_rows) == 6
+    assert result.terminal_rows[0]["affirmative_prefix_phi"] == pytest.approx(0.8)
+    assert result.terminal_rows[0]["no_prefix_phi"] == pytest.approx(0.2)
+    assert result.terminal_rows[0]["paired_delta_phi"] == pytest.approx(0.6)
+    assert len(observable.requests) == 2
+    assert all(prompt == "fixed prompt" for prompt, _ in observable.requests)
+
+
+def test_paired_prefix_robustness_validates_checkpoint_support() -> None:
+    class Tokenizer:
+        @staticmethod
+        def batch_decode(rows, skip_special_tokens=True):
+            return [str(row) for row in rows]
+
+    class Observable:
+        @staticmethod
+        def score_batch(prompt, completions):
+            return [ObservableScore(value=0.0, metadata={}) for _ in completions]
+
+    with pytest.raises(ValueError, match="fit every selected sequence"):
+        evaluate_paired_prefix_robustness(
+            Tokenizer(),
+            Observable(),
+            prompt="prompt",
+            token_sequences=[[1, 2]],
+            affirmative_prefix="Yes ",
+            event_threshold=0.5,
+            trajectory_checkpoints=(1, 3),
+            trajectory_sample_limit=1,
+        )
+
+
 def test_current_and_proposal_phi_order_favors_higher_phi_for_negative_lambda() -> None:
     from suffix_direct_mh_smc_experiment.smc_sampler import metropolis_log_acceptance
 
@@ -259,7 +333,13 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     ):
         assert name in joined
     assert "run_direct_in_memory(" in joined
+    assert joined.count("run_direct_in_memory(") == 2
     assert "run_suffix_direct_mh_smc(" in joined
+    assert "evaluate_paired_prefix_robustness(" in joined
+    assert "prefix_robustness_results" in joined
+    assert "'lm_generated_token_transitions': 0" in joined
+    assert "scenario_specs" not in joined
+    assert "SCENARIO_SAMPLES" not in joined
     assert "estimate_base_tails_from_final_samples(" in joined
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined

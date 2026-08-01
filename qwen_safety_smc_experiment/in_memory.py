@@ -150,6 +150,139 @@ class DirectSampleResult:
     completion_token_ids: torch.Tensor
 
 
+@dataclass(frozen=True)
+class PairedPrefixRobustnessResult:
+    """Guard scores for fixed continuations with and without a text prefix."""
+
+    terminal_rows: list[dict[str, Any]]
+    trajectory_rows: list[dict[str, Any]]
+    evaluated_sample_count: int
+    trajectory_sample_count: int
+    trajectory_checkpoints: tuple[int, ...]
+
+
+def evaluate_paired_prefix_robustness(
+    tokenizer,
+    observable,
+    *,
+    prompt: str,
+    token_sequences: Sequence[Sequence[int]] | torch.Tensor,
+    affirmative_prefix: str,
+    event_threshold: float,
+    trajectory_checkpoints: Sequence[int],
+    trajectory_sample_limit: int,
+    existing_affirmative_terminal_phi: Sequence[float] | None = None,
+) -> PairedPrefixRobustnessResult:
+    """Re-score fixed LM continuations under two prefix presentations.
+
+    The language model is deliberately not an argument: this analysis performs
+    no generation. Both conditions use the same mutable token sequences, so it
+    measures the paired effect of presenting ``affirmative_prefix`` to the
+    guard, not the LM distribution induced by generating without that prefix.
+    """
+
+    if not affirmative_prefix:
+        raise ValueError("affirmative_prefix must be non-empty")
+    if not math.isfinite(float(event_threshold)):
+        raise ValueError("event_threshold must be finite")
+    if trajectory_sample_limit <= 0:
+        raise ValueError("trajectory_sample_limit must be positive")
+
+    if isinstance(token_sequences, torch.Tensor):
+        token_rows = token_sequences.detach().cpu().tolist()
+    else:
+        token_rows = [list(row) for row in token_sequences]
+    if not token_rows or any(not row for row in token_rows):
+        raise ValueError("token_sequences must contain non-empty sequences")
+
+    checkpoints = tuple(sorted({int(value) for value in trajectory_checkpoints}))
+    selected_count = min(len(token_rows), int(trajectory_sample_limit))
+    maximum_checkpoint = min(len(row) for row in token_rows[:selected_count])
+    if not checkpoints or checkpoints[0] <= 0 or checkpoints[-1] > maximum_checkpoint:
+        raise ValueError(
+            "trajectory_checkpoints must be positive and fit every selected sequence"
+        )
+
+    mutable_completions = tokenizer.batch_decode(
+        token_rows,
+        skip_special_tokens=True,
+    )
+    no_prefix_scores = observable.score_batch(prompt, mutable_completions)
+    if existing_affirmative_terminal_phi is None:
+        affirmative_scores = observable.score_batch(
+            prompt,
+            [affirmative_prefix + text for text in mutable_completions],
+        )
+        affirmative_values = [float(score.value) for score in affirmative_scores]
+    else:
+        affirmative_values = [
+            float(value) for value in existing_affirmative_terminal_phi
+        ]
+        if len(affirmative_values) != len(token_rows):
+            raise ValueError(
+                "existing_affirmative_terminal_phi must match token_sequences"
+            )
+        if not all(math.isfinite(value) for value in affirmative_values):
+            raise ValueError("existing affirmative terminal scores must be finite")
+
+    terminal_rows: list[dict[str, Any]] = []
+    for sample_id, (affirmative, no_prefix_score) in enumerate(
+        zip(affirmative_values, no_prefix_scores)
+    ):
+        no_prefix = float(no_prefix_score.value)
+        terminal_rows.append(
+            {
+                "sample_id": int(sample_id),
+                "affirmative_prefix_phi": affirmative,
+                "no_prefix_phi": no_prefix,
+                "paired_delta_phi": affirmative - no_prefix,
+                "affirmative_prefix_event": bool(affirmative >= event_threshold),
+                "no_prefix_event": bool(no_prefix >= event_threshold),
+            }
+        )
+
+    trajectory_texts: list[str] = []
+    trajectory_metadata: list[tuple[int, int, str]] = []
+    selected_rows = token_rows[:selected_count]
+    for checkpoint in checkpoints:
+        mutable_prefixes = tokenizer.batch_decode(
+            [row[:checkpoint] for row in selected_rows],
+            skip_special_tokens=True,
+        )
+        for condition, prefix in (
+            ("affirmative_prefix", affirmative_prefix),
+            ("no_prefix", ""),
+        ):
+            for sample_id, mutable_prefix in enumerate(mutable_prefixes):
+                trajectory_texts.append(prefix + mutable_prefix)
+                trajectory_metadata.append((sample_id, checkpoint, condition))
+
+    trajectory_scores = observable.score_batch(prompt, trajectory_texts)
+    trajectory_rows: list[dict[str, Any]] = []
+    for (sample_id, checkpoint, condition), score in zip(
+        trajectory_metadata,
+        trajectory_scores,
+    ):
+        value = float(score.value)
+        trajectory_rows.append(
+            {
+                "sample_id": int(sample_id),
+                "token_checkpoint": int(checkpoint),
+                "condition": condition,
+                "phi": value,
+                "event": bool(value >= event_threshold),
+            }
+        )
+
+    return PairedPrefixRobustnessResult(
+        terminal_rows=terminal_rows,
+        trajectory_rows=trajectory_rows,
+        evaluated_sample_count=len(token_rows),
+        trajectory_sample_count=selected_count,
+        trajectory_checkpoints=checkpoints,
+    )
+
+
 def _synchronize(device: torch.device) -> None:
     if device.type == "cuda":
         torch.cuda.synchronize(device)
