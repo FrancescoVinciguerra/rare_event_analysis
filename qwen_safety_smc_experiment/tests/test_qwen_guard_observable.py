@@ -263,6 +263,10 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert "estimate_base_tails_from_final_samples(" in joined
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined
+    assert "batch_single_atol = 2e-3" in joined
+    assert "batch_single_probability_atol" in joined
+    assert "batched_equals_individual" not in joined
+    assert "math.isclose(batch_score.value, single_score.value" not in joined
     assert "drive.mount" not in joined
     for forbidden in ("to_csv(", "to_json(", "savefig(", "write_text("):
         assert forbidden not in joined
