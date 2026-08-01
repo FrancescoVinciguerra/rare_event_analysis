@@ -16,9 +16,15 @@ from rea_llms.models import (  # noqa: E402
     DEFAULT_MODEL_NAME,
     DEFAULT_PROMPT,
     DEFAULT_TOKENIZER_NAME,
+    TORCH_DTYPES,
     load_model_and_tokenizer,
 )
-from rea_llms.observables import ARI_CONVENTIONS, create_observable  # noqa: E402
+from rea_llms.observables import (  # noqa: E402
+    ARI_CONVENTIONS,
+    OBSERVABLE_NAMES,
+    create_observable,
+)
+from rea_llms.observables.base import observable_configuration  # noqa: E402
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     SuffixDirectMHSMCConfig,
     parse_float_list,
@@ -46,6 +52,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
+    parser.add_argument("--model-dtype", choices=TORCH_DTYPES, default="auto")
     parser.add_argument("--output-root", type=Path, default=Path("outputs"))
     parser.add_argument("--experiment-label", default="suffix_direct_mh_smc")
     parser.add_argument("--output-dir", type=Path, default=None)
@@ -76,11 +83,38 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--seed", type=int, default=12345)
     parser.add_argument("--tail-thresholds", default="6,8,10,12,15")
+    parser.add_argument("--observable", choices=OBSERVABLE_NAMES, default="ari")
+    parser.add_argument(
+        "--apply-chat-template",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Render --prompt as one user turn before generator tokenization.",
+    )
     parser.add_argument("--ari-cap", type=float, default=15.0)
     parser.add_argument("--ari-mode", choices=["raw", "capped"], default="raw")
     parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--observable-backend", default="exact_cached")
     parser.add_argument("--disable-score-cache", action="store_true")
+    parser.add_argument(
+        "--guardrail-model",
+        default="Qwen/Qwen3Guard-Stream-0.6B",
+    )
+    parser.add_argument(
+        "--guardrail-revision",
+        default="419364a715de9840d47b1457982f64ff37f90ed4",
+    )
+    parser.add_argument("--guardrail-device", choices=["auto", "cuda", "cpu"], default="auto")
+    parser.add_argument(
+        "--guardrail-dtype",
+        choices=TORCH_DTYPES,
+        default="float16",
+    )
+    parser.add_argument(
+        "--guardrail-phi",
+        choices=["unsafe_probability", "unsafe_plus_half_controversial"],
+        default="unsafe_probability",
+    )
+    parser.add_argument("--guardrail-batch-size", type=int, default=16)
     return parser.parse_args(argv)
 
 
@@ -126,24 +160,46 @@ def main() -> None:
             "experiment label/seed or pass --overwrite."
         )
 
-    observable = create_observable(
-        "ari",
-        mode=args.ari_mode,
-        cap=args.ari_cap,
-        backend=args.observable_backend,
-        convention=args.ari_convention,
-        cache_enabled=not args.disable_score_cache,
-    )
+    if args.observable == "ari":
+        observable = create_observable(
+            "ari",
+            mode=args.ari_mode,
+            cap=args.ari_cap,
+            backend=args.observable_backend,
+            convention=args.ari_convention,
+            cache_enabled=not args.disable_score_cache,
+        )
+    else:
+        observable = create_observable(
+            "qwen_guard",
+            model_name=args.guardrail_model,
+            revision=args.guardrail_revision,
+            device=args.guardrail_device,
+            dtype=args.guardrail_dtype,
+            phi_definition=args.guardrail_phi,
+            batch_size=args.guardrail_batch_size,
+            cache_enabled=not args.disable_score_cache,
+            local_files_only=args.local_files_only,
+        )
     model, tokenizer = load_model_and_tokenizer(
         args.model_name,
         args.tokenizer_name,
         local_files_only=args.local_files_only,
         device=args.device,
+        dtype=args.model_dtype,
     )
     model_device = next(model.parameters()).device
     if args.device == "cuda" and model_device.type != "cuda":
         raise RuntimeError("--device cuda was requested, but the model is not on CUDA")
     print(f"model device: {model_device}", flush=True)
+    generator_prompt = args.prompt
+    if args.apply_chat_template:
+        generator_prompt = tokenizer.apply_chat_template(
+            [{"role": "user", "content": args.prompt}],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
 
     progress = tqdm(total=max(0, len(config.lambdas) - 1), desc=f"SMC seed {config.seed}")
 
@@ -159,7 +215,8 @@ def main() -> None:
             model,
             tokenizer,
             observable,
-            prompt=args.prompt,
+            prompt=generator_prompt,
+            observable_prompt=args.prompt,
             config=config,
             progress_callback=update_progress,
         )
@@ -173,8 +230,13 @@ def main() -> None:
         "model_name": args.model_name,
         "tokenizer_name": args.tokenizer_name,
         "prompt": args.prompt,
+        "generator_prompt": generator_prompt,
         "requested_device": args.device,
         "model_device": str(model_device),
+        "model_dtype": args.model_dtype,
+        "observable": args.observable,
+        "observable_configuration": observable_configuration(observable),
+        "tilt_convention": "gamma_lambda(x) = p_M(x|c) * exp(-lambda * phi(x))",
         "ari_mode": args.ari_mode,
         "ari_cap": args.ari_cap,
         "ari_convention": args.ari_convention,

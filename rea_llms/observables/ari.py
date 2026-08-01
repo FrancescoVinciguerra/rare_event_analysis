@@ -80,3 +80,19 @@ class ARIObservable:
             )
             scores.append(self.score_text(text))
         return scores
+
+    @staticmethod
+    def reported_value(score: ObservableScore) -> float:
+        """Preserve raw ARI as the final evaluation metric when phi is capped."""
+
+        return float(score.metadata["raw_ari"])
+
+    def configuration(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "mode": self.mode,
+            "cap": float(self.cap),
+            "backend": self.backend,
+            "convention": self.convention,
+            "cache_enabled": bool(self.cache_enabled),
+        }

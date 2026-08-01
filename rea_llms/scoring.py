@@ -4,6 +4,8 @@ from typing import Any
 
 import torch
 
+from rea_llms.observables.base import reported_value
+
 
 ARI_CONVENTION_CURRENT = "current"
 ARI_CONVENTION_OFFICIAL_PUBLIC = "official_public"
@@ -91,13 +93,13 @@ def score_completion_tokens(
         dtype=torch.float32,
         device=completions.device,
     )
-    raw_ari = torch.tensor(
-        [float(score.metadata["raw_ari"]) for score in scores],
+    report_values = torch.tensor(
+        [reported_value(observable, score) for score in scores],
         dtype=torch.float32,
         device=completions.device,
     )
     if not bool(torch.isfinite(phi).all().item()) or not bool(
-        torch.isfinite(raw_ari).all().item()
+        torch.isfinite(report_values).all().item()
     ):
         raise ValueError("Observable returned a non-finite value")
-    return phi, raw_ari, scores
+    return phi, report_values, scores

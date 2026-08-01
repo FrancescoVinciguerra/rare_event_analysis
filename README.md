@@ -64,7 +64,8 @@ For a prompt `c`, completion `x`, and observable `phi`, the target is
 pi_lambda(x) proportional to p_M(x | c) exp(-lambda phi(x)).
 ```
 
-Negative `lambda` favors larger ARI. At SMC transition `k`, mutation targets
+Negative `lambda` favors larger values of `phi` (ARI in the original
+experiments). At SMC transition `k`, mutation targets
 `pi_(lambda[k-1])`; particles are then reweighted from `lambda[k-1]` to
 `lambda[k]`. The direct-MH suffix acceptance is
 
@@ -118,6 +119,7 @@ same generation and scoring primitives used by SMC.
 ```text
 rea_llms/                              shared generation, ARI, diagnostics, and SNIS
 suffix_direct_mh_smc_experiment/       active sampler and command-line runners
+qwen_safety_smc_experiment/            Qwen3Guard proxy observable and safe smoke tests
 notebooks/REA_Suffix_SMC_Quickstart.ipynb
                                        primary Colab validation workflow
 official_annealed_tps_experiment/      optional adapter to the official TPS code
@@ -157,6 +159,10 @@ baseline is documented in
 The optional comparison notebook is
 [REA_SMC_vs_Official_TPS_Benchmark.ipynb](notebooks/REA_SMC_vs_Official_TPS_Benchmark.ipynb).
 Clone submodules before that benchmark with `git submodule update --init`.
+
+The separate safety-infrastructure smoke uses the public Qwen3Guard-Stream
+proxy and does not run a scientific tail experiment:
+[open the Qwen safety smoke in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/qwen_safety_smc_experiment/notebooks/colab_smoke.ipynb).
 
 ## Running one experiment locally
 

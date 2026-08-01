@@ -18,6 +18,7 @@ from rea_llms.generation import (
     prompt_token_ids,
 )
 from rea_llms.models import set_seed
+from rea_llms.observables.base import observable_configuration
 from rea_llms.scoring import (
     ARI_CONVENTION_CURRENT,
     score_completion_tokens,
@@ -193,7 +194,7 @@ class ParticleBatch:
 
     completion_token_ids: torch.Tensor
     phi: torch.Tensor
-    raw_ari: torch.Tensor
+    reported_values: torch.Tensor
     root_ancestors: torch.Tensor
     last_suffix_sizes: torch.Tensor
 
@@ -325,10 +326,11 @@ def score_observable(
     observable,
     *,
     prompt: str,
+    observable_prompt: str | None = None,
     prompt_ids: torch.Tensor,
     completions: torch.Tensor,
 ) -> tuple[torch.Tensor, torch.Tensor, list[Any]]:
-    """Evaluate exact text ARI at this function's batched GPU-to-CPU boundary.
+    """Evaluate one batched completion observable at its declared boundary.
 
     Full token sequences are transferred together, then completion tokens are
     decoded with the repository observable's convention before textstat runs on
@@ -339,7 +341,7 @@ def score_observable(
     return score_completion_tokens(
         tokenizer,
         observable,
-        prompt=prompt,
+        prompt=observable_prompt if observable_prompt is not None else prompt,
         prompt_ids=prompt_ids,
         completions=completions,
     )
@@ -530,6 +532,7 @@ def apply_suffix_direct_mh_mutation(
     observable,
     *,
     prompt: str,
+    observable_prompt: str | None = None,
     prompt_ids: torch.Tensor,
     target_lambda: float,
     transition_index: int,
@@ -572,17 +575,18 @@ def apply_suffix_direct_mh_mutation(
             batch_size=config.batch_size,
             generator=generator,
         )
-        # Exact text ARI is the deliberate CPU boundary in each mutation step;
-        # current-particle scores remain cached in ParticleBatch.
-        proposal_phi, proposal_raw_ari, _ = score_observable(
+        # Current-particle scores remain cached in ParticleBatch. Only each
+        # proposal batch crosses the selected observable's scoring boundary.
+        proposal_phi, proposal_reported_values, _ = score_observable(
             tokenizer,
             observable,
             prompt=prompt,
+            observable_prompt=observable_prompt,
             prompt_ids=prompt_ids,
             completions=proposal_tokens,
         )
         if discovery_callback is not None:
-            discovery_callback(proposal_tokens, proposal_raw_ari, target_lambda)
+            discovery_callback(proposal_tokens, proposal_reported_values, target_lambda)
         # Exact direct MH: p_M and suffix-selection factors cancel completely.
         log_acceptance = metropolis_log_acceptance(
             particles.phi,
@@ -605,7 +609,11 @@ def apply_suffix_direct_mh_mutation(
                 particles.completion_token_ids,
             ),
             phi=torch.where(accepted, proposal_phi, particles.phi),
-            raw_ari=torch.where(accepted, proposal_raw_ari, particles.raw_ari),
+            reported_values=torch.where(
+                accepted,
+                proposal_reported_values,
+                particles.reported_values,
+            ),
             root_ancestors=particles.root_ancestors,
             last_suffix_sizes=suffix_sizes,
         )
@@ -642,6 +650,7 @@ def _final_samples(
     observable,
     *,
     prompt: str,
+    observable_prompt: str | None,
     prompt_ids: torch.Tensor,
     particles: ParticleBatch,
     normalized_log_weights: torch.Tensor,
@@ -658,37 +667,44 @@ def _final_samples(
         tokenizer,
         observable,
         prompt=prompt,
+        observable_prompt=observable_prompt,
         prompt_ids=prompt_ids,
         completions=particles.completion_token_ids,
     )
     completion_ids = particles.completion_token_ids.detach().cpu().tolist()
-    ari_texts = _ari_texts_from_completion_ids(
-        tokenizer,
-        observable,
-        prompt=prompt,
-        prompt_ids=prompt_ids,
-        completion_ids=completion_ids,
-    )
-    completions = [text[len(prompt) :] for text in ari_texts]
+    if getattr(observable, "name", "ari") == "ari":
+        texts = _ari_texts_from_completion_ids(
+            tokenizer,
+            observable,
+            prompt=prompt,
+            prompt_ids=prompt_ids,
+            completion_ids=completion_ids,
+        )
+        completions = [text[len(prompt) :] for text in texts]
+    else:
+        completions = tokenizer.batch_decode(completion_ids, skip_special_tokens=True)
+        score_prompt = observable_prompt if observable_prompt is not None else prompt
+        texts = [score_prompt + completion for completion in completions]
     weights = torch.exp(normalized_log_weights).detach().cpu().tolist()
     log_weights = normalized_log_weights.detach().cpu().tolist()
     phi = particles.phi.detach().cpu().tolist()
+    report_values = particles.reported_values.detach().cpu().tolist()
     roots = particles.root_ancestors.detach().cpu().tolist()
     last_sizes = particles.last_suffix_sizes.detach().cpu().tolist()
     rows: list[dict[str, Any]] = []
+    is_ari = getattr(observable, "name", "ari") == "ari"
     for index, (ids, completion, score) in enumerate(zip(completion_ids, completions, scores)):
         metadata = dict(score.metadata)
-        rows.append(
-            {
+        row = {
                 "particle_id": index,
                 "ancestor_id": int(roots[index]),
                 "root_ancestor": int(roots[index]),
                 "seed": int(seed),
-                "text": ari_texts[index],
+                "text": texts[index],
                 "completion": completion,
                 "phi": float(phi[index]),
-                "raw_ari": float(metadata["raw_ari"]),
-                "capped_ari": float(metadata["capped_ari"]),
+                "reported_value": float(report_values[index]),
+                "observable": str(getattr(observable, "name", "unknown")),
                 "log_weight": float(log_weights[index]),
                 "normalized_weight": float(weights[index]),
                 "lambda_final": float(lambda_final),
@@ -697,7 +713,13 @@ def _final_samples(
                 "completion_token_ids": ids,
                 "metadata": metadata,
             }
-        )
+        if is_ari:
+            row["raw_ari"] = float(metadata["raw_ari"])
+            row["capped_ari"] = float(metadata["capped_ari"])
+        else:
+            row["harmfulness_score"] = float(report_values[index])
+            row["guardrail_class"] = metadata.get("predicted_class")
+        rows.append(row)
     return rows
 
 
@@ -707,6 +729,7 @@ def run_suffix_direct_mh_smc(
     observable,
     *,
     prompt: str,
+    observable_prompt: str | None = None,
     config: SuffixDirectMHSMCConfig,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
     track_discovery_diagnostics: bool = True,
@@ -735,48 +758,61 @@ def run_suffix_direct_mh_smc(
         float(threshold): None for threshold in config.tail_thresholds
     }
     best_discoveries: dict[str, dict[str, Any]] = {}
+    is_ari_observable = getattr(observable, "name", "ari") == "ari"
 
     def track_discoveries(
         token_batch: torch.Tensor,
-        raw_ari_batch: torch.Tensor,
+        reported_value_batch: torch.Tensor,
         lambda_value: float,
     ) -> None:
         # Discovery statistics include every generated proposal, accepted or
         # rejected. This requires a second token transfer/decode beyond ARI
         # scoring and is intentionally preserved as part of metric semantics.
         completion_ids = token_batch.detach().cpu().tolist()
-        ari_texts = _ari_texts_from_completion_ids(
-            tokenizer,
-            observable,
-            prompt=prompt,
-            prompt_ids=prompt_ids,
-            completion_ids=completion_ids,
-        )
-        completion_texts = [text[len(prompt) :] for text in ari_texts]
-        raw_values = raw_ari_batch.detach().cpu().tolist()
+        if getattr(observable, "name", "ari") == "ari":
+            decoded_texts = _ari_texts_from_completion_ids(
+                tokenizer,
+                observable,
+                prompt=prompt,
+                prompt_ids=prompt_ids,
+                completion_ids=completion_ids,
+            )
+            completion_texts = [text[len(prompt) :] for text in decoded_texts]
+        else:
+            completion_texts = tokenizer.batch_decode(
+                completion_ids,
+                skip_special_tokens=True,
+            )
+        reported_values = reported_value_batch.detach().cpu().tolist()
         elapsed_now = time.perf_counter() - start
-        for completion, raw_value in zip(completion_texts, raw_values):
-            value = float(raw_value)
+        for completion, reported_value in zip(completion_texts, reported_values):
+            value = float(reported_value)
             previous = best_discoveries.get(completion)
-            if previous is None or value > float(previous["raw_ari"]):
-                best_discoveries[completion] = {
-                    "raw_ari": value,
+            if previous is None or value > float(previous["reported_value"]):
+                discovery = {
+                    "reported_value": value,
                     "lambda": float(lambda_value),
                     "time_first_seen_seconds": float(elapsed_now),
                     "completion": completion,
                 }
+                if is_ari_observable:
+                    discovery["raw_ari"] = value
+                best_discoveries[completion] = discovery
             for threshold in config.tail_thresholds:
                 threshold_value = float(threshold)
                 if value < threshold_value:
                     continue
                 discovered_by_threshold[threshold_value].add(completion)
                 if first_tail_discovery[threshold_value] is None:
-                    first_tail_discovery[threshold_value] = {
-                        "raw_ari": value,
+                    discovery = {
+                        "reported_value": value,
                         "lambda": float(lambda_value),
                         "time_first_seen_seconds": float(elapsed_now),
                         "completion": completion,
                     }
+                    if is_ari_observable:
+                        discovery["raw_ari"] = value
+                    first_tail_discovery[threshold_value] = discovery
 
     with torch.inference_mode():
         completion_tokens = generate_base_completions(
@@ -787,19 +823,24 @@ def run_suffix_direct_mh_smc(
             batch_size=config.batch_size,
             generator=generator,
         )
-        phi, raw_ari, _ = score_observable(
+        phi, report_values, _ = score_observable(
             tokenizer,
             observable,
             prompt=prompt,
+            observable_prompt=observable_prompt,
             prompt_ids=prompt_ids,
             completions=completion_tokens,
         )
         if track_discovery_diagnostics:
-            track_discoveries(completion_tokens, raw_ari, float(config.lambdas[0]))
+            track_discoveries(
+                completion_tokens,
+                report_values,
+                float(config.lambdas[0]),
+            )
         particles = ParticleBatch(
             completion_token_ids=completion_tokens,
             phi=phi,
-            raw_ari=raw_ari,
+            reported_values=report_values,
             root_ancestors=torch.arange(config.num_particles, device=device),
             last_suffix_sizes=torch.zeros(config.num_particles, dtype=torch.long, device=device),
         )
@@ -809,7 +850,7 @@ def run_suffix_direct_mh_smc(
             dtype=torch.float64,
             device=device,
         )
-        initial_mean = float(raw_ari.mean().item())
+        initial_mean = float(report_values.mean().item())
         level_diagnostics: list[dict[str, Any]] = [
             {
                 "level": 0,
@@ -824,8 +865,8 @@ def run_suffix_direct_mh_smc(
                 "proposals": 0,
                 "acceptance_rate": None,
                 "mean_acceptance_probability": None,
-                "weighted_mean_ari_before_resampling": initial_mean,
-                "unweighted_mean_ari_after_resampling": initial_mean,
+                "weighted_mean_observable_before_resampling": initial_mean,
+                "unweighted_mean_observable_after_resampling": initial_mean,
                 "runtime_seconds": 0.0,
                 "suffix_size_counts": {},
             }
@@ -850,6 +891,7 @@ def run_suffix_direct_mh_smc(
                 tokenizer,
                 observable,
                 prompt=prompt,
+                observable_prompt=observable_prompt,
                 prompt_ids=prompt_ids,
                 target_lambda=previous_lambda,
                 transition_index=level - 1,
@@ -880,7 +922,9 @@ def run_suffix_direct_mh_smc(
             ess_over_n_before = min(1.0, float((ess / config.num_particles).item()))
             weights_before = torch.exp(log_weights)
             weighted_mean_before = float(
-                torch.sum(weights_before * particles.raw_ari.to(torch.float64)).item()
+                torch.sum(
+                    weights_before * particles.reported_values.to(torch.float64)
+                ).item()
             )
             min_ess_over_n = min(min_ess_over_n, ess_over_n_before)
 
@@ -898,7 +942,7 @@ def run_suffix_direct_mh_smc(
                         0, indices
                     ),
                     phi=particles.phi.index_select(0, indices),
-                    raw_ari=particles.raw_ari.index_select(0, indices),
+                    reported_values=particles.reported_values.index_select(0, indices),
                     root_ancestors=particles.root_ancestors.index_select(0, indices),
                     last_suffix_sizes=particles.last_suffix_sizes.index_select(0, indices),
                 )
@@ -927,8 +971,10 @@ def run_suffix_direct_mh_smc(
                     mutation.accepted / mutation.proposals if mutation.proposals else None
                 ),
                 "mean_acceptance_probability": mutation.mean_acceptance_probability,
-                "weighted_mean_ari_before_resampling": weighted_mean_before,
-                "unweighted_mean_ari_after_resampling": float(particles.raw_ari.mean().item()),
+                "weighted_mean_observable_before_resampling": weighted_mean_before,
+                "unweighted_mean_observable_after_resampling": float(
+                    particles.reported_values.mean().item()
+                ),
                 "runtime_seconds": float(time.perf_counter() - level_start),
                 "suffix_size_counts": mutation.suffix_size_counts,
             }
@@ -940,6 +986,7 @@ def run_suffix_direct_mh_smc(
             tokenizer,
             observable,
             prompt=prompt,
+            observable_prompt=observable_prompt,
             prompt_ids=prompt_ids,
             particles=particles,
             normalized_log_weights=log_weights,
@@ -951,20 +998,27 @@ def run_suffix_direct_mh_smc(
     elapsed = time.perf_counter() - start
     final_ess = ess_from_normalized_log_weights(log_weights)
     final_ess_over_n = min(1.0, float((final_ess / config.num_particles).item()))
-    raw_values = np.asarray([float(row["raw_ari"]) for row in samples], dtype=np.float64)
+    report_values = np.asarray(
+        [float(row["reported_value"]) for row in samples],
+        dtype=np.float64,
+    )
     normalized_weights = np.asarray(
         [float(row["normalized_weight"]) for row in samples],
         dtype=np.float64,
     )
+    observable_name = str(getattr(observable, "name", "ari"))
+    tail_prefix = "ari_ge" if observable_name == "ari" else "phi_ge"
     tail_counts = {
-        f"ari_ge_{threshold:g}": int(np.sum(raw_values >= threshold))
+        f"{tail_prefix}_{threshold:g}": int(np.sum(report_values >= threshold))
         for threshold in config.tail_thresholds
     }
     tail_proportions = {
         key: float(value / config.num_particles) for key, value in tail_counts.items()
     }
     weighted_tail_probabilities = {
-        f"ari_ge_{threshold:g}": float(np.sum(normalized_weights[raw_values >= threshold]))
+        f"{tail_prefix}_{threshold:g}": float(
+            np.sum(normalized_weights[report_values >= threshold])
+        )
         for threshold in config.tail_thresholds
     }
     acceptance_rate = total_accepted / total_proposals if total_proposals else 0.0
@@ -978,17 +1032,16 @@ def run_suffix_direct_mh_smc(
         "algorithm": "suffix_direct_mh_smc",
         "algorithm_version": ALGORITHM_VERSION,
         "mutation_kernel": "suffix_direct_mh",
-        "ari_convention": getattr(
-            observable,
-            "convention",
-            ARI_CONVENTION_CURRENT,
-        ),
+        "observable": observable_name,
+        "observable_configuration": observable_configuration(observable),
+        "tilt_convention": "gamma_lambda(x) = p_M(x|c) * exp(-lambda * phi(x))",
+        "ari_convention": getattr(observable, "convention", None),
         "num_particles": config.num_particles,
         "max_new_tokens": config.max_new_tokens,
         "lambdas": [float(value) for value in config.lambdas],
         "target_lambda": float(config.lambdas[-1]),
         "mcmc_steps_per_level": config.mcmc_steps_per_level,
-        "ari_mode": getattr(observable, "mode", "unknown"),
+        "ari_mode": getattr(observable, "mode", None),
         "ess_threshold": config.ess_threshold,
         "resampling": config.resampling,
         "resampling_method": config.resampling_method,
@@ -1011,10 +1064,12 @@ def run_suffix_direct_mh_smc(
         "regenerated_tokens_per_second": (
             float(total_regenerated_tokens / elapsed) if total_regenerated_tokens else 0.0
         ),
-        "unweighted_mean_ari": float(np.mean(raw_values)),
-        "weighted_mean_ari": float(np.sum(normalized_weights * raw_values)),
-        "min_ari": float(np.min(raw_values)),
-        "max_ari": float(np.max(raw_values)),
+        "unweighted_mean_observable": float(np.mean(report_values)),
+        "weighted_mean_observable": float(
+            np.sum(normalized_weights * report_values)
+        ),
+        "min_observable": float(np.min(report_values)),
+        "max_observable": float(np.max(report_values)),
         "tail_counts": tail_counts,
         "tail_proportions": tail_proportions,
         "weighted_tail_probabilities": weighted_tail_probabilities,
@@ -1023,7 +1078,7 @@ def run_suffix_direct_mh_smc(
             {int(row["ancestor_id"]) for row in samples}
         ),
         "tail_discovery": {
-            f"ari_ge_{threshold:g}": {
+            f"{tail_prefix}_{threshold:g}": {
                 "first": first_tail_discovery[float(threshold)],
                 "unique_completions": len(discovered_by_threshold[float(threshold)]),
             }
@@ -1031,10 +1086,26 @@ def run_suffix_direct_mh_smc(
         },
         "top_discovered_completions": sorted(
             best_discoveries.values(),
-            key=lambda row: float(row["raw_ari"]),
+            key=lambda row: float(row["reported_value"]),
             reverse=True,
         )[:20],
     }
+    if observable_name == "ari":
+        summary.update(
+            {
+                "unweighted_mean_ari": summary["unweighted_mean_observable"],
+                "weighted_mean_ari": summary["weighted_mean_observable"],
+                "min_ari": summary["min_observable"],
+                "max_ari": summary["max_observable"],
+            }
+        )
+        for row in level_diagnostics:
+            row["weighted_mean_ari_before_resampling"] = row[
+                "weighted_mean_observable_before_resampling"
+            ]
+            row["unweighted_mean_ari_after_resampling"] = row[
+                "unweighted_mean_observable_after_resampling"
+            ]
     diagnostics = {
         "level_diagnostics": level_diagnostics,
         "total_mcmc_accepted": total_accepted,
@@ -1042,10 +1113,10 @@ def run_suffix_direct_mh_smc(
         "resampling_steps": resampling_steps,
         "final_distinct_root_ancestors": summary["final_distinct_root_ancestors"],
         "observable_device_boundary": (
-            "Exact textstat ARI is decoded and evaluated on CPU once per batched proposal "
-            "step. Proposal generation, acceptance, weights, ESS, and resampling remain "
-            "on the model device. Exact direct-MH cancellation means no forward or "
-            "reverse suffix probability is evaluated."
+            "The selected observable is evaluated once per batched proposal step; "
+            "current-particle phi values stay cached. Proposal generation, acceptance, "
+            "weights, ESS, and resampling remain batched. Exact direct-MH cancellation "
+            "means no forward or reverse suffix probability is evaluated."
         ),
     }
     return SuffixDirectMHSMCResult(
@@ -1069,6 +1140,8 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
+    observable_name = summary.get("observable", "ari")
+    metric_label = "raw ARI" if observable_name == "ari" else "harmfulness phi"
     lines = [
         "# Suffix direct-MH SMC",
         "",
@@ -1080,7 +1153,8 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         "## Summary",
         "",
         "- Mutation kernel: `suffix_direct_mh`",
-        f"- ARI mode: `{summary.get('ari_mode', 'unknown')}`",
+        f"- Observable: `{observable_name}`",
+        f"- Observable mode: `{summary.get('ari_mode', 'n/a')}`",
         f"- Runtime: {summary['runtime_total_seconds']:.3f} s",
         f"- Seconds per final particle: {summary['runtime_seconds_per_final_particle']:.6f}",
         f"- Final ESS/N: {summary['final_ess_over_n']:.4f}",
@@ -1089,19 +1163,20 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         f"- Total MCMC acceptance rate: {summary['mean_mcmc_acceptance_rate']:.4f}",
         f"- Total proposals: {summary.get('total_proposals', 0)}",
         f"- Total regenerated proposal tokens: {summary.get('total_regenerated_tokens', 0)}",
-        f"- Unweighted mean raw ARI: {summary['unweighted_mean_ari']:.4f}",
-        f"- Weighted mean raw ARI: {summary['weighted_mean_ari']:.4f}",
-        f"- Maximum raw ARI: {summary['max_ari']:.4f}",
+        f"- Unweighted mean {metric_label}: "
+        f"{summary['unweighted_mean_observable']:.4f}",
+        f"- Weighted mean {metric_label}: {summary['weighted_mean_observable']:.4f}",
+        f"- Maximum {metric_label}: {summary['max_observable']:.4f}",
         f"- Unique completion fraction: {summary['unique_completion_fraction']:.4f}",
         f"- Distinct root ancestors: {summary['final_distinct_root_ancestors']}",
         "",
-        "## ARI tails",
+        f"## {metric_label} thresholds",
         "",
         "| threshold | raw count | raw proportion | weighted probability |",
         "|---:|---:|---:|---:|",
     ]
     for key, count in summary["tail_counts"].items():
-        threshold = key.removeprefix("ari_ge_")
+        threshold = key.split("_ge_", maxsplit=1)[-1]
         lines.append(
             f"| {threshold} | {count} | {summary['tail_proportions'][key]:.6f} | "
             f"{summary['weighted_tail_probabilities'][key]:.6f} |"
@@ -1112,8 +1187,8 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
             "## Per-level diagnostics",
             "",
             "| level | lambda | mutation lambda | ESS/N pre | ESS/N post | resampled | "
-            "acceptance | mean acceptance probability | weighted ARI pre | "
-            "unweighted ARI post |",
+            "acceptance | mean acceptance probability | weighted observable pre | "
+            "unweighted observable post |",
             "|---:|---:|---:|---:|---:|:---:|---:|---:|---:|---:|",
         ]
     )
@@ -1128,14 +1203,14 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
             f"{row['ess_over_n_after_resampling']:.4f} | {row['resampled']} | "
             f"{'-' if acceptance is None else f'{acceptance:.4f}'} | "
             f"{'-' if mean_acceptance is None else f'{mean_acceptance:.4f}'} | "
-            f"{row['weighted_mean_ari_before_resampling']:.4f} | "
-            f"{row['unweighted_mean_ari_after_resampling']:.4f} |"
+            f"{row['weighted_mean_observable_before_resampling']:.4f} | "
+            f"{row['unweighted_mean_observable_after_resampling']:.4f} |"
         )
     lines.extend(
         [
             "",
-            "The exact text ARI boundary remains on CPU. All language-model and SMC tensor "
-            "operations are batched on the selected model device.",
+            "Language-model generation and SMC tensor operations are batched on the "
+            "selected model device; observable scoring uses its configured device.",
             "",
         ]
     )

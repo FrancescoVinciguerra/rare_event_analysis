@@ -16,6 +16,9 @@ external_data/
 *.safetensors
 data/
 outputs/
+!qwen_safety_smc_experiment/outputs/
+qwen_safety_smc_experiment/outputs/*
+!qwen_safety_smc_experiment/outputs/.gitkeep
 suffix_direct_mh_smc_experiment/results/
 **/results/tmp*/
 **/results/raw*/
