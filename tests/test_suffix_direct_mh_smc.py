@@ -8,6 +8,7 @@ import pytest
 import torch
 
 import suffix_direct_mh_smc_experiment.smc_sampler as sampler
+from rea_llms.generation import fixed_completion_log_probabilities
 from rea_llms.observables.base import ObservableScore
 from suffix_direct_mh_smc_experiment.run_experiment import config_from_args, parse_args
 from suffix_direct_mh_smc_experiment.smc_sampler import (
@@ -148,6 +149,29 @@ def test_batched_suffix_proposal_preserves_each_selected_prefix() -> None:
     )
     assert proposal.shape == current.shape
     assert torch.equal(proposal[0, :2], current[0, :2])
+
+
+def test_fixed_completion_log_probabilities_match_autoregressive_formula() -> None:
+    model = PrefixDependentTinyModel()
+    prompt = torch.tensor([1], dtype=torch.long)
+    completions = torch.tensor([[2, 3], [0, 1]], dtype=torch.long)
+    actual = fixed_completion_log_probabilities(
+        model,
+        prompt,
+        completions,
+        batch_size=2,
+        position_batch_size=1,
+    )
+    expected = []
+    for completion in completions:
+        work = prompt.unsqueeze(0)
+        value = 0.0
+        for token in completion:
+            logits = model(work).logits[:, -1].float()
+            value += float(torch.log_softmax(logits, dim=-1)[0, token])
+            work = torch.cat((work, token.reshape(1, 1)), dim=1)
+        expected.append(value)
+    assert torch.allclose(actual, torch.tensor(expected, dtype=torch.float64), atol=1e-7)
 
 
 def test_direct_acceptance_matches_the_complete_mh_ratio() -> None:
@@ -320,6 +344,44 @@ def test_fixed_seed_run_is_reproducible() -> None:
     assert [tuple(row[key] for key in fields) for row in runs[0].samples] == [
         tuple(row[key] for key in fields) for row in runs[1].samples
     ]
+
+
+def test_optional_in_memory_level_trace_is_normalized_and_never_writes(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = run_suffix_direct_mh_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        CompletionTokenSumObservable(),
+        prompt="Once",
+        config=_config(
+            num_particles=8,
+            suffix_mode="stochastic",
+            suffix_sizes=(1, 3),
+            suffix_size_schedule=None,
+            suffix_rhos=(0.5, 0.5),
+            seed=41,
+        ),
+        capture_level_particles=True,
+        profile_runtime=True,
+    )
+    traces = result.diagnostics["level_particles"]
+    assert len(traces) == 2
+    assert list(tmp_path.iterdir()) == []
+    for trace in traces:
+        weights = torch.tensor(trace["normalized_weights"], dtype=torch.float64)
+        assert float(weights.sum()) == pytest.approx(1.0)
+        assert torch.isfinite(weights).all()
+    level = result.diagnostics["level_diagnostics"][1]
+    assert set(level["suffix_size_counts"]) == {"1", "3"}
+    for size, rate in level["acceptance_rate_by_suffix_size"].items():
+        assert 0.0 <= rate <= 1.0
+        assert level["accepted_by_suffix_size"][size] <= level["suffix_size_counts"][size]
+    assert result.summary["runtime_profile_enabled"] is True
+    assert result.summary["generator_model_forward_calls"] > 0
+    assert result.summary["generated_token_transitions"] >= 8 * 3
 
 
 def test_active_sampler_has_no_balancing_or_reverse_scoring_path() -> None:

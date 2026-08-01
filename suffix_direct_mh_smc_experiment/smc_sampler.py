@@ -13,6 +13,7 @@ import numpy as np
 import torch
 
 from rea_llms.generation import (
+    GenerationDiagnostics,
     generate_fixed_length_completions,
     generate_fixed_length_suffixes,
     prompt_token_ids,
@@ -207,7 +208,11 @@ class MutationDiagnostics:
     proposals: int
     mean_acceptance_probability: float
     suffix_size_counts: dict[str, int]
+    accepted_by_suffix_size: dict[str, int]
+    acceptance_rate_by_suffix_size: dict[str, float]
     regenerated_tokens: int
+    generator_runtime_seconds: float
+    observable_runtime_seconds: float
 
 
 @dataclass
@@ -272,6 +277,7 @@ def propose_suffixes_parallel(
     *,
     batch_size: int,
     generator: torch.Generator,
+    generation_diagnostics: GenerationDiagnostics | None = None,
 ) -> torch.Tensor:
     """Regenerate exact LM suffixes in GPU batches grouped by suffix length.
 
@@ -294,6 +300,7 @@ def propose_suffixes_parallel(
             suffix_size=int(suffix_size),
             batch_size=batch_size,
             generator=generator,
+            diagnostics=generation_diagnostics,
         )
         proposal_group = torch.cat((current_group[:, :prefix_size], proposed_suffix), dim=1)
         proposals.index_copy_(0, indices, proposal_group)
@@ -355,6 +362,7 @@ def generate_base_completions(
     max_new_tokens: int,
     batch_size: int,
     generator: torch.Generator,
+    generation_diagnostics: GenerationDiagnostics | None = None,
 ) -> torch.Tensor:
     """Initialize all particles from p_M using the batched autoregressive path."""
     return generate_fixed_length_completions(
@@ -364,6 +372,7 @@ def generate_base_completions(
         max_new_tokens=max_new_tokens,
         batch_size=batch_size,
         generator=generator,
+        diagnostics=generation_diagnostics,
     )
 
 
@@ -539,6 +548,8 @@ def apply_suffix_direct_mh_mutation(
     config: SuffixDirectMHSMCConfig,
     generator: torch.Generator,
     discovery_callback: Callable[[torch.Tensor, torch.Tensor, float], None] | None = None,
+    generation_diagnostics: GenerationDiagnostics | None = None,
+    profile_runtime: bool = False,
 ) -> tuple[ParticleBatch, MutationDiagnostics]:
     """Apply repeated direct-MH suffix moves invariant for ``pi_{k-1}``.
 
@@ -551,7 +562,14 @@ def apply_suffix_direct_mh_mutation(
     accepted_total = torch.zeros((), dtype=torch.long, device=device)
     acceptance_probability_sum = torch.zeros((), dtype=torch.float64, device=device)
     size_counts = torch.zeros(config.max_new_tokens + 1, dtype=torch.long, device=device)
+    accepted_by_size = torch.zeros(
+        config.max_new_tokens + 1,
+        dtype=torch.long,
+        device=device,
+    )
     regenerated_tokens = torch.zeros((), dtype=torch.long, device=device)
+    generator_runtime_seconds = 0.0
+    observable_runtime_seconds = 0.0
     proposals_total = config.num_particles * config.mcmc_steps_per_level
     suffix_sampling = _prepare_suffix_size_sampling(
         config,
@@ -567,6 +585,9 @@ def apply_suffix_direct_mh_mutation(
             device=device,
             generator=generator,
         )
+        if profile_runtime:
+            _synchronize(device)
+        generator_started = time.perf_counter() if profile_runtime else None
         proposal_tokens = propose_suffixes_parallel(
             model,
             prompt_ids,
@@ -574,9 +595,15 @@ def apply_suffix_direct_mh_mutation(
             suffix_sizes,
             batch_size=config.batch_size,
             generator=generator,
+            generation_diagnostics=generation_diagnostics,
         )
+        if profile_runtime:
+            _synchronize(device)
+            assert generator_started is not None
+            generator_runtime_seconds += time.perf_counter() - generator_started
         # Current-particle scores remain cached in ParticleBatch. Only each
         # proposal batch crosses the selected observable's scoring boundary.
+        observable_started = time.perf_counter() if profile_runtime else None
         proposal_phi, proposal_reported_values, _ = score_observable(
             tokenizer,
             observable,
@@ -585,6 +612,9 @@ def apply_suffix_direct_mh_mutation(
             prompt_ids=prompt_ids,
             completions=proposal_tokens,
         )
+        if profile_runtime:
+            assert observable_started is not None
+            observable_runtime_seconds += time.perf_counter() - observable_started
         if discovery_callback is not None:
             discovery_callback(proposal_tokens, proposal_reported_values, target_lambda)
         # Exact direct MH: p_M and suffix-selection factors cancel completely.
@@ -620,6 +650,10 @@ def apply_suffix_direct_mh_mutation(
         accepted_total += accepted.sum()
         acceptance_probability_sum += torch.exp(log_acceptance).to(torch.float64).sum()
         size_counts += torch.bincount(suffix_sizes, minlength=config.max_new_tokens + 1)
+        accepted_by_size += torch.bincount(
+            suffix_sizes[accepted],
+            minlength=config.max_new_tokens + 1,
+        )
         regenerated_tokens += suffix_sizes.sum()
 
     denominator = max(1, proposals_total)
@@ -629,6 +663,16 @@ def apply_suffix_direct_mh_mutation(
         for size in range(1, config.max_new_tokens + 1)
         if counts_on_cpu[size] > 0
     }
+    accepted_on_cpu = accepted_by_size.detach().cpu().tolist()
+    accepted_size_rows = {
+        str(size): int(accepted_on_cpu[size])
+        for size in range(1, config.max_new_tokens + 1)
+        if counts_on_cpu[size] > 0
+    }
+    acceptance_rate_rows = {
+        key: accepted_size_rows[key] / suffix_count_rows[key]
+        for key in suffix_count_rows
+    }
     return particles, MutationDiagnostics(
         accepted=int(accepted_total.item()),
         proposals=proposals_total,
@@ -636,7 +680,11 @@ def apply_suffix_direct_mh_mutation(
             (acceptance_probability_sum / denominator).item()
         ),
         suffix_size_counts=suffix_count_rows,
+        accepted_by_suffix_size=accepted_size_rows,
+        acceptance_rate_by_suffix_size=acceptance_rate_rows,
         regenerated_tokens=int(regenerated_tokens.item()),
+        generator_runtime_seconds=float(generator_runtime_seconds),
+        observable_runtime_seconds=float(observable_runtime_seconds),
     )
 
 
@@ -723,6 +771,41 @@ def _final_samples(
     return rows
 
 
+def _particle_snapshot(
+    *,
+    level: int,
+    lambda_value: float,
+    particles: ParticleBatch,
+    normalized_log_weights: torch.Tensor,
+) -> dict[str, Any]:
+    """Copy one optional diagnostic population to serializable host memory."""
+
+    return {
+        "level": int(level),
+        "lambda": float(lambda_value),
+        "completion_token_ids": particles.completion_token_ids.detach().cpu().tolist(),
+        "phi": particles.phi.detach().cpu().tolist(),
+        "reported_values": particles.reported_values.detach().cpu().tolist(),
+        "normalized_weights": torch.exp(normalized_log_weights).detach().cpu().tolist(),
+        "root_ancestors": particles.root_ancestors.detach().cpu().tolist(),
+        "last_suffix_sizes": particles.last_suffix_sizes.detach().cpu().tolist(),
+    }
+
+
+def _observable_counter_snapshot(observable) -> dict[str, float]:
+    names = (
+        "cache_hits",
+        "cache_misses",
+        "evaluation_batches",
+        "evaluated_completions",
+        "inference_seconds",
+    )
+    return {
+        name: float(getattr(observable, name, 0.0))
+        for name in names
+    }
+
+
 def run_suffix_direct_mh_smc(
     model,
     tokenizer,
@@ -733,6 +816,8 @@ def run_suffix_direct_mh_smc(
     config: SuffixDirectMHSMCConfig,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
     track_discovery_diagnostics: bool = True,
+    capture_level_particles: bool = False,
+    profile_runtime: bool = False,
 ) -> SuffixDirectMHSMCResult:
     """Run full-sequence SMC with an exact direct-MH suffix mutation.
 
@@ -744,6 +829,8 @@ def run_suffix_direct_mh_smc(
     set_seed(config.seed)
     device = next(model.parameters()).device
     generator = torch.Generator(device=device).manual_seed(config.seed)
+    generation_diagnostics = GenerationDiagnostics()
+    observable_counters_before = _observable_counter_snapshot(observable)
     prompt_ids = prompt_token_ids(tokenizer, prompt, device)
     uniform_log_weight = -math.log(config.num_particles)
     if device.type == "cuda":
@@ -759,6 +846,9 @@ def run_suffix_direct_mh_smc(
     }
     best_discoveries: dict[str, dict[str, Any]] = {}
     is_ari_observable = getattr(observable, "name", "ari") == "ari"
+    generator_runtime_seconds = 0.0
+    observable_runtime_seconds = 0.0
+    level_particles: list[dict[str, Any]] = []
 
     def track_discoveries(
         token_batch: torch.Tensor,
@@ -815,6 +905,9 @@ def run_suffix_direct_mh_smc(
                     first_tail_discovery[threshold_value] = discovery
 
     with torch.inference_mode():
+        if profile_runtime:
+            _synchronize(device)
+        generation_started = time.perf_counter() if profile_runtime else None
         completion_tokens = generate_base_completions(
             model,
             prompt_ids,
@@ -822,7 +915,13 @@ def run_suffix_direct_mh_smc(
             max_new_tokens=config.max_new_tokens,
             batch_size=config.batch_size,
             generator=generator,
+            generation_diagnostics=generation_diagnostics,
         )
+        if profile_runtime:
+            _synchronize(device)
+            assert generation_started is not None
+            generator_runtime_seconds += time.perf_counter() - generation_started
+        observable_started = time.perf_counter() if profile_runtime else None
         phi, report_values, _ = score_observable(
             tokenizer,
             observable,
@@ -831,6 +930,9 @@ def run_suffix_direct_mh_smc(
             prompt_ids=prompt_ids,
             completions=completion_tokens,
         )
+        if profile_runtime:
+            assert observable_started is not None
+            observable_runtime_seconds += time.perf_counter() - observable_started
         if track_discovery_diagnostics:
             track_discoveries(
                 completion_tokens,
@@ -850,6 +952,15 @@ def run_suffix_direct_mh_smc(
             dtype=torch.float64,
             device=device,
         )
+        if capture_level_particles:
+            level_particles.append(
+                _particle_snapshot(
+                    level=0,
+                    lambda_value=float(config.lambdas[0]),
+                    particles=particles,
+                    normalized_log_weights=log_weights,
+                )
+            )
         initial_mean = float(report_values.mean().item())
         level_diagnostics: list[dict[str, Any]] = [
             {
@@ -869,6 +980,14 @@ def run_suffix_direct_mh_smc(
                 "unweighted_mean_observable_after_resampling": initial_mean,
                 "runtime_seconds": 0.0,
                 "suffix_size_counts": {},
+                "accepted_by_suffix_size": {},
+                "acceptance_rate_by_suffix_size": {},
+                "generator_runtime_seconds": (
+                    generator_runtime_seconds if profile_runtime else None
+                ),
+                "observable_runtime_seconds": (
+                    observable_runtime_seconds if profile_runtime else None
+                ),
             }
         ]
         total_accepted = 0
@@ -900,7 +1019,11 @@ def run_suffix_direct_mh_smc(
                 discovery_callback=(
                     track_discoveries if track_discovery_diagnostics else None
                 ),
+                generation_diagnostics=generation_diagnostics,
+                profile_runtime=profile_runtime,
             )
+            generator_runtime_seconds += mutation.generator_runtime_seconds
+            observable_runtime_seconds += mutation.observable_runtime_seconds
             total_accepted += mutation.accepted
             total_proposals += mutation.proposals
             total_regenerated_tokens += mutation.regenerated_tokens
@@ -977,8 +1100,25 @@ def run_suffix_direct_mh_smc(
                 ),
                 "runtime_seconds": float(time.perf_counter() - level_start),
                 "suffix_size_counts": mutation.suffix_size_counts,
+                "accepted_by_suffix_size": mutation.accepted_by_suffix_size,
+                "acceptance_rate_by_suffix_size": mutation.acceptance_rate_by_suffix_size,
+                "generator_runtime_seconds": (
+                    mutation.generator_runtime_seconds if profile_runtime else None
+                ),
+                "observable_runtime_seconds": (
+                    mutation.observable_runtime_seconds if profile_runtime else None
+                ),
             }
             level_diagnostics.append(row)
+            if capture_level_particles:
+                level_particles.append(
+                    _particle_snapshot(
+                        level=level,
+                        lambda_value=current_lambda,
+                        particles=particles,
+                        normalized_log_weights=log_weights,
+                    )
+                )
             if progress_callback is not None:
                 progress_callback(row)
 
@@ -1027,6 +1167,11 @@ def run_suffix_direct_mh_smc(
     peak_memory = (
         int(torch.cuda.max_memory_allocated(device)) if device.type == "cuda" else 0
     )
+    observable_counters_after = _observable_counter_snapshot(observable)
+    observable_counter_deltas = {
+        name: observable_counters_after[name] - observable_counters_before[name]
+        for name in observable_counters_after
+    }
     summary = {
         "method": "suffix_direct_mh_smc",
         "algorithm": "suffix_direct_mh_smc",
@@ -1063,6 +1208,31 @@ def run_suffix_direct_mh_smc(
         "proposals_per_second": float(total_proposals / elapsed) if total_proposals else 0.0,
         "regenerated_tokens_per_second": (
             float(total_regenerated_tokens / elapsed) if total_regenerated_tokens else 0.0
+        ),
+        "runtime_profile_enabled": bool(profile_runtime),
+        "generator_runtime_seconds": (
+            float(generator_runtime_seconds) if profile_runtime else None
+        ),
+        "observable_runtime_seconds": (
+            float(observable_runtime_seconds) if profile_runtime else None
+        ),
+        "generator_batch_calls": int(generation_diagnostics.batch_calls),
+        "generator_model_forward_calls": int(
+            generation_diagnostics.model_forward_calls
+        ),
+        "generated_token_transitions": int(
+            generation_diagnostics.generated_token_transitions
+        ),
+        "observable_cache_hits": int(observable_counter_deltas["cache_hits"]),
+        "observable_cache_misses": int(observable_counter_deltas["cache_misses"]),
+        "observable_evaluation_batches": int(
+            observable_counter_deltas["evaluation_batches"]
+        ),
+        "observable_evaluated_completions": int(
+            observable_counter_deltas["evaluated_completions"]
+        ),
+        "observable_inference_seconds": float(
+            observable_counter_deltas["inference_seconds"]
         ),
         "unweighted_mean_observable": float(np.mean(report_values)),
         "weighted_mean_observable": float(
@@ -1119,6 +1289,8 @@ def run_suffix_direct_mh_smc(
             "means no forward or reverse suffix probability is evaluated."
         ),
     }
+    if capture_level_particles:
+        diagnostics["level_particles"] = level_particles
     return SuffixDirectMHSMCResult(
         samples=samples,
         summary=summary,

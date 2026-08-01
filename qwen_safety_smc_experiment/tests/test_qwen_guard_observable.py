@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import ast
+import json
+import math
+from pathlib import Path
 import runpy
 from types import SimpleNamespace
 
@@ -8,6 +12,12 @@ import torch
 
 from rea_llms.observables import create_observable
 from rea_llms.observables.qwen_guard import QwenGuardHarmfulnessObservable
+from qwen_safety_smc_experiment.in_memory import (
+    PrefixedCompletionObservable,
+    SafetyPromptContext,
+    build_qwen_fixed_context,
+    run_direct_in_memory,
+)
 from suffix_direct_mh_smc_experiment.smc_sampler import run_suffix_direct_mh_smc
 
 
@@ -117,6 +127,18 @@ def test_qwen_guard_uses_full_softmax_unsafe_probability_and_batches() -> None:
         ]
         assert sum(probabilities) == pytest.approx(1.0)
         assert score.value == pytest.approx(score.metadata["unsafe_probability"])
+        assert 0.0 <= score.value <= 1.0
+    assert observable.evaluation_batches == 1
+    assert observable.evaluated_completions == 2
+
+
+def test_qwen_guard_coalesces_duplicate_uncached_completions() -> None:
+    observable = fake_observable()
+    scores = observable.score_batch("prompt", ["same", "same", "different"])
+    assert len(scores) == 3
+    assert scores[0] == scores[1]
+    assert observable.model.forward_calls == 1
+    assert observable.evaluated_completions == 2
 
 
 def test_weighted_phi_and_exact_cache_are_explicit() -> None:
@@ -140,6 +162,112 @@ def test_prefix_trajectory_returns_finite_three_class_probabilities() -> None:
     for row in rows:
         assert row["Safe"] + row["Unsafe"] + row["Controversial"] == pytest.approx(1.0)
         assert row["phi"] == pytest.approx(row["Unsafe"])
+
+
+def test_fixed_assistant_prefix_is_frozen_in_context_and_observable() -> None:
+    base = fake_observable()
+    wrapped = PrefixedCompletionObservable(base, completion_prefix="I understand. ")
+    context = build_qwen_fixed_context(
+        base.tokenizer,
+        system_prompt="Follow safety policy.",
+        user_prompt="Discuss an abstract risky request safely.",
+        assistant_prefix="I understand. ",
+        enable_thinking=False,
+    )
+    assert context.generator_prompt.endswith("I understand. ")
+    assert context.full_completion("I will refuse.") == "I understand. I will refuse."
+    score = wrapped.score_completion(context.user_prompt, "I will refuse.")
+    assert (context.user_prompt, context.full_completion("I will refuse.")) in base._cache
+    assert math.isfinite(score.value)
+
+
+def test_direct_helper_is_reproducible_in_memory_and_preserves_prefix(tmp_path, monkeypatch) -> None:
+    namespace = runpy.run_path(
+        str(Path(__file__).resolve().parents[2] / "tests" / "test_suffix_direct_mh_smc.py")
+    )
+    monkeypatch.chdir(tmp_path)
+    context = SafetyPromptContext("", "Once", "Fixed: ", False, "OnceFixed: ", "OnceFixed: ")
+
+    class SumObservable(namespace["CompletionTokenSumObservable"]):
+        completion_prefix = "Fixed: "
+
+    kwargs = dict(
+        model=namespace["PrefixDependentTinyModel"](),
+        tokenizer=namespace["TinyTokenizer"](),
+        observable=SumObservable(),
+        context=context,
+        num_samples=4,
+        max_new_tokens=2,
+        batch_size=2,
+        seed=53,
+        event_threshold=2.0,
+    )
+    first = run_direct_in_memory(**kwargs)
+    second = run_direct_in_memory(**{**kwargs, "model": namespace["PrefixDependentTinyModel"]()})
+    assert first.rows == second.rows
+    assert all(row["completion"].startswith("Fixed: ") for row in first.rows)
+    assert first.summary["persisted"] is False
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_current_and_proposal_phi_order_favors_higher_phi_for_negative_lambda() -> None:
+    from suffix_direct_mh_smc_experiment.smc_sampler import metropolis_log_acceptance
+
+    current = torch.tensor([0.1, 0.9])
+    proposal = torch.tensor([0.9, 0.1])
+    log_acceptance = metropolis_log_acceptance(
+        current,
+        proposal,
+        target_lambda=-1.0,
+    )
+    assert float(log_acceptance[0]) == pytest.approx(0.0)
+    assert float(log_acceptance[1]) == pytest.approx(-0.8)
+
+
+def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() -> None:
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "notebooks"
+        / "safety_smc_experiment.ipynb"
+    )
+    notebook = json.loads(path.read_text(encoding="utf-8"))
+    assert notebook["nbformat"] == 4
+    code_cells = []
+    markdown = []
+    for index, cell in enumerate(notebook["cells"]):
+        assert cell.get("outputs", []) == []
+        source = "".join(cell.get("source", []))
+        if cell["cell_type"] == "code":
+            ast.parse(source, filename=f"{path.name}:cell-{index}")
+            code_cells.append(source)
+        else:
+            markdown.append(source)
+    joined = "\n".join(code_cells)
+    headings = "\n".join(markdown)
+    assert joined.count("# EDIT PARAMETERS HERE") == 1
+    for name in (
+        "GENERATOR_MODEL",
+        "GUARD_MODEL",
+        "NUM_PARTICLES",
+        "MCMC_STEPS_PER_LEVEL",
+        "LAMBDAS",
+        "SUFFIX_SIZES",
+        "SUFFIX_RHOS",
+        "EVENT_THRESHOLD",
+        "FAST_MODE",
+        "SHOW_FULL_COMPLETIONS",
+    ):
+        assert name in joined
+    assert "run_direct_in_memory(" in joined
+    assert "run_suffix_direct_mh_smc(" in joined
+    assert "estimate_base_tails_from_final_samples(" in joined
+    assert "capture_level_particles=True" in joined
+    assert "profile_runtime=True" in joined
+    assert "drive.mount" not in joined
+    for forbidden in ("to_csv(", "to_json(", "savefig(", "write_text("):
+        assert forbidden not in joined
+    for section in range(1, 13):
+        assert f"## {section}." in headings
 
 
 def test_ari_seeded_snapshot_is_unchanged() -> None:

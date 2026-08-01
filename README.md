@@ -163,6 +163,9 @@ Clone submodules before that benchmark with `git submodule update --init`.
 The separate safety-infrastructure smoke uses the public Qwen3Guard-Stream
 proxy and does not run a scientific tail experiment:
 [open the Qwen safety smoke in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/qwen_safety_smc_experiment/notebooks/colab_smoke.ipynb).
+The complete in-memory direct/SMC exploration is available in the
+[Safety SMC experiment notebook](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/qwen_safety_smc_experiment/notebooks/safety_smc_experiment.ipynb);
+it writes no experimental artifacts.
 
 ## Running one experiment locally
 

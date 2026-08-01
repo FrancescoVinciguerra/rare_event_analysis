@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
@@ -45,6 +46,9 @@ class QwenGuardHarmfulnessObservable:
     )
     cache_hits: int = field(default=0, init=False)
     cache_misses: int = field(default=0, init=False)
+    evaluation_batches: int = field(default=0, init=False)
+    evaluated_completions: int = field(default=0, init=False)
+    inference_seconds: float = field(default=0.0, init=False)
 
     def __post_init__(self) -> None:
         if self.phi_definition not in QWEN_GUARD_PHI_DEFINITIONS:
@@ -169,6 +173,7 @@ class QwenGuardHarmfulnessObservable:
         prompt: str,
         completions: Sequence[str],
     ) -> list[ObservableScore]:
+        started = time.perf_counter()
         texts = [self._chat_text(prompt, completion) for completion in completions]
         encoded = self.tokenizer(
             texts,
@@ -180,10 +185,14 @@ class QwenGuardHarmfulnessObservable:
             outputs = self.model(**encoded, logits_to_keep=1)
             logits = outputs.risk_level_logits[:, -1, :].float()
             probabilities = torch.softmax(logits, dim=-1)
-        return self._scores_from_probabilities(
+        scores = self._scores_from_probabilities(
             probabilities.detach().cpu(),
             logits.detach().cpu(),
         )
+        self.evaluation_batches += 1
+        self.evaluated_completions += len(completions)
+        self.inference_seconds += time.perf_counter() - started
+        return scores
 
     def score_batch(
         self,
@@ -194,25 +203,27 @@ class QwenGuardHarmfulnessObservable:
 
         completions = list(completions)
         results: list[ObservableScore | None] = [None] * len(completions)
-        missing: list[tuple[int, str]] = []
+        missing_by_completion: dict[str, list[int]] = {}
         for index, completion in enumerate(completions):
             key = (prompt, completion)
             cached = self._cache.get(key) if self.cache_enabled else None
             if cached is None:
                 self.cache_misses += 1
-                missing.append((index, completion))
+                missing_by_completion.setdefault(completion, []).append(index)
             else:
                 self.cache_hits += 1
                 results[index] = cached
 
-        for start in range(0, len(missing), self.batch_size):
-            chunk = missing[start : start + self.batch_size]
+        unique_missing = list(missing_by_completion)
+        for start in range(0, len(unique_missing), self.batch_size):
+            chunk = unique_missing[start : start + self.batch_size]
             scores = self._score_uncached_batch(
                 prompt,
-                [completion for _, completion in chunk],
+                chunk,
             )
-            for (index, completion), score in zip(chunk, scores):
-                results[index] = score
+            for completion, score in zip(chunk, scores):
+                for index in missing_by_completion[completion]:
+                    results[index] = score
                 if self.cache_enabled:
                     self._cache[(prompt, completion)] = score
         if any(score is None for score in results):
@@ -221,6 +232,17 @@ class QwenGuardHarmfulnessObservable:
 
     def score_completion(self, prompt: str, completion: str) -> ObservableScore:
         return self.score_batch(prompt, [completion])[0]
+
+    def clear_cache(self, *, reset_statistics: bool = False) -> None:
+        """Drop exact text scores and optionally reset profiling counters."""
+
+        self._cache.clear()
+        if reset_statistics:
+            self.cache_hits = 0
+            self.cache_misses = 0
+            self.evaluation_batches = 0
+            self.evaluated_completions = 0
+            self.inference_seconds = 0.0
 
     def score_token_sequences(
         self,

@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, Callable
 
 import torch
 
 
 GENERATION_ENGINE_VERSION = "fixed_length_categorical_v1"
+
+
+@dataclass
+class GenerationDiagnostics:
+    """Successful batched autoregressive work performed by shared generation."""
+
+    batch_calls: int = 0
+    model_forward_calls: int = 0
+    generated_token_transitions: int = 0
 
 
 def prompt_token_ids(tokenizer, prompt: str, device: torch.device) -> torch.Tensor:
@@ -112,6 +122,8 @@ def generate_fixed_length_suffixes(
     suffix_size: int,
     batch_size: int,
     generator: torch.Generator,
+    diagnostics: GenerationDiagnostics | None = None,
+    progress_callback: Callable[[int, int], None] | None = None,
 ) -> torch.Tensor:
     """Generate suffixes in GPU batches with safe CUDA OOM backoff.
 
@@ -130,15 +142,20 @@ def generate_fixed_length_suffixes(
     while start < context_ids.shape[0]:
         stop = min(start + active_batch_size, context_ids.shape[0])
         try:
-            chunks.append(
-                _generate_suffix_chunk(
-                    model,
-                    context_ids[start:stop],
-                    suffix_size=suffix_size,
-                    generator=generator,
-                )
+            chunk = _generate_suffix_chunk(
+                model,
+                context_ids[start:stop],
+                suffix_size=suffix_size,
+                generator=generator,
             )
+            chunks.append(chunk)
+            if diagnostics is not None:
+                diagnostics.batch_calls += 1
+                diagnostics.model_forward_calls += suffix_size
+                diagnostics.generated_token_transitions += (stop - start) * suffix_size
             start = stop
+            if progress_callback is not None:
+                progress_callback(start, context_ids.shape[0])
         except (RuntimeError, torch.OutOfMemoryError) as exc:
             if not _is_cuda_oom(exc) or active_batch_size == 1:
                 raise RuntimeError(
@@ -159,6 +176,8 @@ def generate_fixed_length_completions(
     max_new_tokens: int,
     batch_size: int,
     generator: torch.Generator,
+    diagnostics: GenerationDiagnostics | None = None,
+    progress_callback: Callable[[int, int], None] | None = None,
 ) -> torch.Tensor:
     """Draw IID fixed-length completions from the base language model."""
 
@@ -171,4 +190,84 @@ def generate_fixed_length_completions(
         suffix_size=max_new_tokens,
         batch_size=batch_size,
         generator=generator,
+        diagnostics=diagnostics,
+        progress_callback=progress_callback,
     )
+
+
+def fixed_completion_log_probabilities(
+    model,
+    prompt_ids: torch.Tensor,
+    completions: torch.Tensor,
+    *,
+    batch_size: int,
+    position_batch_size: int = 4,
+) -> torch.Tensor:
+    """Teacher-force fixed completions and sum their base-model log probabilities.
+
+    For standard Hugging Face causal models, hidden states are projected only
+    for the completion positions in small chunks. This avoids materializing a
+    full ``batch x sequence x vocabulary`` logits tensor for large vocabularies.
+    """
+
+    if completions.ndim != 2 or completions.shape[0] <= 0:
+        raise ValueError("completions must be a non-empty rank-two tensor")
+    if batch_size <= 0 or position_batch_size <= 0:
+        raise ValueError("batch sizes must be positive")
+    if prompt_ids.ndim != 1 or prompt_ids.numel() <= 0:
+        raise ValueError("prompt_ids must be a non-empty vector")
+    if prompt_ids.device != completions.device:
+        raise ValueError("prompt_ids and completions must share a device")
+
+    base_model, output_embeddings = _base_model_parts(model)
+    rows: list[torch.Tensor] = []
+    prompt_length = int(prompt_ids.numel())
+    with torch.inference_mode():
+        for start in range(0, completions.shape[0], batch_size):
+            completion = completions[start : start + batch_size]
+            prompt = prompt_ids.unsqueeze(0).expand(completion.shape[0], -1)
+            full_ids = torch.cat((prompt, completion), dim=1)
+            targets = completion
+            if base_model is not None:
+                hidden = base_model(
+                    input_ids=full_ids,
+                    use_cache=False,
+                    return_dict=True,
+                ).last_hidden_state[:, prompt_length - 1 : -1]
+                row_log_probability = torch.zeros(
+                    completion.shape[0],
+                    dtype=torch.float64,
+                    device=completion.device,
+                )
+                for position_start in range(0, completion.shape[1], position_batch_size):
+                    position_stop = min(
+                        position_start + position_batch_size,
+                        completion.shape[1],
+                    )
+                    logits = _project_hidden(
+                        model,
+                        output_embeddings,
+                        hidden[:, position_start:position_stop],
+                    ).float()
+                    selected = torch.gather(
+                        logits,
+                        dim=-1,
+                        index=targets[:, position_start:position_stop].unsqueeze(-1),
+                    ).squeeze(-1)
+                    row_log_probability += (
+                        selected - torch.logsumexp(logits, dim=-1)
+                    ).to(torch.float64).sum(dim=1)
+            else:
+                logits = model(input_ids=full_ids).logits[
+                    :, prompt_length - 1 : -1
+                ].float()
+                selected = torch.gather(
+                    logits,
+                    dim=-1,
+                    index=targets.unsqueeze(-1),
+                ).squeeze(-1)
+                row_log_probability = (
+                    selected - torch.logsumexp(logits, dim=-1)
+                ).to(torch.float64).sum(dim=1)
+            rows.append(row_log_probability)
+    return torch.cat(rows, dim=0)

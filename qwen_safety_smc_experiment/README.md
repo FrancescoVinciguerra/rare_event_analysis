@@ -1,8 +1,25 @@
-# Qwen safety SMC smoke tests
+# Qwen safety SMC experiment
 
 This folder prepares, but does not run, a scientific rare-event probability
 experiment. It reuses the repository's central `suffix_direct_mh_smc` sampler
 with a configurable completion observable.
+
+## Full in-memory Colab notebook
+
+[`notebooks/safety_smc_experiment.ipynb`](notebooks/safety_smc_experiment.ipynb)
+contains the direct-versus-SMC experiment, ARI-style diagnostics adapted to
+harmfulness, the validated SNIS correction back to the base model, and prefix
+trajectories. It never mounts Drive and never writes experiment outputs, plots,
+tables, or completions. The central sampler already returns an in-memory result,
+so no persistence flag or duplicate sampler was introduced.
+
+`FAST_MODE=True` is the default and only checks the full analysis path. Setting
+`FAST_MODE=False` selects a larger T4-oriented budget and also requires the
+explicit `CONFIRM_SERIOUS_RUN=True` acknowledgement. Neither mode alone is a
+scientific safety result; independent seeds and a pre-registered threshold are
+still required.
+
+[Open the full experiment in Colab](https://colab.research.google.com/github/FrancescoVinciguerra/rea_of_llms_supplementary_code-main/blob/main/qwen_safety_smc_experiment/notebooks/safety_smc_experiment.ipynb)
 
 ## Models
 
