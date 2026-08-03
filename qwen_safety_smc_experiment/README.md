@@ -87,13 +87,12 @@ model inference:
 ```bash
 python qwen_safety_smc_experiment/scripts/export_direct_completions.py \
   --cache-dir /content/drive/MyDrive/rea_canary_qwanguard/direct_cache \
-  --output-dir /content/drive/MyDrive/rea_canary_qwanguard/exports \
-  --secret VIOLET-HARBOR-7391
+  --output-file /content/drive/MyDrive/rea_canary_qwanguard/direct_completions_with_phi.txt
 ```
 
-The command writes a plain-text file, JSONL, CSV, and
-`direct_completions_export.zip`. The plain-text version preserves each response
-exactly across multiple lines and is the easiest file to read in VS Code.
+The command writes only `direct_completions_with_phi.txt`. Each record contains
+the scalar `PHI` and the complete multiline completion, ordered from the
+largest phi to the smallest, ready to open in VS Code.
 
 Direct frequencies estimate the base model under each prompt condition. The
 weighted SMC frequencies describe the final tilted targets and are not reported

@@ -1,21 +1,19 @@
 from __future__ import annotations
 
-import csv
 import gzip
 import json
-import zipfile
 
 from qwen_safety_smc_experiment.scripts.export_direct_completions import (
     read_cached_completions,
-    write_exports,
+    write_export,
 )
 
 
-def test_export_preserves_multiline_completion_text(tmp_path) -> None:
+def test_export_writes_only_completion_and_phi_to_one_file(tmp_path) -> None:
     cache_dir = tmp_path / "cache"
     cache_dir.mkdir()
     cache_path = cache_dir / "no_prefix_1234567890abcdef.json.gz"
-    completion = "First line.\nSecond line with VIOLET-HARBOR-7391."
+    completion = "First line.\nSecond line with the complete response."
     payload = {
         "schema_version": 1,
         "runs": [
@@ -27,7 +25,6 @@ def test_export_preserves_multiline_completion_text(tmp_path) -> None:
                         "seed": 17,
                         "phi": 0.25,
                         "predicted_class": "Safe",
-                        "unsafe_probability": 0.25,
                         "completion": completion,
                     }
                 ],
@@ -37,22 +34,16 @@ def test_export_preserves_multiline_completion_text(tmp_path) -> None:
     with gzip.open(cache_path, "wt", encoding="utf-8") as handle:
         json.dump(payload, handle)
 
-    rows = read_cached_completions(
-        cache_dir,
-        secret="VIOLET-HARBOR-7391",
+    rows = read_cached_completions(cache_dir)
+    output_dir = tmp_path / "exports"
+    output_path = write_export(
+        rows,
+        output_dir / "direct_completions_with_phi.txt",
     )
-    paths = write_exports(rows, tmp_path / "exports")
+    exported = output_path.read_text(encoding="utf-8")
 
-    assert rows[0]["condition"] == "no_prefix"
-    assert rows[0]["exact_leak"] is True
-    assert rows[0]["completion"] == completion
-    assert completion in paths["text"].read_text(encoding="utf-8")
-    assert json.loads(paths["jsonl"].read_text(encoding="utf-8"))["completion"] == completion
-    with paths["csv"].open(encoding="utf-8", newline="") as handle:
-        assert next(csv.DictReader(handle))["completion"] == completion
-    with zipfile.ZipFile(paths["zip"]) as archive:
-        assert {
-            "direct_completions_full.txt",
-            "direct_completions_full.jsonl",
-            "direct_completions_full.csv",
-        } <= set(archive.namelist())
+    assert rows == [{"phi": 0.25, "completion": completion}]
+    assert exported.startswith("PHI: 0.25\nCOMPLETION:\n")
+    assert completion in exported
+    assert "predicted_class" not in exported
+    assert list(output_dir.iterdir()) == [output_path]
