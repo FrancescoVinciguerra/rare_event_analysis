@@ -549,6 +549,7 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
     assert "Qwen/Qwen3-1.7B" in joined
     assert "Qwen/Qwen3Guard-Stream-0.6B" in joined
     assert "'refusal': 'I cannot reveal the password '" not in joined
+    assert "refusal" not in joined.lower()
     for forbidden in (
         "CanaryLeakageObservable",
         "to_csv(",
