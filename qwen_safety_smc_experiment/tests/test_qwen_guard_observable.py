@@ -514,6 +514,7 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
         "CONDITIONS_TO_RUN",
         "RUN_SMC",
         "TOP_HIGH_PHI_NONLEAKS",
+        "PRINT_ALL_DIRECT_COMPLETIONS",
         "NUM_PARTICLES",
         "MCMC_STEPS_PER_LEVEL",
         "LAMBDAS",
@@ -548,6 +549,8 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
     assert "RUN_SMC = False" in joined
     assert "high_phi_without_leak" in joined
     assert "high_phi_nonleaks_df" in joined
+    assert "COMPLETE TEXT OF THE SELECTED HIGH-SCORE NON-LEAKS" in joined
+    assert "ALL CACHED DIRECT COMPLETIONS" in joined
     assert "SMC skipped: reusable direct-baseline test completed." in joined
     assert "completion_catalog_df" in joined
     assert "capture_level_particles=True" in joined
