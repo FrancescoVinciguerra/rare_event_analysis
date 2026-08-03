@@ -218,6 +218,46 @@ def test_direct_helper_is_reproducible_in_memory_and_preserves_prefix(tmp_path, 
     assert list(tmp_path.iterdir()) == []
 
 
+def test_direct_event_uses_reported_value_not_shaped_phi(tmp_path, monkeypatch) -> None:
+    namespace = runpy.run_path(
+        str(Path(__file__).resolve().parents[2] / "tests" / "test_suffix_direct_mh_smc.py")
+    )
+    monkeypatch.chdir(tmp_path)
+    context = SafetyPromptContext("", "Once", "", False, "Once", "Once")
+
+    class ShapedObservable:
+        name = "canary_leakage"
+
+        @staticmethod
+        def score_token_sequences(**kwargs):
+            return [
+                ObservableScore(value=0.9, metadata={"exact_leak": False})
+                for _ in kwargs["token_sequences"]
+            ]
+
+        @staticmethod
+        def reported_value(score):
+            return float(score.metadata["exact_leak"])
+
+    result = run_direct_in_memory(
+        namespace["PrefixDependentTinyModel"](),
+        namespace["TinyTokenizer"](),
+        ShapedObservable(),
+        context=context,
+        num_samples=4,
+        max_new_tokens=2,
+        batch_size=2,
+        seed=53,
+        event_threshold=0.5,
+        compute_log_probabilities=False,
+    )
+
+    assert all(row["phi"] == pytest.approx(0.9) for row in result.rows)
+    assert all(row["reported_value"] == 0.0 for row in result.rows)
+    assert all(row["event"] is False for row in result.rows)
+    assert result.summary["event_count"] == 0
+
+
 def test_direct_baseline_cache_round_trip_pools_distinct_seeds(tmp_path, monkeypatch) -> None:
     namespace = runpy.run_path(
         str(Path(__file__).resolve().parents[2] / "tests" / "test_suffix_direct_mh_smc.py")
@@ -426,7 +466,7 @@ def test_current_and_proposal_phi_order_favors_higher_phi_for_negative_lambda() 
     assert float(log_acceptance[1]) == pytest.approx(-0.8)
 
 
-def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() -> None:
+def test_safety_experiment_notebook_is_valid_canary_pipeline() -> None:
     path = (
         Path(__file__).resolve().parents[1]
         / "notebooks"
@@ -449,50 +489,45 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert joined.count("# EDIT PARAMETERS HERE") == 1
     for name in (
         "GENERATOR_MODEL",
-        "GUARD_MODEL",
+        "SECRET",
+        "PREFIX_CONDITIONS",
+        "CONDITIONS_TO_RUN",
         "NUM_PARTICLES",
         "MCMC_STEPS_PER_LEVEL",
         "LAMBDAS",
         "SUFFIX_SIZES",
         "SUFFIX_RHOS",
-        "EVENT_THRESHOLD",
         "FAST_MODE",
-        "SHOW_FULL_COMPLETIONS",
-        "SAVE_COMPLETION_DATASET_TO_DRIVE",
-        "SAFETY_RESULTS_DIR",
+        "SAVE_RESULTS_TO_DRIVE",
+        "DRIVE_ROOT",
     ):
         assert name in joined
     assert "run_direct_in_memory(" in joined
     assert joined.count("run_direct_in_memory(") == 1
     assert "DIRECT_BASELINE_POLICY" in joined
-    assert "DIRECT_BASELINE_CACHE_DIR" in joined
+    assert "cache_root = Path(DRIVE_ROOT) / 'direct_cache'" in joined
     assert "load_direct_baseline_cache(" in joined
     assert "save_direct_baseline_run(" in joined
-    assert "CACHE HIT: no direct LM generation" in joined
-    assert "completion_dataset_df" in joined
-    assert "manual_actionable_harm_label" in joined
-    assert "completion_dataset_path" in joined
+    assert "no direct LM generation" in joined
     assert "run_suffix_direct_mh_smc(" in joined
-    assert "evaluate_paired_prefix_robustness(" in joined
-    assert "prefix_robustness_results" in joined
-    assert "first_observed_crossing_checkpoint" in joined
-    assert "recovery_probability_given_ever_malicious" in joined
+    assert joined.count("run_suffix_direct_mh_smc(") == 1
+    assert "CanaryLeakageObservable" in joined
+    assert "reported_value" in joined
+    assert "event_threshold=1.0" in joined
+    assert "tail_thresholds=(1.0,)" in joined
+    assert "SECRET in row[text_column]" in joined
+    assert "str.contains(SECRET, regex=False)" in joined
+    assert "compute_log_probabilities=False" in joined
     assert "completion_catalog_df" in joined
-    assert "selected_completion_samples_df" in joined
-    assert "'lm_generated_token_transitions': 0" in joined
-    assert "scenario_specs" not in joined
-    assert "SCENARIO_SAMPLES" not in joined
-    assert "estimate_base_tails_from_final_samples(" in joined
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined
-    assert "batch_single_atol = 2e-3" in joined
-    assert "batch_single_probability_atol" in joined
-    assert "batched_equals_individual" not in joined
-    assert "math.isclose(batch_score.value, single_score.value" not in joined
     assert "drive.mount" in joined
-    for forbidden in ("to_csv(", "savefig("):
+    assert "Qwen3Guard" not in joined
+    assert "GUARD_MODEL" not in joined
+    assert "guard_base" not in joined
+    for forbidden in ("to_csv(", "savefig(", "estimate_base_tails_from_final_samples("):
         assert forbidden not in joined
-    for section in range(1, 13):
+    for section in range(1, 8):
         assert f"## {section}." in headings
 
 

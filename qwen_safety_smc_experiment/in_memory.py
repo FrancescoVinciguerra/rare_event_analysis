@@ -19,7 +19,11 @@ from rea_llms.generation import (
     prompt_token_ids,
 )
 from rea_llms.models import set_seed
-from rea_llms.observables.base import ObservableScore, observable_configuration
+from rea_llms.observables.base import (
+    ObservableScore,
+    observable_configuration,
+    reported_value,
+)
 from suffix_direct_mh_smc_experiment.smc_sampler import score_observable
 
 
@@ -347,7 +351,8 @@ def load_direct_baseline_cache(
             )
             row["cache_run_index"] = int(cache_run_index)
             row["sample_id"] = len(rows)
-            row["event"] = bool(float(row["phi"]) >= float(event_threshold))
+            event_value = float(row.get("reported_value", row["phi"]))
+            row["event"] = bool(event_value >= float(event_threshold))
             rows.append(row)
     if not rows:
         raise ValueError("Direct baseline cache contains no samples")
@@ -732,11 +737,19 @@ def run_direct_in_memory(
     )
     token_rows = completion_tokens.detach().cpu().tolist()
     phi_rows = phi.detach().cpu().tolist()
+    reported_rows = [reported_value(observable, score) for score in scores]
     log_probability_rows = log_probabilities.detach().cpu().tolist()
     eos_token_id = getattr(tokenizer, "eos_token_id", None)
     rows: list[dict[str, Any]] = []
-    for index, (token_ids, mutable, value, log_probability, score) in enumerate(
-        zip(token_rows, mutable_completions, phi_rows, log_probability_rows, scores)
+    for index, (token_ids, mutable, value, report, log_probability, score) in enumerate(
+        zip(
+            token_rows,
+            mutable_completions,
+            phi_rows,
+            reported_rows,
+            log_probability_rows,
+            scores,
+        )
     ):
         metadata = dict(score.metadata)
         length = _effective_length(token_ids, eos_token_id)
@@ -748,6 +761,7 @@ def run_direct_in_memory(
                 "completion": context.full_completion(mutable),
                 "completion_token_ids": token_ids,
                 "phi": float(value),
+                "reported_value": float(report),
                 "predicted_class": metadata.get("predicted_class"),
                 "safe_probability": metadata.get("safe_probability"),
                 "controversial_probability": metadata.get(
@@ -760,7 +774,7 @@ def run_direct_in_memory(
                 "eos_observed": bool(
                     eos_token_id is not None and int(eos_token_id) in token_ids
                 ),
-                "event": bool(float(value) >= float(event_threshold)),
+                "event": bool(float(report) >= float(event_threshold)),
             }
         )
 
@@ -771,7 +785,7 @@ def run_direct_in_memory(
         name: counters_after[name] - counters_before[name]
         for name in counters_after
     }
-    values = np.asarray(phi_rows, dtype=np.float64)
+    values = np.asarray(reported_rows, dtype=np.float64)
     event_count = int(np.count_nonzero(values >= float(event_threshold)))
     total_cache_requests = deltas["cache_hits"] + deltas["cache_misses"]
     summary = {
