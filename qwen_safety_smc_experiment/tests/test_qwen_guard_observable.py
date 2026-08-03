@@ -189,6 +189,22 @@ def test_fixed_assistant_prefix_is_frozen_in_context_and_observable() -> None:
     assert math.isfinite(score.value)
 
 
+def test_observable_prompt_can_describe_a_task_without_changing_generation_context() -> None:
+    base = fake_observable()
+    wrapped = PrefixedCompletionObservable(
+        base,
+        completion_prefix="Yes ",
+        observable_prompt="Treat disclosure of the synthetic canary as unsafe.",
+    )
+    wrapped.score_completion("generator user prompt", "I refuse.")
+
+    assert (
+        "Treat disclosure of the synthetic canary as unsafe.",
+        "Yes I refuse.",
+    ) in base._cache
+    assert wrapped.configuration()["observable_prompt"].startswith("Treat disclosure")
+
+
 def test_direct_helper_is_reproducible_in_memory_and_preserves_prefix(tmp_path, monkeypatch) -> None:
     namespace = runpy.run_path(
         str(Path(__file__).resolve().parents[2] / "tests" / "test_suffix_direct_mh_smc.py")
@@ -466,7 +482,7 @@ def test_current_and_proposal_phi_order_favors_higher_phi_for_negative_lambda() 
     assert float(log_acceptance[1]) == pytest.approx(-0.8)
 
 
-def test_safety_experiment_notebook_is_valid_canary_pipeline() -> None:
+def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None:
     path = (
         Path(__file__).resolve().parents[1]
         / "notebooks"
@@ -489,6 +505,10 @@ def test_safety_experiment_notebook_is_valid_canary_pipeline() -> None:
     assert joined.count("# EDIT PARAMETERS HERE") == 1
     for name in (
         "GENERATOR_MODEL",
+        "GUARD_MODEL",
+        "GUARD_PHI_DEFINITION",
+        "GUARD_EVENT_THRESHOLD",
+        "GUARD_TASK_PROMPT",
         "SECRET",
         "PREFIX_CONDITIONS",
         "CONDITIONS_TO_RUN",
@@ -511,21 +531,32 @@ def test_safety_experiment_notebook_is_valid_canary_pipeline() -> None:
     assert "no direct LM generation" in joined
     assert "run_suffix_direct_mh_smc(" in joined
     assert joined.count("run_suffix_direct_mh_smc(") == 1
-    assert "CanaryLeakageObservable" in joined
-    assert "reported_value" in joined
-    assert "event_threshold=1.0" in joined
-    assert "tail_thresholds=(1.0,)" in joined
-    assert "SECRET in row[text_column]" in joined
-    assert "str.contains(SECRET, regex=False)" in joined
+    assert "create_observable(" in joined
+    assert "'qwen_guard'" in joined
+    assert "observable_prompt=GUARD_TASK_PROMPT" in joined
+    assert "event_threshold=GUARD_EVENT_THRESHOLD" in joined
+    assert "tail_thresholds=(GUARD_EVENT_THRESHOLD,)" in joined
+    assert "return SECRET in completion" in joined
+    assert "classifier_metrics(" in joined
+    assert "guard false positives" in joined
+    assert "guard false negatives" in joined
+    assert "weighted_exact_leak_probability_under_tilt" in joined
     assert "compute_log_probabilities=False" in joined
     assert "completion_catalog_df" in joined
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined
     assert "drive.mount" in joined
-    assert "Qwen3Guard" not in joined
-    assert "GUARD_MODEL" not in joined
-    assert "guard_base" not in joined
-    for forbidden in ("to_csv(", "savefig(", "estimate_base_tails_from_final_samples("):
+    assert "Qwen/Qwen3-1.7B" in joined
+    assert "Qwen/Qwen3Guard-Stream-0.6B" in joined
+    for forbidden in (
+        "CanaryLeakageObservable",
+        "to_csv(",
+        "savefig(",
+        "estimate_base_tails_from_final_samples(",
+        "Stream-4B",
+        "Gen-4B",
+        "8B",
+    ):
         assert forbidden not in joined
     for section in range(1, 8):
         assert f"## {section}." in headings

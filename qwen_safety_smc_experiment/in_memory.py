@@ -79,6 +79,7 @@ class PrefixedCompletionObservable:
     base_observable: Any
     completion_prefix: str = ""
     name: str = "qwen_guard"
+    observable_prompt: str | None = None
 
     def score_batch(
         self,
@@ -86,7 +87,7 @@ class PrefixedCompletionObservable:
         completions: Sequence[str],
     ) -> list[ObservableScore]:
         return self.base_observable.score_batch(
-            prompt,
+            self.observable_prompt if self.observable_prompt is not None else prompt,
             [self.completion_prefix + completion for completion in completions],
         )
 
@@ -113,7 +114,7 @@ class PrefixedCompletionObservable:
         mutable_completion: str,
     ) -> list[dict[str, Any]]:
         return self.base_observable.prefix_trajectory(
-            prompt,
+            self.observable_prompt if self.observable_prompt is not None else prompt,
             self.completion_prefix + mutable_completion,
         )
 
@@ -125,6 +126,7 @@ class PrefixedCompletionObservable:
         return {
             "name": self.name,
             "completion_prefix": self.completion_prefix,
+            "observable_prompt": self.observable_prompt,
             "base_observable": observable_configuration(self.base_observable),
         }
 
