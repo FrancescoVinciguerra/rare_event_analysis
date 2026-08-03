@@ -81,6 +81,20 @@ Section 6 prints score quantiles and complete high-`phi` responses that do not
 contain the canary. The resulting gzip caches are reused automatically. Set
 `RUN_SMC=True` later to run SMC against the same direct pools.
 
+To inspect every cached completion outside Colab, export the caches without any
+model inference:
+
+```bash
+python qwen_safety_smc_experiment/scripts/export_direct_completions.py \
+  --cache-dir /content/drive/MyDrive/rea_canary_qwanguard/direct_cache \
+  --output-dir /content/drive/MyDrive/rea_canary_qwanguard/exports \
+  --secret VIOLET-HARBOR-7391
+```
+
+The command writes a plain-text file, JSONL, CSV, and
+`direct_completions_export.zip`. The plain-text version preserves each response
+exactly across multiple lines and is the easiest file to read in VS Code.
+
 Direct frequencies estimate the base model under each prompt condition. The
 weighted SMC frequencies describe the final tilted targets and are not reported
 as base-model leakage probabilities.
