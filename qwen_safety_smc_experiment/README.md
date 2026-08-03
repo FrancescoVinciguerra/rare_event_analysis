@@ -72,8 +72,14 @@ change. The final notebook cell displays:
 - complete texts for exact leaks and classifier errors.
 
 The same cell optionally writes one combined completion JSONL and one compact
-JSON summary under `rea_canary_leakage/results` on Drive. Raw completions remain
+JSON summary under `rea_canary_qwanguard/results` on Drive. Raw completions remain
 ignored by Git.
+
+The notebook currently defaults to a focused reusable direct-baseline test:
+`RUN_SMC=False` and 128 completions for each of the three prefix conditions.
+Section 6 prints score quantiles and complete high-`phi` responses that do not
+contain the canary. The resulting gzip caches are reused automatically. Set
+`RUN_SMC=True` later to run SMC against the same direct pools.
 
 Direct frequencies estimate the base model under each prompt condition. The
 weighted SMC frequencies describe the final tilted targets and are not reported

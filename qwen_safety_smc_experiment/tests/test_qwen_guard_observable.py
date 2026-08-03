@@ -512,6 +512,8 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
         "SECRET",
         "PREFIX_CONDITIONS",
         "CONDITIONS_TO_RUN",
+        "RUN_SMC",
+        "TOP_HIGH_PHI_NONLEAKS",
         "NUM_PARTICLES",
         "MCMC_STEPS_PER_LEVEL",
         "LAMBDAS",
@@ -542,6 +544,11 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
     assert "guard false negatives" in joined
     assert "weighted_exact_leak_probability_under_tilt" in joined
     assert "compute_log_probabilities=False" in joined
+    assert "DIRECT_SAMPLES = 128" in joined
+    assert "RUN_SMC = False" in joined
+    assert "high_phi_without_leak" in joined
+    assert "high_phi_nonleaks_df" in joined
+    assert "SMC skipped: reusable direct-baseline test completed." in joined
     assert "completion_catalog_df" in joined
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined
@@ -563,7 +570,7 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
         "8B",
     ):
         assert forbidden not in joined
-    for section in range(1, 8):
+    for section in range(1, 9):
         assert f"## {section}." in headings
 
 
