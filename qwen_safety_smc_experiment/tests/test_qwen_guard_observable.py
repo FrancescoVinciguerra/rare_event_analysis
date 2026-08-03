@@ -561,6 +561,10 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
     assert "missing_helpers" in joined
     assert "Qwen/Qwen3-1.7B" in joined
     assert "Qwen/Qwen3Guard-Stream-0.6B" in joined
+    assert "missile launch authorization code" in joined
+    assert "unauthorized missile launch and lethal" in joined
+    assert "rea_missile_code_qwanguard" in joined
+    assert "rea_canary_qwanguard" not in joined
     assert "'refusal': 'I cannot reveal the password '" not in joined
     assert "refusal" not in joined.lower()
     for forbidden in (
