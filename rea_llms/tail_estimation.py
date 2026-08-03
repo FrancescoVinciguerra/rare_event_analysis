@@ -50,7 +50,7 @@ class BaseTailEstimates:
 
 @dataclass(frozen=True)
 class MixtureComponentPopulation:
-    """One independent terminal SMC population used by the MIS estimator."""
+    """One independent terminal SMC population used by multi-component estimators."""
 
     run_id: str
     seed: int
@@ -101,6 +101,39 @@ class ComponentReverseDiagnostics:
     corrected_ess: torch.Tensor
     corrected_ess_over_n: torch.Tensor
     reverse_log_normalizing_constant: torch.Tensor
+
+
+@dataclass(frozen=True)
+class ComponentAveragedTailEstimates:
+    """Average of per-component self-normalized reverse-IS tail estimates."""
+
+    thresholds: torch.Tensor
+    estimated_probabilities: torch.Tensor
+    component_probabilities: torch.Tensor
+    component_corrected_ess: torch.Tensor
+    component_corrected_ess_over_n: torch.Tensor
+    corrected_ess: torch.Tensor
+    corrected_ess_over_n: torch.Tensor
+    component_coefficients: torch.Tensor
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "weight_ess": float(self.corrected_ess.detach().cpu()),
+            "weight_ess_over_n": float(self.corrected_ess_over_n.detach().cpu()),
+            "component_coefficients": (
+                self.component_coefficients.detach().cpu().tolist()
+            ),
+            "tails": [
+                {
+                    "threshold": float(threshold),
+                    "estimated_probability_under_p_m": float(probability),
+                }
+                for threshold, probability in zip(
+                    self.thresholds.detach().cpu().tolist(),
+                    self.estimated_probabilities.detach().cpu().tolist(),
+                )
+            ],
+        }
 
 
 def _as_vector(values, *, name: str, device: torch.device | None = None) -> torch.Tensor:
@@ -188,6 +221,106 @@ def diagnose_component_reverse_estimator(
         corrected_ess=ess,
         corrected_ess_over_n=ess / raw.numel(),
         reverse_log_normalizing_constant=-log_reverse_expectation,
+    )
+
+
+def estimate_base_tails_by_component_average(
+    components: Sequence[MixtureComponentPopulation],
+    *,
+    thresholds: Sequence[float],
+    component_coefficients: Sequence[float] | None = None,
+) -> ComponentAveragedTailEstimates:
+    """Average independent per-component SNIS estimates back to ``p_M``.
+
+    Component ``j`` is treated as its own proposal
+    ``p_M(x) exp(-lambda_j psi_j(x)) / Z_j``. Within that component, SNIS
+    corrects by ``exp(lambda_j psi_j(x))`` so ``Z_j`` cancels. The returned
+    probability is a weighted average of the component estimates, with equal
+    component weights by default.
+    """
+
+    _validate_independent_components(components)
+    diagnostics = [
+        diagnose_component_reverse_estimator(
+            component.raw_ari,
+            component.final_log_weights,
+            cap=component.cap,
+            lambda_final=component.lambda_final,
+            thresholds=thresholds,
+        )
+        for component in components
+    ]
+    device = diagnostics[0].thresholds.device
+    if any(diagnostic.thresholds.device != device for diagnostic in diagnostics):
+        diagnostics = [
+            diagnostic
+            if diagnostic.thresholds.device == device
+            else ComponentReverseDiagnostics(
+                thresholds=diagnostic.thresholds.to(device),
+                estimated_probabilities=diagnostic.estimated_probabilities.to(device),
+                raw_counts=diagnostic.raw_counts.to(device),
+                corrected_log_weights=diagnostic.corrected_log_weights.to(device),
+                corrected_ess=diagnostic.corrected_ess.to(device),
+                corrected_ess_over_n=diagnostic.corrected_ess_over_n.to(device),
+                reverse_log_normalizing_constant=(
+                    diagnostic.reverse_log_normalizing_constant.to(device)
+                ),
+            )
+            for diagnostic in diagnostics
+        ]
+
+    threshold_values = diagnostics[0].thresholds
+    for diagnostic in diagnostics[1:]:
+        if diagnostic.thresholds.shape != threshold_values.shape or not torch.allclose(
+            diagnostic.thresholds,
+            threshold_values,
+        ):
+            raise ValueError("all component diagnostics must use the same thresholds")
+
+    if component_coefficients is None:
+        alpha = torch.ones(len(components), dtype=torch.float64, device=device)
+    else:
+        alpha = _as_vector(
+            component_coefficients,
+            name="component_coefficients",
+            device=device,
+        )
+        if alpha.numel() != len(components):
+            raise ValueError("one component coefficient is required per component")
+    if not bool(torch.isfinite(alpha).all().item()) or not bool(
+        (alpha > 0.0).all().item()
+    ):
+        raise ValueError("component coefficients must be finite and strictly positive")
+    alpha = alpha / alpha.sum()
+
+    component_probabilities = torch.stack(
+        [
+            diagnostic.estimated_probabilities.to(torch.float64)
+            for diagnostic in diagnostics
+        ]
+    )
+    estimated_probabilities = torch.sum(
+        alpha.unsqueeze(1) * component_probabilities,
+        dim=0,
+    )
+    component_ess = torch.stack(
+        [diagnostic.corrected_ess.to(torch.float64) for diagnostic in diagnostics]
+    )
+    component_ess_over_n = torch.stack(
+        [
+            diagnostic.corrected_ess_over_n.to(torch.float64)
+            for diagnostic in diagnostics
+        ]
+    )
+    return ComponentAveragedTailEstimates(
+        thresholds=threshold_values,
+        estimated_probabilities=estimated_probabilities,
+        component_probabilities=component_probabilities,
+        component_corrected_ess=component_ess,
+        component_corrected_ess_over_n=component_ess_over_n,
+        corrected_ess=torch.sum(alpha * component_ess),
+        corrected_ess_over_n=torch.sum(alpha * component_ess_over_n),
+        component_coefficients=alpha,
     )
 
 

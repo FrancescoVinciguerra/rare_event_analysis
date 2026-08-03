@@ -25,6 +25,7 @@ from rea_llms.tail_estimation import (
     effective_sample_size_from_log_weights,
     estimate_base_expectation,
     estimate_base_tail_probabilities,
+    estimate_base_tails_by_component_average,
     estimate_base_tails_from_deterministic_mixture,
     estimate_base_tails_from_final_samples,
     log_mixture_density_ratio,
@@ -129,6 +130,45 @@ def test_deterministic_mixture_recovers_exact_toy_probability() -> None:
     )
     assert float(estimates.estimated_probabilities[0]) == pytest.approx(0.7, abs=1e-12)
     assert float(torch.exp(estimates.corrected_log_weights).sum()) == pytest.approx(1.0)
+
+
+def test_component_average_snis_averages_per_component_estimates_without_log_z() -> None:
+    base = torch.tensor([0.1, 0.2, 0.3, 0.4], dtype=torch.float64)
+    raw = torch.tensor([0.0, 1.0, 2.0, 3.0], dtype=torch.float64)
+    components = []
+    reverse_estimates = []
+    for index, (cap, lambda_final) in enumerate(((2.0, -0.5), (3.0, -1.0))):
+        potential = torch.clamp(raw, max=cap)
+        tilted = base * torch.exp(-lambda_final * potential)
+        tilted /= tilted.sum()
+        component = MixtureComponentPopulation(
+            run_id=f"run-{index}",
+            seed=100 + index,
+            cap=cap,
+            lambda_final=lambda_final,
+            log_normalizing_constant=1000.0 + index,
+            raw_ari=raw,
+            final_log_weights=torch.log(tilted),
+        )
+        components.append(component)
+        reverse_estimates.append(
+            diagnose_component_reverse_estimator(
+                component.raw_ari,
+                component.final_log_weights,
+                cap=component.cap,
+                lambda_final=component.lambda_final,
+                thresholds=[2.0],
+            ).estimated_probabilities[0]
+        )
+    estimates = estimate_base_tails_by_component_average(
+        components,
+        thresholds=[2.0],
+    )
+    assert float(estimates.estimated_probabilities[0]) == pytest.approx(
+        float(torch.stack(reverse_estimates).mean()),
+        abs=1e-12,
+    )
+    assert float(estimates.estimated_probabilities[0]) == pytest.approx(0.7, abs=1e-12)
 
 
 def test_components_require_distinct_seed_and_run_id() -> None:

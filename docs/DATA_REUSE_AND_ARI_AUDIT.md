@@ -50,7 +50,8 @@ therefore cannot be retargeted by replacing only their final ARI values.
 
 1. Generate or load one reproducible IID direct reference.
 2. Generate or load the requested independent SMC components.
-3. Compare the SMC mixture with the matching IID direct reference in memory.
+3. Compare the component-averaged SMC estimate with the matching IID direct
+   reference in memory.
 
 Only direct arrays, direct metadata, and compact SMC component archives persist
 on Drive. Tables and plots stay in the notebook.

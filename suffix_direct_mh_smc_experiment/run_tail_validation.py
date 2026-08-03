@@ -1,4 +1,4 @@
-"""Validate deterministic-mixture SMC tails against reproducible IID direct data."""
+"""Validate component-averaged SMC tails against reproducible IID direct data."""
 
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ from rea_llms.scoring import ari_decoding_description  # noqa: E402
 from rea_llms.tail_estimation import (  # noqa: E402
     MixtureComponentPopulation,
     diagnose_component_reverse_estimator,
-    estimate_base_tails_from_deterministic_mixture,
+    estimate_base_tails_by_component_average,
 )
 from suffix_direct_mh_smc_experiment.smc_sampler import (  # noqa: E402
     ALGORITHM_VERSION,
@@ -226,7 +226,7 @@ def _component_metadata(
         "ess_threshold": float(args.ess_threshold),
         "resampling": True,
         "resampling_method": "systematic",
-        "resample_final": False,
+        "resample_final": True,
         "suffix_mode": "stochastic",
         "suffix_sizes": list(suffix_sizes),
         "suffix_rhos": list(suffix_rhos) if suffix_rhos is not None else None,
@@ -346,6 +346,17 @@ def _load_component_archive(
         or np.isposinf(final_log_weights).any()
     ):
         raise ValueError(f"cached component contains invalid log weights: {path}")
+    if expected_metadata.get("resample_final") is True:
+        uniform_log_weight = -math.log(expected_count)
+        if not np.allclose(
+            final_log_weights,
+            uniform_log_weight,
+            atol=1e-10,
+            rtol=0.0,
+        ):
+            raise ValueError(
+                f"cached final-resampled component is not uniformly weighted: {path}"
+            )
     if not np.allclose(phi, np.minimum(raw_ari, spec.cap), atol=1e-6, rtol=0.0):
         raise ValueError(f"cached capped potential does not equal min(raw_ari, cap): {path}")
     if not math.isfinite(log_z) or not math.isfinite(runtime):
@@ -551,8 +562,8 @@ def _run_component(
         )
     finally:
         progress.close()
-    if result.summary.get("resample_final") is not False:
-        raise RuntimeError("suffix SMC unexpectedly resampled its final population")
+    if result.summary.get("resample_final") is not True:
+        raise RuntimeError("suffix SMC did not resample its final population")
     if result.summary.get("algorithm_version") != ALGORITHM_VERSION:
         raise RuntimeError("suffix SMC algorithm version does not match cache metadata")
     raw_ari = np.asarray([row["raw_ari"] for row in result.samples], dtype=np.float64)
@@ -584,12 +595,12 @@ def _run_component(
     )
 
 
-def _mixture_coefficients(
+def _component_coefficients(
     specs: Sequence[ComponentSpec],
-    completed: Sequence[CompletedComponent],
+    _completed: Sequence[CompletedComponent],
 ) -> list[float] | None:
     if all(spec.rho is None for spec in specs):
-        return [float(component.raw_ari.size) for component in completed]
+        return None
     return [float(spec.rho) for spec in specs if spec.rho is not None]
 
 
@@ -610,10 +621,10 @@ def _estimate_seed_group(
         )
         for component in components
     ]
-    return estimate_base_tails_from_deterministic_mixture(
+    return estimate_base_tails_by_component_average(
         populations,
         thresholds=thresholds,
-        mixture_coefficients=_mixture_coefficients(specs, components),
+        component_coefficients=_component_coefficients(specs, components),
     )
 
 
@@ -786,7 +797,7 @@ def _diagnostic_interpretation(
             "cannot be assessed."
         )
     elif seed_group_count == 0:
-        messages.append("No complete seed group is available for mixture estimation.")
+        messages.append("No complete seed group is available for SMC estimation.")
     if smoke_mode:
         messages.append(
             "Smoke-mode estimates validate execution only; they are not used to "
@@ -844,7 +855,7 @@ def _diagnostic_interpretation(
 
     if not aggregate_rows:
         messages.append(
-            "No aggregate mixture is available for comparison with IID direct."
+            "No aggregate SMC estimate is available for comparison with IID direct."
         )
         return messages
 
@@ -864,7 +875,7 @@ def _diagnostic_interpretation(
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Validate suffix direct-MH SMC mixture tail estimates."
+        description="Validate component-averaged suffix direct-MH SMC tail estimates."
     )
     parser.add_argument("--model-name", default=DEFAULT_MODEL_NAME)
     parser.add_argument("--tokenizer-name", default=DEFAULT_TOKENIZER_NAME)

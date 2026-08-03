@@ -28,7 +28,7 @@ from rea_llms.scoring import (
 
 
 ScheduleValue = TypeVar("ScheduleValue")
-ALGORITHM_VERSION = "suffix_direct_mh_smc_v3_log_normalizer"
+ALGORITHM_VERSION = "suffix_direct_mh_smc_v4_final_resample_component_snis"
 
 
 def _ari_texts_from_completion_ids(
@@ -72,6 +72,7 @@ class SuffixDirectMHSMCConfig:
     mcmc_steps_per_level: int = 5
     ess_threshold: float = 0.5
     resampling: bool = True
+    resample_final: bool = True
     resampling_method: str = "systematic"
     suffix_mode: str = "stochastic"
     suffix_sizes: tuple[int, ...] | None = None
@@ -705,7 +706,7 @@ def _final_samples(
     seed: int,
     lambda_final: float,
 ) -> list[dict[str, Any]]:
-    """Serialize the final weighted particle system without resampling it.
+    """Serialize the final particle system and its current normalized weights.
 
     This currently reconstructs score metadata and decoded strings on CPU. The
     repeated work is retained during this audit because changing it would need
@@ -822,9 +823,9 @@ def run_suffix_direct_mh_smc(
     """Run full-sequence SMC with an exact direct-MH suffix mutation.
 
     The order at transition k is mutation under pi_{k-1}, incremental weighting
-    from gamma_{k-1} to gamma_k, then optional systematic resampling. The final
-    resampling is intentionally omitted so returned normalized weights retain
-    the final target approximation.
+    from gamma_{k-1} to gamma_k, then optional systematic resampling. By default
+    the final level is resampled too, so returned particles carry uniform
+    empirical weights under the terminal tilted target.
     """
     set_seed(config.seed)
     device = next(model.parameters()).device
@@ -995,6 +996,7 @@ def run_suffix_direct_mh_smc(
         total_regenerated_tokens = 0
         resampling_steps = 0
         min_ess_over_n = 1.0
+        final_weight_ess_over_n_before_resampling = 1.0
         log_normalizing_constant = torch.zeros((), dtype=torch.float64, device=device)
 
         for level in range(1, len(config.lambdas)):
@@ -1039,8 +1041,9 @@ def run_suffix_direct_mh_smc(
                 )
             )
             log_normalizing_constant += log_normalizer_increment
-            # 3. Diagnose normalized weights and resample only before the final
-            # level, where equal weights can benefit subsequent mutation.
+            # 3. Diagnose normalized weights. Intermediate low-ESS resampling
+            # helps subsequent mutation; final resampling returns an unweighted
+            # terminal population for the downstream SNIS correction.
             ess = ess_from_normalized_log_weights(log_weights)
             ess_over_n_before = min(1.0, float((ess / config.num_particles).item()))
             weights_before = torch.exp(log_weights)
@@ -1050,13 +1053,15 @@ def run_suffix_direct_mh_smc(
                 ).item()
             )
             min_ess_over_n = min(min_ess_over_n, ess_over_n_before)
-
-            # Keep final weights: resampling there would discard the information
-            # needed by both the final target estimator and the SNIS correction.
+            is_final_level = level == len(config.lambdas) - 1
+            if is_final_level:
+                final_weight_ess_over_n_before_resampling = ess_over_n_before
             resampled = bool(
                 config.resampling
-                and level < len(config.lambdas) - 1
-                and ess_over_n_before < config.ess_threshold
+                and (
+                    (not is_final_level and ess_over_n_before < config.ess_threshold)
+                    or (is_final_level and config.resample_final)
+                )
             )
             if resampled:
                 indices = systematic_resample(log_weights, generator=generator)
@@ -1190,7 +1195,7 @@ def run_suffix_direct_mh_smc(
         "ess_threshold": config.ess_threshold,
         "resampling": config.resampling,
         "resampling_method": config.resampling_method,
-        "resample_final": False,
+        "resample_final": bool(config.resample_final),
         "resampling_steps": resampling_steps,
         "log_normalizing_constant_estimate": float(
             log_normalizing_constant.item()
@@ -1201,6 +1206,9 @@ def run_suffix_direct_mh_smc(
         "mean_runtime_seconds_per_level": float(np.mean(level_runtimes)) if level_runtimes else 0.0,
         "cuda_peak_memory_bytes": peak_memory,
         "final_ess_over_n": final_ess_over_n,
+        "final_weight_ess_over_n_before_resampling": float(
+            final_weight_ess_over_n_before_resampling
+        ),
         "min_ess_over_n": float(min_ess_over_n),
         "mean_mcmc_acceptance_rate": float(acceptance_rate),
         "total_proposals": int(total_proposals),
@@ -1329,9 +1337,11 @@ def render_report(summary: dict[str, Any], diagnostics: dict[str, Any]) -> str:
         f"- Observable mode: `{summary.get('ari_mode', 'n/a')}`",
         f"- Runtime: {summary['runtime_total_seconds']:.3f} s",
         f"- Seconds per final particle: {summary['runtime_seconds_per_final_particle']:.6f}",
-        f"- Final ESS/N: {summary['final_ess_over_n']:.4f}",
+        f"- Final serialized ESS/N: {summary['final_ess_over_n']:.4f}",
+        "- Final pre-resampling ESS/N: "
+        f"{summary['final_weight_ess_over_n_before_resampling']:.4f}",
         f"- Minimum pre-resampling ESS/N: {summary['min_ess_over_n']:.4f}",
-        f"- Resampling steps: {summary['resampling_steps']} (never at the final level)",
+        f"- Resampling steps: {summary['resampling_steps']} (including final when enabled)",
         f"- Total MCMC acceptance rate: {summary['mean_mcmc_acceptance_rate']:.4f}",
         f"- Total proposals: {summary.get('total_proposals', 0)}",
         f"- Total regenerated proposal tokens: {summary.get('total_regenerated_tokens', 0)}",

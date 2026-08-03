@@ -467,8 +467,8 @@ def _run_seed(
         )
     finally:
         progress.close()
-    if result.summary.get("resample_final") is not False:
-        raise RuntimeError("the final weighted SMC population was unexpectedly resampled")
+    if result.summary.get("resample_final") is not True:
+        raise RuntimeError("the final SMC population was not resampled")
     if len(result.samples) != config.num_particles:
         raise RuntimeError("final SMC sample count does not match num_particles")
 
@@ -491,7 +491,12 @@ def _run_seed(
         "num_particles": config.num_particles,
         "mean_phi": float(result.summary["weighted_mean_ari"]),
         "max_phi": max(float(sample["phi"]) for sample in result.samples),
-        "smc_ess_over_n": float(result.summary["final_ess_over_n"]),
+        "smc_ess_over_n": float(
+            result.summary.get(
+                "final_weight_ess_over_n_before_resampling",
+                result.summary["final_ess_over_n"],
+            )
+        ),
         **estimates,
     }
     payload = {

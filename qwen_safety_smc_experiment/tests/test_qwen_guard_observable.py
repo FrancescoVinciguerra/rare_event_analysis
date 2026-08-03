@@ -600,11 +600,12 @@ def test_ari_seeded_snapshot_is_unchanged() -> None:
     )
     assert [row["completion_token_ids"] for row in result.samples] == [
         [2, 3, 0],
+        [2, 3, 0],
         [1, 1, 2],
         [1, 1, 2],
         [1, 2, 0],
-        [0, 2, 0],
         [2, 0, 0],
     ]
-    assert result.summary["unweighted_mean_ari"] == pytest.approx(3.3333333333333335)
-    assert result.summary["weighted_mean_ari"] == pytest.approx(3.9139799191376166)
+    assert all(row["normalized_weight"] == pytest.approx(1 / 6) for row in result.samples)
+    assert result.summary["unweighted_mean_ari"] == pytest.approx(3.8333333333333335)
+    assert result.summary["weighted_mean_ari"] == pytest.approx(3.8333333333333335)

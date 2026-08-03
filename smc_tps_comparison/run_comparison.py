@@ -237,8 +237,15 @@ def _run_smc(
             "weighted_tail_probabilities"
         ],
         "acceptance_rate": result.summary["mean_mcmc_acceptance_rate"],
-        "smc_weight_ess": result.summary["final_ess_over_n"] * args.smc_num_particles,
-        "smc_weight_ess_over_n": result.summary["final_ess_over_n"],
+        "smc_weight_ess": result.summary.get(
+            "final_weight_ess_over_n_before_resampling",
+            result.summary["final_ess_over_n"],
+        )
+        * args.smc_num_particles,
+        "smc_weight_ess_over_n": result.summary.get(
+            "final_weight_ess_over_n_before_resampling",
+            result.summary["final_ess_over_n"],
+        ),
         "tps_temporal_ess": None,
         "configuration_fingerprint": fingerprint,
         "fingerprint_payload": fingerprint_payload,

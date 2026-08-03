@@ -2,7 +2,7 @@
 
 This package is the active research pipeline. It samples complete, fixed-length
 language-model completions along an exponential-tilt schedule and estimates
-base-model ARI tails from the final weighted population.
+base-model ARI tails from the final-resampled terminal population.
 
 The mathematical specification and correctness derivation are in
 [`THEORY.md`](../THEORY.md). In particular, the active proposal is an exact
@@ -17,8 +17,8 @@ or a vocabulary-wide proposal normalizer.
 - `run_experiment.py`: one independent SMC run.
 - `run_tail_estimation.py`: multi-seed SNIS tail estimates and optional terminal
   lambda schedule sweep.
-- `run_tail_validation.py`: independent cap/lambda components, SMC normalizer
-  estimates, deterministic-mixture MIS, and comparison with a matching
+- `run_tail_validation.py`: independent cap/lambda components, per-component
+  SNIS estimates, and comparison with a matching
   reproducible IID direct reference.
 
 ## One run
@@ -32,7 +32,8 @@ python suffix_direct_mh_smc_experiment/run_experiment.py \
 
 Mutation at level `k` leaves `pi_(lambda[k-1])` invariant. Reweighting then
 applies `exp(-(lambda[k]-lambda[k-1])*phi)`. Resampling may occur below the ESS
-threshold at non-final levels only; final normalized log weights are retained.
+threshold at non-final levels, and the terminal population is resampled once so
+serialized final particles have uniform weights.
 
 ## Tail estimation
 
@@ -60,9 +61,9 @@ python suffix_direct_mh_smc_experiment/run_tail_validation.py \
 
 Every `(cap, terminal lambda, seed)` component is a separate complete SMC run.
 The runner stores one compact `.npz` archive per component and reuses it only
-when its full algorithm/configuration metadata matches. It combines final SMC
-weights with estimated normalizing constants in log-space; no final resampling,
-direct generation, TPS, or MBAR is performed.
+when its full algorithm/configuration metadata matches. It corrects each
+component back to the base model with SNIS, then averages the component
+estimates; direct generation, TPS, and MBAR are not part of this runner.
 
 Before loading a model, the runner checks model, tokenizer, prompt, completion
 length, sampling temperature, truncation, EOS, fixed-length settings, and ARI

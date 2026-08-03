@@ -266,11 +266,12 @@ resampling then resets particle weights but does not alter the accumulated
 normalizer estimate. This is exactly the weighting/resampling order implemented
 in `run_suffix_direct_mh_smc`.
 
-There is no final resampling. Keeping `W_K` preserves the information required
-for final expectations and for correction back to the base model:
+The active implementation performs one final systematic resampling step at
+`lambda_K`. The pre-resampling weights are still recorded as diagnostics, but
+serialized terminal particles have uniform weights:
 
 ```text
-E_(pi_lambda_K)[f(X)] approximately sum_i W_K^i f(X_K^i).
+E_(pi_lambda_K)[f(X)] approximately (1/N) sum_i f(\bar X_K^i).
 ```
 
 For a fixed number of levels, standard SMC consistency conditions include
@@ -322,6 +323,10 @@ log r_i = log W_i + lambda phi_i,
 R_i     = exp(log r_i - logsumexp_j(log r_j)).
 ```
 
+After the final resampling step, `W_i=1/N` in the serialized population, so the
+same formula reduces to `log r_i = lambda phi_i` up to an irrelevant additive
+constant.
+
 The implemented self-normalized estimate is
 
 ```text
@@ -346,12 +351,13 @@ ESS means those particles also represent the base model after multiplying by
 corrected mass is carried by a few lower-ARI particles, causing the second to
 collapse.
 
-## 6. Mixtures and multiple tilted distributions
+## 6. Multiple tilted distributions
 
 The repository implements single-component SNIS (**A**), independent terminal
-lambda studies (**B**), and the normalized deterministic-mixture validation in
-`run_tail_validation.py` (**C**). The unnormalized construction in **D** is not
-used by the active validation pipeline.
+lambda studies (**B**), and component-averaged SNIS validation in
+`run_tail_validation.py` (**C**). The normalized-mixture and unnormalized-
+mixture constructions in **D** and **E** are not used by the active validation
+pipeline.
 
 ### A. One tilted distribution with SNIS
 
@@ -365,7 +371,7 @@ not require its own `Z_lambda`. Comparing or summarizing independent estimates
 is not automatically multiple importance sampling and is not described as a
 mixture in this repository.
 
-### C. Implemented normalized deterministic mixture
+### C. Implemented component-averaged SNIS
 
 Component `j` uses its own cap and independent full SMC run:
 
@@ -375,17 +381,50 @@ q_j(x)   = p_M(x) exp[-lambda_j psi_j(x)] / Z_j.
 ```
 
 Runs do not share particles, ancestry, or RNG state. An intermediate population
-from a schedule ending at another lambda is not a component. For prescribed
-positive coefficients `rho_j` summing to one,
+from a schedule ending at another lambda is not a component. The active sampler
+resamples the final population, so each component archive contains terminal
+particles `\bar X_(j,i)` with uniform empirical weights. Component `j` estimates
+the base-model tail by its own SNIS ratio:
 
-For prescribed coefficients `rho_k`, a normalized mixture is
+```text
+p_hat_(j,a)
+  = sum_i exp[lambda_j psi_j(\bar X_(j,i))]
+          1{raw_ari(\bar X_(j,i)) >= a}
+    / sum_i exp[lambda_j psi_j(\bar X_(j,i))].
+```
+
+Equivalently, before final resampling one may write the same component estimate
+with the normalized SMC weights `W_(j,i)`:
+
+```text
+p_hat_(j,a)
+  = sum_i W_(j,i) exp[lambda_j psi_j(X_(j,i))]
+          1{raw_ari(X_(j,i)) >= a}
+    / sum_i W_(j,i) exp[lambda_j psi_j(X_(j,i))].
+```
+
+The unknown `Z_j` cancels inside each component's self-normalized ratio. The
+validation estimate then averages the component estimates:
+
+```text
+p_hat_a = sum_j alpha_j p_hat_(j,a),   sum_j alpha_j = 1.
+```
+
+With no explicit component coefficients, `alpha_j=1/J`. Thus the cap affects
+only the tilted component distribution and the reverse-IS correction; the event
+always uses raw ARI. Independent seed groups, rather than particles within one
+run, are the replication unit.
+
+### D. Non-active normalized deterministic mixture
+
+One may instead prescribe positive coefficients `rho_j` summing to one and form
 
 ```text
 q_mix(x) = sum_j rho_j q_j(x)
          = p_M(x) sum_j rho_j exp[-lambda_j psi_j(x)] / Z_j.
 ```
 
-Therefore
+Then
 
 ```text
 p_M(x)/q_mix(x)
@@ -393,12 +432,11 @@ p_M(x)/q_mix(x)
 ```
 
 The different `Z_j` occur inside a sum, so one common self-normalization cannot
-remove them. The implementation inserts the independently estimated
-`Z_hat_j` from each SMC run and evaluates this denominator with `logsumexp`.
+remove them. A plug-in implementation would need independently estimated
+`Z_hat_j` values and would evaluate this denominator with `logsumexp`.
 
-The final SMC population for component `j` is itself weighted. Its empirical
-mass is `W_ji`, not one unweighted count. For sample `x_ji`, the implemented
-unnormalized deterministic-mixture contribution is
+For weighted component samples, the unnormalized deterministic-mixture
+contribution would be
 
 ```text
 log d_ji = log rho_j + log W_ji
@@ -407,24 +445,16 @@ log d_ji = log rho_j + log W_ji
              ).
 ```
 
-After normalizing all `d_ji` together, the tail estimate is
+After normalizing all `d_ji` together, the tail estimate would be
 
 ```text
 p_hat_a = sum_(j,i) D_ji 1{raw_ari(x_ji) >= a}.
 ```
 
-Thus the cap affects only component construction and the mixture denominator;
-the event always uses raw ARI. When component particles are equally weighted
-and `rho_j=n_j/sum_l n_l`, this reduces to the usual balance-heuristic sample
-weight. With nonuniform final SMC weights, the `W_ji` factor preserves the
-weighted empirical approximation instead of treating particles as independent
-unweighted draws.
-
-Because `Z_hat_j` and the component empirical measures are random, this is a
-plug-in self-normalized estimator. It is not exactly unbiased at finite particle
-count. Independent seed groups, rather than particles within one run, are the
-replication unit. Veach and Guibas (1995) supplies multiple-importance-sampling
-context; the formula above is the direct derivation used by this code.
+Because `Z_hat_j` and the component empirical measures are random, this would be
+a plug-in self-normalized estimator. It is retained as methodological context,
+not as the active validation estimator. Veach and Guibas (1995) supplies
+multiple-importance-sampling context for this non-active construction.
 
 The tracked official direct array is an empirical reference for the paper's
 observable, not analytic ground truth. Its model, tokenizer, prompt, generation
@@ -435,7 +465,7 @@ decode/slicing convention. `run_tail_validation.py` checks the published setup
 before sampling and requires an explicit opt-in to report a cross-implementation
 comparison when this observable limitation remains.
 
-### D. An unnormalized mixture potential
+### E. An unnormalized mixture potential
 
 One may instead define
 
@@ -446,7 +476,7 @@ q_H(x) proportional to p_M(x) H(x).
 
 Correction to `p_M` is then proportional to `1/H(x)`, whose one global
 normalizer disappears under SNIS. But `q_H` is generally not the normalized
-mixture in C with the same prescribed `rho_k`; its effective component weights
+mixture in D with the same prescribed `rho_k`; its effective component weights
 depend on the `Z_k`. This is a distinct target and remains future work here.
 
 ## 7. Small examples

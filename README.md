@@ -93,7 +93,7 @@ derivation but do not by themselves guarantee efficient finite runs.
 
 ## Estimating tail probabilities
 
-For one final weighted population, the SNIS correction back to the base model is
+For one final terminal population, the SNIS correction back to the base model is
 
 ```text
 log r_i = log W_i + lambda_final * phi_i
@@ -101,18 +101,21 @@ R_i     = exp(log r_i - logsumexp(log r))
 P_hat_pM(phi >= a) = sum_i R_i 1{phi_i >= a}.
 ```
 
-The output distinguishes final SMC ESS from corrected importance ESS. The first
-diagnoses degeneracy while representing the tilted target; the second diagnoses
-overlap after correcting back to `p_M`. An aggressive tilt can improve discovery
-while making the corrected estimate unusable.
+The active sampler performs one final resampling step, so serialized terminal
+particles have `W_i=1/N`; the weighted formula above is the equivalent
+pre-resampling expression.
+
+The output distinguishes pre-final-resampling SMC ESS from corrected importance
+ESS. The first diagnoses degeneracy while representing the tilted target; the
+second diagnoses overlap after correcting back to `p_M`. An aggressive tilt can
+improve discovery while making the corrected estimate unusable.
 
 The tail-validation workflow combines independent capped-ARI terminal
-populations as a normalized deterministic mixture. Its balance heuristic uses
-both the final SMC weights and the estimated component normalizers; all events
-are still evaluated with raw ARI. This is a plug-in SNIS estimator, not an
-exactly unbiased finite-sample estimator. The direct formula is in
-[THEORY.md](THEORY.md). Its primary reference can be generated once with the
-same generation and scoring primitives used by SMC.
+populations by computing one SNIS estimate per cap/lambda component and then
+averaging those component estimates. The component normalizers cancel within
+each SNIS ratio and are diagnostic only; all events are still evaluated with raw
+ARI. The direct formula is in [THEORY.md](THEORY.md). Its primary reference can
+be generated once with the same generation and scoring primitives used by SMC.
 
 ## Repository structure
 
@@ -150,7 +153,7 @@ switch performs read-only metadata inspection.
 Only resumable scientific data are persisted under
 `MyDrive/rea_official_public_validation`: `component_runs/*.npz` and the
 reproducible IID direct ARI reference. The main table compares IID direct and
-the SMC mixture at thresholds 6, 7, and 8. Component reverse diagnostics and
+the component-averaged SMC estimate at thresholds 6, 7, and 8. Component reverse diagnostics and
 exactly two plots are displayed inline; no analysis CSV, PNG, or report is
 written. The reason the released paper arrays are not used as a numerical
 baseline is documented in

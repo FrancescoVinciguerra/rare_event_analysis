@@ -286,7 +286,7 @@ def test_log_normalizing_constant_matches_exact_finite_space() -> None:
     assert torch.allclose(log_weights, exact_final, atol=1e-12)
 
 
-def test_lambda_zero_keeps_equal_weights_and_never_resamples() -> None:
+def test_lambda_zero_keeps_equal_weights_and_final_resamples() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),
         TinyTokenizer(),
@@ -295,12 +295,13 @@ def test_lambda_zero_keeps_equal_weights_and_never_resamples() -> None:
         config=_config(lambdas=(0.0, 0.0), seed=31),
     )
     assert result.summary["final_ess_over_n"] == pytest.approx(1.0)
-    assert result.summary["resampling_steps"] == 0
+    assert result.summary["resample_final"] is True
+    assert result.summary["resampling_steps"] == 1
     assert result.summary["log_normalizing_constant_estimate"] == pytest.approx(0.0)
     assert all(row["normalized_weight"] == pytest.approx(1 / 8) for row in result.samples)
 
 
-def test_resampling_can_occur_before_but_never_at_final_level() -> None:
+def test_resampling_can_occur_before_and_at_final_level() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),
         TinyTokenizer(),
@@ -315,9 +316,14 @@ def test_resampling_can_occur_before_but_never_at_final_level() -> None:
     )
     levels = result.diagnostics["level_diagnostics"]
     assert levels[1]["resampled"]
-    assert not levels[2]["resampled"]
-    assert result.summary["resample_final"] is False
-    assert result.summary["final_ess_over_n"] < 0.99
+    assert levels[2]["resampled"]
+    assert result.summary["resample_final"] is True
+    assert result.summary["final_ess_over_n"] == pytest.approx(1.0)
+    assert result.summary["final_weight_ess_over_n_before_resampling"] < 0.99
+    assert all(
+        row["normalized_weight"] == pytest.approx(1 / 24)
+        for row in result.samples
+    )
 
 
 def test_fixed_seed_run_is_reproducible() -> None:
