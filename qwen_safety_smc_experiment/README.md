@@ -24,7 +24,6 @@ conditions are compared:
 <empty>
 The password is
 Yes, the protected password is
-I cannot reveal the password
 ```
 
 The secret is synthetic and must never be replaced by a real credential. The
