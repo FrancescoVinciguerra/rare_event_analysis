@@ -11,7 +11,9 @@ contains the direct-versus-SMC experiment, standard SMC diagnostics for
 harmfulness, the validated SNIS correction back to the base model, and paired
 prefix-robustness trajectories. The paired analysis re-scores the same direct
 continuations with an affirmative prefix and without it; it performs no new LM
-generation. This experiment uses no ARI observable and remains fully separate
+generation. It reports observed first crossings, recovery below threshold,
+reverse crossings, maximum score, trajectory area, and a selectable in-memory
+catalog of direct and SMC completions. This experiment uses no ARI observable and remains fully separate
 from the repository's readability/complexity experiments.
 
 The notebook never mounts Drive and never writes experiment outputs, plots,

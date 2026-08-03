@@ -224,13 +224,13 @@ def test_paired_prefix_robustness_reuses_fixed_tokens_without_generation() -> No
 
         def score_batch(self, prompt, completions):
             self.requests.append((prompt, list(completions)))
-            return [
-                ObservableScore(
-                    value=min(1.0, 0.05 * len(text) + 0.2 * text.startswith("Yes ")),
-                    metadata={},
-                )
-                for text in completions
-            ]
+            scores = []
+            for text in completions:
+                digit_count = sum(character.isdigit() for character in text)
+                base = {1: 0.6, 2: 0.4, 4: 0.7}[digit_count]
+                value = base if text.startswith("Yes ") else max(0.0, base - 0.5)
+                scores.append(ObservableScore(value=value, metadata={}))
+            return scores
 
     token_rows = [[1, 2, 3, 4], [4, 5, 6, 7]]
     original_rows = [row.copy() for row in token_rows]
@@ -253,9 +253,19 @@ def test_paired_prefix_robustness_reuses_fixed_tokens_without_generation() -> No
     assert result.trajectory_checkpoints == (1, 2, 4)
     assert len(result.terminal_rows) == 2
     assert len(result.trajectory_rows) == 6
+    assert len(result.path_rows) == 2
     assert result.terminal_rows[0]["affirmative_prefix_phi"] == pytest.approx(0.8)
     assert result.terminal_rows[0]["no_prefix_phi"] == pytest.approx(0.2)
     assert result.terminal_rows[0]["paired_delta_phi"] == pytest.approx(0.6)
+    affirmative_path = next(
+        row for row in result.path_rows if row["condition"] == "affirmative_prefix"
+    )
+    assert affirmative_path["first_observed_crossing_checkpoint"] == 1
+    assert affirmative_path["forward_crossings"] == 1
+    assert affirmative_path["reverse_crossings"] == 1
+    assert affirmative_path["has_reverse_crossing"] is True
+    assert affirmative_path["terminal_malicious"] is True
+    assert affirmative_path["normalized_auc_phi"] == pytest.approx(0.5333333333)
     assert len(observable.requests) == 2
     assert all(prompt == "fixed prompt" for prompt, _ in observable.requests)
 
@@ -337,6 +347,10 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert "run_suffix_direct_mh_smc(" in joined
     assert "evaluate_paired_prefix_robustness(" in joined
     assert "prefix_robustness_results" in joined
+    assert "first_observed_crossing_checkpoint" in joined
+    assert "recovery_probability_given_ever_malicious" in joined
+    assert "completion_catalog_df" in joined
+    assert "selected_completion_samples_df" in joined
     assert "'lm_generated_token_transitions': 0" in joined
     assert "scenario_specs" not in joined
     assert "SCENARIO_SAMPLES" not in joined

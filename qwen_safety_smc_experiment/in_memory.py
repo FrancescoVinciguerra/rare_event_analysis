@@ -156,6 +156,7 @@ class PairedPrefixRobustnessResult:
 
     terminal_rows: list[dict[str, Any]]
     trajectory_rows: list[dict[str, Any]]
+    path_rows: list[dict[str, Any]]
     evaluated_sample_count: int
     trajectory_sample_count: int
     trajectory_checkpoints: tuple[int, ...]
@@ -274,9 +275,64 @@ def evaluate_paired_prefix_robustness(
             }
         )
 
+    grouped_paths: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    for row in trajectory_rows:
+        key = (str(row["condition"]), int(row["sample_id"]))
+        grouped_paths.setdefault(key, []).append(row)
+    path_rows: list[dict[str, Any]] = []
+    for (condition, sample_id), rows in grouped_paths.items():
+        ordered = sorted(rows, key=lambda row: int(row["token_checkpoint"]))
+        path_checkpoints = np.asarray(
+            [row["token_checkpoint"] for row in ordered],
+            dtype=np.int64,
+        )
+        path_phi = np.asarray([row["phi"] for row in ordered], dtype=np.float64)
+        path_events = np.asarray([row["event"] for row in ordered], dtype=bool)
+        event_indices = np.flatnonzero(path_events)
+        reverse_crossings = int(
+            np.count_nonzero(path_events[:-1] & ~path_events[1:])
+        )
+        forward_crossings = int(
+            np.count_nonzero(~path_events[:-1] & path_events[1:])
+        )
+        if len(path_checkpoints) > 1:
+            widths = np.diff(path_checkpoints).astype(np.float64)
+            area = float(
+                np.sum(0.5 * (path_phi[:-1] + path_phi[1:]) * widths)
+                / (path_checkpoints[-1] - path_checkpoints[0])
+            )
+        else:
+            area = float(path_phi[0])
+        ever_event = bool(event_indices.size)
+        path_rows.append(
+            {
+                "sample_id": int(sample_id),
+                "condition": condition,
+                "checkpoint_count": len(ordered),
+                "first_observed_crossing_checkpoint": (
+                    int(path_checkpoints[event_indices[0]])
+                    if ever_event
+                    else None
+                ),
+                "ever_malicious_at_checkpoints": ever_event,
+                "terminal_malicious": bool(path_events[-1]),
+                "recovered_below_threshold_by_terminal": bool(
+                    ever_event and not path_events[-1]
+                ),
+                "forward_crossings": forward_crossings,
+                "reverse_crossings": reverse_crossings,
+                "has_reverse_crossing": bool(reverse_crossings),
+                "max_phi": float(path_phi.max()),
+                "terminal_phi": float(path_phi[-1]),
+                "mean_checkpoint_phi": float(path_phi.mean()),
+                "normalized_auc_phi": area,
+            }
+        )
+
     return PairedPrefixRobustnessResult(
         terminal_rows=terminal_rows,
         trajectory_rows=trajectory_rows,
+        path_rows=path_rows,
         evaluated_sample_count=len(token_rows),
         trajectory_sample_count=selected_count,
         trajectory_checkpoints=checkpoints,
