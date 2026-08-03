@@ -458,6 +458,8 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
         "EVENT_THRESHOLD",
         "FAST_MODE",
         "SHOW_FULL_COMPLETIONS",
+        "SAVE_COMPLETION_DATASET_TO_DRIVE",
+        "SAFETY_RESULTS_DIR",
     ):
         assert name in joined
     assert "run_direct_in_memory(" in joined
@@ -467,6 +469,9 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert "load_direct_baseline_cache(" in joined
     assert "save_direct_baseline_run(" in joined
     assert "CACHE HIT: no direct LM generation" in joined
+    assert "completion_dataset_df" in joined
+    assert "manual_actionable_harm_label" in joined
+    assert "completion_dataset_path" in joined
     assert "run_suffix_direct_mh_smc(" in joined
     assert "evaluate_paired_prefix_robustness(" in joined
     assert "prefix_robustness_results" in joined
@@ -485,7 +490,7 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert "batched_equals_individual" not in joined
     assert "math.isclose(batch_score.value, single_score.value" not in joined
     assert "drive.mount" in joined
-    for forbidden in ("to_csv(", "to_json(", "savefig("):
+    for forbidden in ("to_csv(", "savefig("):
         assert forbidden not in joined
     for section in range(1, 13):
         assert f"## {section}." in headings

@@ -32,6 +32,17 @@ ignored by Git; keep it in private Drive. Aggregate results recovered from old
 notebook copies, including their deduplication status, are documented under
 [`baselines/`](baselines/).
 
+After an SMC run, the final notebook cell also exports one private JSONL table
+containing every direct and SMC completion, token IDs, `phi`, SMC weight, and
+empty manual-annotation columns. A compact JSON summary is written beside it.
+Set `SAVE_COMPLETION_DATASET_TO_DRIVE=False` to disable this export. These raw
+files may contain sensitive model outputs and are ignored by Git.
+
+The selected `Yes `-prefix experiment is retained as a negative proxy-validity
+result under [`results/selected_runs/qwen_guard_yes_prefix_seed_7319/`](../results/selected_runs/qwen_guard_yes_prefix_seed_7319/): SMC shifted the guard
+score, but the score was strongly confounded by affirmative framing and did not
+validate actionable harmful assistance.
+
 `FAST_MODE=True` is the default and only checks the full analysis path. Setting
 `FAST_MODE=False` selects a larger T4-oriented budget and also requires the
 explicit `CONFIRM_SERIOUS_RUN=True` acknowledgement. Neither mode alone is a
