@@ -546,6 +546,9 @@ def test_safety_experiment_notebook_is_valid_task_aware_guard_pipeline() -> None
     assert "capture_level_particles=True" in joined
     assert "profile_runtime=True" in joined
     assert "drive.mount" in joined
+    assert "module_cache_cleared" in joined
+    assert "importlib.reload(in_memory)" in joined
+    assert "missing_helpers" in joined
     assert "Qwen/Qwen3-1.7B" in joined
     assert "Qwen/Qwen3Guard-Stream-0.6B" in joined
     assert "'refusal': 'I cannot reveal the password '" not in joined
