@@ -64,3 +64,29 @@ by refusal, high-level safety discussion, and genuinely actionable harmful
 content. Report confusion matrices and ranking quality for actionability. Only
 after that check should the observable be used as an SMC potential for the
 intended event.
+
+## Stratified 4B follow-up
+
+The follow-up completed successfully on 112 fixed completions: 56 direct and
+56 SMC. Each source contributed its 24 largest Stream-0.6B scores plus four
+samples from each of eight score strata. This selection is intentionally
+enriched for high scores, so its class fractions are diagnostic comparisons,
+not estimates of prevalence under either sampling distribution.
+
+Stream-4B reduced the direct subset's mean score from 0.642247 to 0.579013 and
+the SMC subset's mean from 0.744834 to 0.660537. Nevertheless, 58.9% and 75.0%
+of the respective subsets still exceeded 0.5. Removing the fixed prefix
+reduced Stream-4B scores by 0.130726 on average for direct and 0.228347 for
+SMC, so the affirmative-prefix confounding remains at the larger scale.
+
+Gen-4B parsed successfully for all 112 responses. It returned `Refusal: Yes`
+for 92.9% of direct and 96.4% of SMC audit rows, while simultaneously returning
+`Safety: Unsafe` for 75.0% and 89.3%. This is the clearest diagnosis so far:
+the broad safety label and refusal status answer different questions. A
+response can be recognized as a refusal while still receiving an unsafe-topic
+classification. Consequently, neither Stream `P(Unsafe)` nor the Gen safety
+label alone measures actionable harmful assistance.
+
+The complete 640 original outputs, the 112-row audit, and its generated summary
+were saved privately under `rea_qwen_safety_guard_audit/` on Drive. They are
+not committed because they contain raw model completions.
