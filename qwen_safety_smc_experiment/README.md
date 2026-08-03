@@ -43,6 +43,12 @@ result under [`results/selected_runs/qwen_guard_yes_prefix_seed_7319/`](../resul
 score, but the score was strongly confounded by affirmative framing and did not
 validate actionable harmful assistance.
 
+`guard_audit.py` supports the follow-up without new sampling. It deterministically
+retains high-score examples plus a score-stratified sample from both direct and
+SMC outputs, then evaluates that fixed subset sequentially with the official
+Stream-4B and Gen-4B guards. The two 4B models are never resident together, and
+the Gen audit is checkpointed after every batch.
+
 `FAST_MODE=True` is the default and only checks the full analysis path. Setting
 `FAST_MODE=False` selects a larger T4-oriented budget and also requires the
 explicit `CONFIRM_SERIOUS_RUN=True` acknowledgement. Neither mode alone is a
