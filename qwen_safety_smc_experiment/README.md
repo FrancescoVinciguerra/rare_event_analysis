@@ -16,9 +16,21 @@ reverse crossings, maximum score, trajectory area, and a selectable in-memory
 catalog of direct and SMC completions. This experiment uses no ARI observable and remains fully separate
 from the repository's readability/complexity experiments.
 
-The notebook never mounts Drive and never writes experiment outputs, plots,
-tables, or completions. The central sampler already returns an in-memory result,
-so no persistence flag or duplicate sampler was introduced.
+SMC results, plots, and analysis tables remain in notebook memory. Direct
+sampling is handled differently because it is a reusable calibration rather
+than an SMC step. By default, the notebook mounts Drive and loads a compatible
+gzip cache; it generates a direct run only when that cache does not yet exist.
+Changing lambdas, particles, mutation steps, suffix settings, or the ESS
+threshold therefore does not repeat direct inference. Set
+`DIRECT_BASELINE_POLICY='append'` with a new seed to enlarge the pool, or
+`'reuse_only'` to forbid any direct generation.
+
+Cache compatibility is strict over the generator/tokenizer revisions, rendered
+context, fixed assistant prefix, fixed completion length, temperature, top-p,
+EOS convention, and observable. The cache contains completion text and is
+ignored by Git; keep it in private Drive. Aggregate results recovered from old
+notebook copies, including their deduplication status, are documented under
+[`baselines/`](baselines/).
 
 `FAST_MODE=True` is the default and only checks the full analysis path. Setting
 `FAST_MODE=False` selects a larger T4-oriented budget and also requires the

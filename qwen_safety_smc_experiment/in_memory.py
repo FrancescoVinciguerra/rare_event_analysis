@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import gzip
+import hashlib
+import json
 import math
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import numpy as np
@@ -148,6 +152,274 @@ class DirectSampleResult:
     rows: list[dict[str, Any]]
     summary: dict[str, Any]
     completion_token_ids: torch.Tensor
+
+
+DIRECT_BASELINE_CACHE_SCHEMA_VERSION = 1
+_OBSERVABLE_RUNTIME_FIELDS = {"batch_size", "cache_enabled", "device"}
+
+
+def _scientific_observable_identity(value: Any) -> Any:
+    """Remove execution-only fields from an observable configuration."""
+
+    if isinstance(value, dict):
+        return {
+            str(key): _scientific_observable_identity(item)
+            for key, item in sorted(value.items())
+            if key not in _OBSERVABLE_RUNTIME_FIELDS
+        }
+    if isinstance(value, (list, tuple)):
+        return [_scientific_observable_identity(item) for item in value]
+    return value
+
+
+def build_direct_baseline_spec(
+    *,
+    generator_model: str,
+    tokenizer_name: str,
+    context: SafetyPromptContext,
+    observable: Any,
+    max_new_tokens: int,
+    temperature: float,
+    top_p: float,
+    generator_revision: str | None = None,
+    tokenizer_revision: str | None = None,
+) -> dict[str, Any]:
+    """Describe every scientific choice that determines a direct baseline.
+
+    SMC-only settings are intentionally absent. A cache remains compatible
+    when lambdas, particle counts, or mutation schedules change, but not when
+    the base distribution, fixed context, completion length, or phi changes.
+    """
+
+    if max_new_tokens <= 0:
+        raise ValueError("max_new_tokens must be positive")
+    if not math.isfinite(float(temperature)) or float(temperature) <= 0:
+        raise ValueError("temperature must be finite and positive")
+    if not math.isfinite(float(top_p)) or not 0 < float(top_p) <= 1:
+        raise ValueError("top_p must be in (0, 1]")
+    return {
+        "generator": {
+            "model_name": str(generator_model),
+            "revision": generator_revision,
+            "tokenizer_name": str(tokenizer_name),
+            "tokenizer_revision": tokenizer_revision,
+        },
+        "context": {
+            "system_prompt": context.system_prompt,
+            "user_prompt": context.user_prompt,
+            "assistant_prefix": context.assistant_prefix,
+            "enable_thinking": bool(context.enable_thinking),
+            "rendered_generator_prompt": context.generator_prompt,
+        },
+        "sampling": {
+            "max_new_tokens": int(max_new_tokens),
+            "temperature": float(temperature),
+            "top_p": float(top_p),
+            "fixed_length": True,
+            "stop_at_eos": False,
+        },
+        "observable": _scientific_observable_identity(
+            observable_configuration(observable)
+        ),
+    }
+
+
+def direct_baseline_fingerprint(spec: dict[str, Any]) -> str:
+    """Return a stable short identity for one direct-sampling distribution."""
+
+    encoded = json.dumps(
+        spec,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def _read_direct_baseline_payload(path: Path) -> dict[str, Any]:
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if payload.get("schema_version") != DIRECT_BASELINE_CACHE_SCHEMA_VERSION:
+        raise ValueError(
+            f"Unsupported direct baseline cache schema in {path}: "
+            f"{payload.get('schema_version')!r}"
+        )
+    return payload
+
+
+def direct_baseline_cached_seeds(
+    path: str | Path,
+    *,
+    expected_spec: dict[str, Any],
+) -> tuple[int, ...]:
+    """List independent seeds already stored in a compatible cache."""
+
+    cache_path = Path(path)
+    if not cache_path.exists():
+        return ()
+    payload = _read_direct_baseline_payload(cache_path)
+    expected = direct_baseline_fingerprint(expected_spec)
+    if payload.get("fingerprint") != expected or payload.get("spec") != expected_spec:
+        raise ValueError(
+            "Direct baseline cache is incompatible with the active model, "
+            "context, sampling convention, or observable"
+        )
+    return tuple(int(run["seed"]) for run in payload.get("runs", []))
+
+
+def save_direct_baseline_run(
+    path: str | Path,
+    result: DirectSampleResult,
+    *,
+    spec: dict[str, Any],
+) -> bool:
+    """Append one independent direct run atomically; duplicate seeds are skipped."""
+
+    cache_path = Path(path)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    fingerprint = direct_baseline_fingerprint(spec)
+    if cache_path.exists():
+        payload = _read_direct_baseline_payload(cache_path)
+        if payload.get("fingerprint") != fingerprint or payload.get("spec") != spec:
+            raise ValueError(
+                "Refusing to mix incompatible direct baselines in one cache"
+            )
+    else:
+        payload = {
+            "schema_version": DIRECT_BASELINE_CACHE_SCHEMA_VERSION,
+            "fingerprint": fingerprint,
+            "spec": spec,
+            "runs": [],
+        }
+
+    seed = int(result.summary["seed"])
+    if any(int(run["seed"]) == seed for run in payload["runs"]):
+        return False
+    payload["runs"].append(
+        {
+            "seed": seed,
+            "num_samples": len(result.rows),
+            "summary": result.summary,
+            "rows": result.rows,
+        }
+    )
+    temporary_path = cache_path.with_name(cache_path.name + ".tmp")
+    with gzip.open(temporary_path, "wt", encoding="utf-8") as handle:
+        json.dump(payload, handle, ensure_ascii=True, separators=(",", ":"))
+    temporary_path.replace(cache_path)
+    return True
+
+
+def load_direct_baseline_cache(
+    path: str | Path,
+    *,
+    expected_spec: dict[str, Any],
+    event_threshold: float,
+) -> DirectSampleResult:
+    """Pool all compatible, distinct-seed direct runs without new generation."""
+
+    if not math.isfinite(float(event_threshold)):
+        raise ValueError("event_threshold must be finite")
+    cache_path = Path(path)
+    payload = _read_direct_baseline_payload(cache_path)
+    fingerprint = direct_baseline_fingerprint(expected_spec)
+    if payload.get("fingerprint") != fingerprint or payload.get("spec") != expected_spec:
+        raise ValueError(
+            "Direct baseline cache is incompatible with the active model, "
+            "context, sampling convention, or observable"
+        )
+    runs = payload.get("runs", [])
+    seeds = [int(run["seed"]) for run in runs]
+    if not runs:
+        raise ValueError("Direct baseline cache contains no runs")
+    if len(seeds) != len(set(seeds)):
+        raise ValueError("Direct baseline cache contains duplicate seeds")
+
+    rows: list[dict[str, Any]] = []
+    summaries = []
+    for cache_run_index, run in enumerate(runs):
+        summaries.append(dict(run["summary"]))
+        for source_sample_id, stored_row in enumerate(run["rows"]):
+            row = dict(stored_row)
+            row["source_sample_id"] = int(
+                row.get("sample_id", source_sample_id)
+            )
+            row["cache_run_index"] = int(cache_run_index)
+            row["sample_id"] = len(rows)
+            row["event"] = bool(float(row["phi"]) >= float(event_threshold))
+            rows.append(row)
+    if not rows:
+        raise ValueError("Direct baseline cache contains no samples")
+    widths = {len(row["completion_token_ids"]) for row in rows}
+    if len(widths) != 1:
+        raise ValueError("Cached direct token sequences do not have fixed length")
+
+    numeric_sum_fields = (
+        "generated_token_transitions",
+        "generator_batch_calls",
+        "generator_model_forward_calls",
+        "guard_evaluation_batches",
+        "guard_evaluated_completions",
+        "guard_cache_hits",
+        "guard_cache_misses",
+        "runtime_seconds",
+        "generator_runtime_seconds",
+        "guard_scoring_runtime_seconds",
+        "guard_inference_seconds",
+        "log_probability_runtime_seconds",
+    )
+    event_count = sum(bool(row["event"]) for row in rows)
+    summary: dict[str, Any] = {
+        "method": "iid_direct_cached_pool",
+        "persisted": True,
+        "loaded_from_cache": True,
+        "cache_path": str(cache_path),
+        "cache_fingerprint": fingerprint,
+        "cached_run_count": len(runs),
+        "cached_seeds": seeds,
+        "seed": seeds[0] if len(seeds) == 1 else None,
+        "num_samples": len(rows),
+        "max_new_tokens": int(expected_spec["sampling"]["max_new_tokens"]),
+        "event_threshold": float(event_threshold),
+        "event_count": int(event_count),
+        "empirical_event_probability": event_count / len(rows),
+        "unique_completion_count": len({row["completion"] for row in rows}),
+        "observable_configuration": summaries[0].get(
+            "observable_configuration",
+            expected_spec["observable"],
+        ),
+        "fixed_context_token_count": summaries[0].get(
+            "fixed_context_token_count"
+        ),
+        "cuda_peak_memory_bytes": max(
+            int(item.get("cuda_peak_memory_bytes", 0)) for item in summaries
+        ),
+    }
+    for field in numeric_sum_fields:
+        summary[field] = sum(float(item.get(field, 0.0)) for item in summaries)
+        if field not in {
+            "runtime_seconds",
+            "generator_runtime_seconds",
+            "guard_scoring_runtime_seconds",
+            "guard_inference_seconds",
+            "log_probability_runtime_seconds",
+        }:
+            summary[field] = int(summary[field])
+    total_cache_requests = summary["guard_cache_hits"] + summary["guard_cache_misses"]
+    summary["guard_cache_hit_rate"] = (
+        summary["guard_cache_hits"] / total_cache_requests
+        if total_cache_requests
+        else math.nan
+    )
+    return DirectSampleResult(
+        rows=rows,
+        summary=summary,
+        completion_token_ids=torch.tensor(
+            [row["completion_token_ids"] for row in rows],
+            dtype=torch.long,
+        ),
+    )
 
 
 @dataclass(frozen=True)

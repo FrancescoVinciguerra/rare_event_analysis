@@ -19,6 +19,8 @@ outputs/
 !qwen_safety_smc_experiment/outputs/
 qwen_safety_smc_experiment/outputs/*
 !qwen_safety_smc_experiment/outputs/.gitkeep
+qwen_safety_smc_experiment/direct_baseline_cache/
+**/direct_baseline_*.json.gz
 suffix_direct_mh_smc_experiment/results/
 **/results/tmp*/
 **/results/raw*/

@@ -14,11 +14,17 @@ from rea_llms.observables import create_observable
 from rea_llms.observables.base import ObservableScore
 from rea_llms.observables.qwen_guard import QwenGuardHarmfulnessObservable
 from qwen_safety_smc_experiment.in_memory import (
+    DirectSampleResult,
     PrefixedCompletionObservable,
     SafetyPromptContext,
+    build_direct_baseline_spec,
     build_qwen_fixed_context,
+    direct_baseline_cached_seeds,
+    direct_baseline_fingerprint,
     evaluate_paired_prefix_robustness,
+    load_direct_baseline_cache,
     run_direct_in_memory,
+    save_direct_baseline_run,
 )
 from suffix_direct_mh_smc_experiment.smc_sampler import run_suffix_direct_mh_smc
 
@@ -212,6 +218,118 @@ def test_direct_helper_is_reproducible_in_memory_and_preserves_prefix(tmp_path, 
     assert list(tmp_path.iterdir()) == []
 
 
+def test_direct_baseline_cache_round_trip_pools_distinct_seeds(tmp_path, monkeypatch) -> None:
+    namespace = runpy.run_path(
+        str(Path(__file__).resolve().parents[2] / "tests" / "test_suffix_direct_mh_smc.py")
+    )
+    monkeypatch.chdir(tmp_path)
+    context = SafetyPromptContext("", "Once", "Fixed: ", False, "OnceFixed: ", "OnceFixed: ")
+
+    class SumObservable(namespace["CompletionTokenSumObservable"]):
+        completion_prefix = "Fixed: "
+
+        def configuration(self):
+            return {
+                "name": "sum",
+                "device": "cpu",
+                "batch_size": 2,
+                "cache_enabled": True,
+            }
+
+    observable = SumObservable()
+    spec = build_direct_baseline_spec(
+        generator_model="tiny/model",
+        tokenizer_name="tiny/tokenizer",
+        context=context,
+        observable=observable,
+        max_new_tokens=2,
+        temperature=1.0,
+        top_p=1.0,
+        generator_revision="generator-commit",
+        tokenizer_revision="tokenizer-commit",
+    )
+    cache_path = tmp_path / f"direct_baseline_{direct_baseline_fingerprint(spec)}.json.gz"
+    common = dict(
+        tokenizer=namespace["TinyTokenizer"](),
+        observable=observable,
+        context=context,
+        num_samples=4,
+        max_new_tokens=2,
+        batch_size=2,
+        event_threshold=2.0,
+    )
+    first = run_direct_in_memory(
+        namespace["PrefixDependentTinyModel"](), seed=53, **common
+    )
+    second = run_direct_in_memory(
+        namespace["PrefixDependentTinyModel"](), seed=54, **common
+    )
+
+    assert save_direct_baseline_run(cache_path, first, spec=spec) is True
+    assert save_direct_baseline_run(cache_path, first, spec=spec) is False
+    assert save_direct_baseline_run(cache_path, second, spec=spec) is True
+    assert direct_baseline_cached_seeds(cache_path, expected_spec=spec) == (53, 54)
+
+    pooled = load_direct_baseline_cache(
+        cache_path,
+        expected_spec=spec,
+        event_threshold=4.0,
+    )
+    assert len(pooled.rows) == 8
+    assert pooled.completion_token_ids.shape == (8, 2)
+    assert pooled.summary["persisted"] is True
+    assert pooled.summary["loaded_from_cache"] is True
+    assert pooled.summary["cached_run_count"] == 2
+    assert pooled.summary["cached_seeds"] == [53, 54]
+    assert pooled.summary["event_count"] == sum(row["phi"] >= 4.0 for row in pooled.rows)
+    assert all(row["event"] == (row["phi"] >= 4.0) for row in pooled.rows)
+
+
+def test_direct_baseline_cache_rejects_incompatible_context(tmp_path) -> None:
+    context = SafetyPromptContext("system", "user", "Yes ", False, "chat", "chatYes ")
+    observable = fake_observable()
+    original = build_direct_baseline_spec(
+        generator_model="model",
+        tokenizer_name="tokenizer",
+        context=context,
+        observable=observable,
+        max_new_tokens=8,
+        temperature=1.0,
+        top_p=1.0,
+    )
+    changed = build_direct_baseline_spec(
+        generator_model="model",
+        tokenizer_name="tokenizer",
+        context=SafetyPromptContext(
+            "system", "different user", "Yes ", False, "other chat", "other chatYes "
+        ),
+        observable=observable,
+        max_new_tokens=8,
+        temperature=1.0,
+        top_p=1.0,
+    )
+    result = DirectSampleResult(
+        rows=[{
+            "sample_id": 0,
+            "seed": 1,
+            "completion": "Yes safe",
+            "completion_token_ids": [1, 2],
+            "phi": 0.1,
+            "event": False,
+        }],
+        summary={"seed": 1, "observable_configuration": observable.configuration()},
+        completion_token_ids=torch.tensor([[1, 2]]),
+    )
+    cache_path = tmp_path / "direct_baseline_test.json.gz"
+    save_direct_baseline_run(cache_path, result, spec=original)
+    with pytest.raises(ValueError, match="incompatible"):
+        load_direct_baseline_cache(
+            cache_path,
+            expected_spec=changed,
+            event_threshold=0.5,
+        )
+
+
 def test_paired_prefix_robustness_reuses_fixed_tokens_without_generation() -> None:
     class TextTokenizer:
         @staticmethod
@@ -343,7 +461,12 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     ):
         assert name in joined
     assert "run_direct_in_memory(" in joined
-    assert joined.count("run_direct_in_memory(") == 2
+    assert joined.count("run_direct_in_memory(") == 1
+    assert "DIRECT_BASELINE_POLICY" in joined
+    assert "DIRECT_BASELINE_CACHE_DIR" in joined
+    assert "load_direct_baseline_cache(" in joined
+    assert "save_direct_baseline_run(" in joined
+    assert "CACHE HIT: no direct LM generation" in joined
     assert "run_suffix_direct_mh_smc(" in joined
     assert "evaluate_paired_prefix_robustness(" in joined
     assert "prefix_robustness_results" in joined
@@ -361,8 +484,8 @@ def test_safety_experiment_notebook_is_valid_in_memory_and_uses_shared_apis() ->
     assert "batch_single_probability_atol" in joined
     assert "batched_equals_individual" not in joined
     assert "math.isclose(batch_score.value, single_score.value" not in joined
-    assert "drive.mount" not in joined
-    for forbidden in ("to_csv(", "to_json(", "savefig(", "write_text("):
+    assert "drive.mount" in joined
+    for forbidden in ("to_csv(", "to_json(", "savefig("):
         assert forbidden not in joined
     for section in range(1, 13):
         assert f"## {section}." in headings
