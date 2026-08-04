@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -163,6 +164,10 @@ def generate_fixed_length_suffixes(
                     f"size {active_batch_size}; reduce --batch-size"
                 ) from exc
             active_batch_size = max(1, active_batch_size // 2)
+            # The traceback owns the failed generation frame and its CUDA tensors.
+            # Detach it before asking the allocator to release cached blocks.
+            exc.__traceback__ = None
+            gc.collect()
             if context_ids.device.type == "cuda":
                 torch.cuda.empty_cache()
     return torch.cat(chunks, dim=0)
