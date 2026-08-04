@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 from rea_llms.current_direct_reference import CurrentDirectConfig, requested_metadata
@@ -39,6 +41,16 @@ class LeadingSpaceTokenizer:
             (1, 2): "Hello world",
             (2,): " world",
         }[tuple(int(value) for value in token_ids)]
+
+
+def test_data_reuse_audit_imports_first_in_fresh_interpreter() -> None:
+    code = (
+        "from rea_llms.data_reuse_audit import REUSE_DIMENSIONS, audit_run_directory; "
+        "from rea_llms.observables import ARI_CONVENTIONS, create_observable; "
+        "assert REUSE_DIMENSIONS and ARI_CONVENTIONS; "
+        "assert create_observable('ari').name == 'ari'"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
 
 
 def test_full_sequence_and_completion_only_decoding_can_differ() -> None:
