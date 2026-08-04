@@ -9,6 +9,7 @@ def test_fixed_length_generation_releases_oom_traceback_before_retry(
     monkeypatch,
 ) -> None:
     attempted_batch_sizes: list[int] = []
+    grad_enabled_during_attempts: list[bool] = []
     oom = torch.OutOfMemoryError("synthetic CUDA out of memory")
 
     def fake_generate_chunk(
@@ -20,6 +21,7 @@ def test_fixed_length_generation_releases_oom_traceback_before_retry(
     ) -> torch.Tensor:
         del model, generator
         attempted_batch_sizes.append(context_ids.shape[0])
+        grad_enabled_during_attempts.append(torch.is_grad_enabled())
         if context_ids.shape[0] > 1:
             raise oom
         return torch.zeros(
@@ -37,5 +39,6 @@ def test_fixed_length_generation_releases_oom_traceback_before_retry(
     )
 
     assert attempted_batch_sizes == [4, 2, 1, 1, 1, 1]
+    assert grad_enabled_during_attempts == [False] * len(attempted_batch_sizes)
     assert result.shape == (4, 2)
     assert oom.__traceback__ is None

@@ -143,12 +143,13 @@ def generate_fixed_length_suffixes(
     while start < context_ids.shape[0]:
         stop = min(start + active_batch_size, context_ids.shape[0])
         try:
-            chunk = _generate_suffix_chunk(
-                model,
-                context_ids[start:stop],
-                suffix_size=suffix_size,
-                generator=generator,
-            )
+            with torch.inference_mode():
+                chunk = _generate_suffix_chunk(
+                    model,
+                    context_ids[start:stop],
+                    suffix_size=suffix_size,
+                    generator=generator,
+                )
             chunks.append(chunk)
             if diagnostics is not None:
                 diagnostics.batch_calls += 1
