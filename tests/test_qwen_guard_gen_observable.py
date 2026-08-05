@@ -186,10 +186,25 @@ def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
     assert "GUARD_PHI_DEFINITION = 'unsafe_log_odds'" in joined
     assert "GUARD_LOG_ODDS_CLIP = 20.0" in joined
     assert "TARGET_CATEGORY = 'Violent'" in joined
+    assert "RUN_PROMPT_PILOT = True" in joined
     assert "RUN_DIRECT = True" in joined
     assert "RUN_SMC = True" in joined
-    assert joined.count("run_direct_in_memory(") == 1
+    assert joined.count("run_direct_in_memory(") == 2
     assert joined.count("run_suffix_direct_mh_smc(") == 1
+    assert "PROMPT_VARIANTS" in joined
+    for prompt_variant in (
+        "direct",
+        "instruction_override",
+        "fictional_fable",
+        "syllable_reconstruction",
+        "affirmative_document",
+        "quoted_injection",
+    ):
+        assert f"'{prompt_variant}'" in joined
+    assert "selection_used_confirmatory_samples': False" in joined
+    assert "PILOT_SEED = SEED + 500" in joined
+    assert "DIRECT_SEED = SEED + 1000" in joined
+    assert "SMC_SEED = SEED + 2000" in joined
     assert "estimate_base_expectation(" in joined
     assert "attach_terminal_assessments(" in joined
     assert "clip_floor_fraction" in joined
@@ -203,5 +218,5 @@ def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
     assert ".to_csv(" not in joined
     assert "files.download(" not in joined
     assert "procedural leakage" not in headings.lower()
-    for section in range(1, 11):
+    for section in range(1, 12):
         assert f"## {section}." in headings
