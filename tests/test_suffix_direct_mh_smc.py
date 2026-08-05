@@ -301,6 +301,52 @@ def test_lambda_zero_keeps_equal_weights_and_final_resamples() -> None:
     assert all(row["normalized_weight"] == pytest.approx(1 / 8) for row in result.samples)
 
 
+def test_external_initial_population_preserves_importance_weights() -> None:
+    completions = torch.tensor(
+        [[0, 0, 0], [1, 1, 1], [2, 2, 2], [3, 3, 3]],
+        dtype=torch.long,
+    )
+    raw_weights = torch.tensor([1.0, 2.0, 3.0, 4.0], dtype=torch.float64)
+    result = run_suffix_direct_mh_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        CompletionTokenSumObservable(),
+        prompt="Once",
+        config=_config(
+            num_particles=4,
+            lambdas=(0.0,),
+            mcmc_steps_per_level=0,
+            resampling=False,
+            resample_final=False,
+        ),
+        initial_completion_token_ids=completions,
+        initial_log_weights=torch.log(raw_weights),
+    )
+
+    assert result.summary["initialization"] == "external_importance_weighted"
+    assert result.summary["initial_log_normalizing_constant_estimate"] == pytest.approx(
+        math.log(2.5)
+    )
+    expected_ess = float(raw_weights.sum() ** 2 / (raw_weights.square().sum() * 4))
+    assert result.summary["initial_ess_over_n"] == pytest.approx(expected_ess)
+    assert [row["completion_token_ids"] for row in result.samples] == completions.tolist()
+    assert [row["normalized_weight"] for row in result.samples] == pytest.approx(
+        (raw_weights / raw_weights.sum()).tolist()
+    )
+
+
+def test_external_initial_population_validates_shapes() -> None:
+    with pytest.raises(ValueError, match="must have shape"):
+        run_suffix_direct_mh_smc(
+            PrefixDependentTinyModel(),
+            TinyTokenizer(),
+            CompletionTokenSumObservable(),
+            prompt="Once",
+            config=_config(num_particles=4, lambdas=(0.0,)),
+            initial_completion_token_ids=torch.zeros((3, 3), dtype=torch.long),
+        )
+
+
 def test_resampling_can_occur_before_and_at_final_level() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),

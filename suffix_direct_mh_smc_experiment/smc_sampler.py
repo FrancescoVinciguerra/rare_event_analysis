@@ -28,7 +28,7 @@ from rea_llms.scoring import (
 
 
 ScheduleValue = TypeVar("ScheduleValue")
-ALGORITHM_VERSION = "suffix_direct_mh_smc_v4_final_resample_component_snis"
+ALGORITHM_VERSION = "suffix_direct_mh_smc_v5_weighted_initial_population"
 
 
 def _ari_texts_from_completion_ids(
@@ -819,13 +819,17 @@ def run_suffix_direct_mh_smc(
     track_discovery_diagnostics: bool = True,
     capture_level_particles: bool = False,
     profile_runtime: bool = False,
+    initial_completion_token_ids: torch.Tensor | None = None,
+    initial_log_weights: torch.Tensor | None = None,
 ) -> SuffixDirectMHSMCResult:
     """Run full-sequence SMC with an exact direct-MH suffix mutation.
 
     The order at transition k is mutation under pi_{k-1}, incremental weighting
     from gamma_{k-1} to gamma_k, then optional systematic resampling. By default
     the final level is resampled too, so returned particles carry uniform
-    empirical weights under the terminal tilted target.
+    empirical weights under the terminal tilted target. An externally sampled
+    initial population may be supplied with unnormalized importance log-weights;
+    this supports proposal distributions other than the base language model.
     """
     set_seed(config.seed)
     device = next(model.parameters()).device
@@ -906,22 +910,80 @@ def run_suffix_direct_mh_smc(
                     first_tail_discovery[threshold_value] = discovery
 
     with torch.inference_mode():
-        if profile_runtime:
-            _synchronize(device)
-        generation_started = time.perf_counter() if profile_runtime else None
-        completion_tokens = generate_base_completions(
-            model,
-            prompt_ids,
-            num_particles=config.num_particles,
-            max_new_tokens=config.max_new_tokens,
-            batch_size=config.batch_size,
-            generator=generator,
-            generation_diagnostics=generation_diagnostics,
-        )
-        if profile_runtime:
-            _synchronize(device)
-            assert generation_started is not None
-            generator_runtime_seconds += time.perf_counter() - generation_started
+        if initial_completion_token_ids is None:
+            if initial_log_weights is not None:
+                raise ValueError(
+                    "initial_log_weights requires initial_completion_token_ids"
+                )
+            if profile_runtime:
+                _synchronize(device)
+            generation_started = time.perf_counter() if profile_runtime else None
+            completion_tokens = generate_base_completions(
+                model,
+                prompt_ids,
+                num_particles=config.num_particles,
+                max_new_tokens=config.max_new_tokens,
+                batch_size=config.batch_size,
+                generator=generator,
+                generation_diagnostics=generation_diagnostics,
+            )
+            if profile_runtime:
+                _synchronize(device)
+                assert generation_started is not None
+                generator_runtime_seconds += time.perf_counter() - generation_started
+            log_weights = torch.full(
+                (config.num_particles,),
+                uniform_log_weight,
+                dtype=torch.float64,
+                device=device,
+            )
+            initial_log_normalizer = torch.zeros(
+                (), dtype=torch.float64, device=device
+            )
+            initialization = "base_iid"
+        else:
+            completion_tokens = torch.as_tensor(
+                initial_completion_token_ids,
+                dtype=torch.long,
+                device=device,
+            ).clone()
+            expected_shape = (config.num_particles, config.max_new_tokens)
+            if tuple(completion_tokens.shape) != expected_shape:
+                raise ValueError(
+                    "initial_completion_token_ids must have shape "
+                    f"{expected_shape}, got {tuple(completion_tokens.shape)}"
+                )
+            if initial_log_weights is None:
+                log_weights = torch.full(
+                    (config.num_particles,),
+                    uniform_log_weight,
+                    dtype=torch.float64,
+                    device=device,
+                )
+                initial_log_normalizer = torch.zeros(
+                    (), dtype=torch.float64, device=device
+                )
+                initialization = "external_uniform"
+            else:
+                raw_initial_log_weights = torch.as_tensor(
+                    initial_log_weights,
+                    dtype=torch.float64,
+                    device=device,
+                ).clone()
+                if tuple(raw_initial_log_weights.shape) != (config.num_particles,):
+                    raise ValueError(
+                        "initial_log_weights must have shape "
+                        f"({config.num_particles},), got "
+                        f"{tuple(raw_initial_log_weights.shape)}"
+                    )
+                if not bool(torch.isfinite(raw_initial_log_weights).all().item()):
+                    raise ValueError("initial_log_weights must all be finite")
+                initial_log_normalizer = (
+                    torch.logsumexp(raw_initial_log_weights, dim=0)
+                    - math.log(config.num_particles)
+                )
+                log_weights = normalize_log_weights(raw_initial_log_weights)
+                initialization = "external_importance_weighted"
         observable_started = time.perf_counter() if profile_runtime else None
         phi, report_values, _ = score_observable(
             tokenizer,
@@ -947,11 +1009,9 @@ def run_suffix_direct_mh_smc(
             root_ancestors=torch.arange(config.num_particles, device=device),
             last_suffix_sizes=torch.zeros(config.num_particles, dtype=torch.long, device=device),
         )
-        log_weights = torch.full(
-            (config.num_particles,),
-            uniform_log_weight,
-            dtype=torch.float64,
-            device=device,
+        initial_ess = ess_from_normalized_log_weights(log_weights)
+        initial_ess_over_n = min(
+            1.0, float((initial_ess / config.num_particles).item())
         )
         if capture_level_particles:
             level_particles.append(
@@ -962,16 +1022,25 @@ def run_suffix_direct_mh_smc(
                     normalized_log_weights=log_weights,
                 )
             )
-        initial_mean = float(report_values.mean().item())
+        initial_mean = float(
+            torch.sum(
+                torch.exp(log_weights)
+                * report_values.to(dtype=torch.float64)
+            ).item()
+        )
         level_diagnostics: list[dict[str, Any]] = [
             {
                 "level": 0,
                 "lambda": float(config.lambdas[0]),
                 "mutation_target_lambda": None,
-                "log_normalizing_constant_increment": 0.0,
-                "log_normalizing_constant_estimate": 0.0,
-                "ess_over_n_before_resampling": 1.0,
-                "ess_over_n_after_resampling": 1.0,
+                "log_normalizing_constant_increment": float(
+                    initial_log_normalizer.item()
+                ),
+                "log_normalizing_constant_estimate": float(
+                    initial_log_normalizer.item()
+                ),
+                "ess_over_n_before_resampling": initial_ess_over_n,
+                "ess_over_n_after_resampling": initial_ess_over_n,
                 "resampled": False,
                 "accepted": 0,
                 "proposals": 0,
@@ -995,9 +1064,9 @@ def run_suffix_direct_mh_smc(
         total_proposals = 0
         total_regenerated_tokens = 0
         resampling_steps = 0
-        min_ess_over_n = 1.0
-        final_weight_ess_over_n_before_resampling = 1.0
-        log_normalizing_constant = torch.zeros((), dtype=torch.float64, device=device)
+        min_ess_over_n = initial_ess_over_n
+        final_weight_ess_over_n_before_resampling = initial_ess_over_n
+        log_normalizing_constant = initial_log_normalizer.clone()
 
         for level in range(1, len(config.lambdas)):
             _synchronize(device)
@@ -1197,6 +1266,11 @@ def run_suffix_direct_mh_smc(
         "resampling_method": config.resampling_method,
         "resample_final": bool(config.resample_final),
         "resampling_steps": resampling_steps,
+        "initialization": initialization,
+        "initial_ess_over_n": float(initial_ess_over_n),
+        "initial_log_normalizing_constant_estimate": float(
+            initial_log_normalizer.item()
+        ),
         "log_normalizing_constant_estimate": float(
             log_normalizing_constant.item()
         ),
