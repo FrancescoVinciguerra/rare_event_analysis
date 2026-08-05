@@ -37,7 +37,7 @@ class QwenGuardGenObservable:
     device: str = "auto"
     dtype: str = "float16"
     phi_definition: str = "unsafe_log_odds"
-    log_odds_clip: float | None = 8.0
+    log_odds_clip: float | None = 20.0
     batch_size: int = 16
     cache_enabled: bool = True
     local_files_only: bool = False

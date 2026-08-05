@@ -184,6 +184,7 @@ def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
     assert joined.count("# EDIT PARAMETERS HERE") == 1
     assert "Qwen/Qwen3Guard-Gen-0.6B" in joined
     assert "GUARD_PHI_DEFINITION = 'unsafe_log_odds'" in joined
+    assert "GUARD_LOG_ODDS_CLIP = 20.0" in joined
     assert "TARGET_CATEGORY = 'Violent'" in joined
     assert "RUN_DIRECT = True" in joined
     assert "RUN_SMC = True" in joined
@@ -191,6 +192,8 @@ def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
     assert joined.count("run_suffix_direct_mh_smc(") == 1
     assert "estimate_base_expectation(" in joined
     assert "attach_terminal_assessments(" in joined
+    assert "clip_floor_fraction" in joined
+    assert "Observable saturation" in joined
     assert "display_completion_catalog(" in joined
     assert "html_lib.escape(str(row.full_completion))" in joined
     assert "off_category_samples_discarded': 0" in joined
