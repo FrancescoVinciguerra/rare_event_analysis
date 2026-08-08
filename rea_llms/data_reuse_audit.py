@@ -367,7 +367,7 @@ def _archive_is_complete(facts: ArchiveFacts) -> bool:
     valid_weights = (~np.isnan(weights)) & (~np.isposinf(weights))
     if not valid_weights.all() or not np.isfinite(weights).any():
         return False
-    return math.isfinite(log_z) and metadata.get("resample_final") is True
+    return math.isfinite(log_z) and isinstance(metadata.get("resample_final"), bool)
 
 
 def _mismatched_keys(

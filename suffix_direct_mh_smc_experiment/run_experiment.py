@@ -64,6 +64,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mcmc-steps-per-level", type=int, default=5)
     parser.add_argument("--ess-threshold", type=float, default=0.5)
     parser.add_argument("--disable-resampling", action="store_true")
+    parser.add_argument(
+        "--resample-final",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Resample the terminal population to uniform weights. Disabled by "
+            "default because retaining terminal SMC weights avoids extra variance."
+        ),
+    )
 
     parser.add_argument(
         "--suffix-mode",
@@ -97,11 +106,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--disable-score-cache", action="store_true")
     parser.add_argument(
         "--guardrail-model",
-        default="Qwen/Qwen3Guard-Stream-0.6B",
+        default="Qwen/Qwen3Guard-Gen-0.6B",
     )
     parser.add_argument(
         "--guardrail-revision",
-        default="419364a715de9840d47b1457982f64ff37f90ed4",
+        default="fada3b2f655b89601929198343c94cd2f64d93cc",
     )
     parser.add_argument("--guardrail-device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument(
@@ -111,9 +120,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--guardrail-phi",
-        choices=["unsafe_probability", "unsafe_plus_half_controversial"],
-        default="unsafe_probability",
+        choices=["unsafe_probability", "unsafe_log_odds"],
+        default="unsafe_log_odds",
     )
+    parser.add_argument("--guardrail-log-odds-clip", type=float, default=20.0)
     parser.add_argument("--guardrail-batch-size", type=int, default=16)
     return parser.parse_args(argv)
 
@@ -128,6 +138,7 @@ def config_from_args(args: argparse.Namespace) -> SuffixDirectMHSMCConfig:
         mcmc_steps_per_level=args.mcmc_steps_per_level,
         ess_threshold=args.ess_threshold,
         resampling=not args.disable_resampling,
+        resample_final=args.resample_final,
         suffix_mode=args.suffix_mode,
         suffix_sizes=parse_int_list(args.suffix_sizes) if args.suffix_sizes else None,
         suffix_rhos=parse_float_list(args.suffix_rhos) if args.suffix_rhos else None,
@@ -171,12 +182,13 @@ def main() -> None:
         )
     else:
         observable = create_observable(
-            "qwen_guard",
+            "qwen_guard_gen",
             model_name=args.guardrail_model,
             revision=args.guardrail_revision,
             device=args.guardrail_device,
             dtype=args.guardrail_dtype,
             phi_definition=args.guardrail_phi,
+            log_odds_clip=args.guardrail_log_odds_clip,
             batch_size=args.guardrail_batch_size,
             cache_enabled=not args.disable_score_cache,
             local_files_only=args.local_files_only,

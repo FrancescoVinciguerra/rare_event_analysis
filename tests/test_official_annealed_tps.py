@@ -27,7 +27,6 @@ from rea_llms.benchmarking import (
 )
 from rea_llms.observables.ari import ARIObservable
 from rea_llms.observables.base import ObservableScore
-from smc_tps_comparison.run_comparison import parse_args
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -230,15 +229,8 @@ def test_fingerprint_rejects_incompatible_completed_run(tmp_path: Path) -> None:
         completed_run_action(output, second, skip_completed=True, overwrite=False)
 
 
-def test_comparison_algorithms_are_selectable_independently() -> None:
-    smc = parse_args(["--algorithms", "suffix_direct_mh_smc"])
-    tps = parse_args(["--algorithms", "official_annealed_tps"])
-    assert smc.algorithms == "suffix_direct_mh_smc"
-    assert tps.algorithms == "official_annealed_tps"
-
-
 def test_comparison_notebook_is_valid_and_calls_shared_runner() -> None:
-    path = ROOT / "notebooks" / "REA_SMC_vs_Official_TPS_Benchmark.ipynb"
+    path = ROOT / "notebooks" / "01_original_tps_mbar.ipynb"
     notebook = json.loads(path.read_text(encoding="utf-8"))
     assert notebook["nbformat"] == 4
     code = []
@@ -250,9 +242,9 @@ def test_comparison_notebook_is_valid_and_calls_shared_runner() -> None:
         code.append(source)
     joined = "\n".join(code)
     assert "EDIT PARAMETERS HERE" in joined
-    assert "suffix_direct_mh_smc" in joined
     assert "official_annealed_tps" in joined
-    assert "smc_tps_comparison/run_comparison.py" in joined
-    assert "Additional mixing, genealogy, weight, and token-repetition diagnostics" in joined
-    assert "weighted_mean_token_repeats" in joined
-    assert "within_level_drift" in joined
+    assert "run_official_annealed_tps" in joined
+    assert "collect_tps_window_scores" in joined
+    assert "estimate_mbar_tails" in joined
+    assert "overlap_matrix" in joined
+    assert "run_suffix_direct_mh_smc" not in joined

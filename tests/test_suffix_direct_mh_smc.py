@@ -115,6 +115,8 @@ def test_config_requires_a_valid_state_independent_suffix_law() -> None:
             suffix_sizes=(1, 3),
             suffix_rhos=(1.0, 0.0),
         )
+    with pytest.raises(ValueError, match="requires resampling=True"):
+        _config(resampling=False, resample_final=True)
 
 
 def test_suffix_sizes_are_sampled_for_all_particles_in_one_draw() -> None:
@@ -286,7 +288,7 @@ def test_log_normalizing_constant_matches_exact_finite_space() -> None:
     assert torch.allclose(log_weights, exact_final, atol=1e-12)
 
 
-def test_lambda_zero_keeps_equal_weights_and_final_resamples() -> None:
+def test_lambda_zero_keeps_equal_weights_without_final_resampling_by_default() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),
         TinyTokenizer(),
@@ -295,8 +297,8 @@ def test_lambda_zero_keeps_equal_weights_and_final_resamples() -> None:
         config=_config(lambdas=(0.0, 0.0), seed=31),
     )
     assert result.summary["final_ess_over_n"] == pytest.approx(1.0)
-    assert result.summary["resample_final"] is True
-    assert result.summary["resampling_steps"] == 1
+    assert result.summary["resample_final"] is False
+    assert result.summary["resampling_steps"] == 0
     assert result.summary["log_normalizing_constant_estimate"] == pytest.approx(0.0)
     assert all(row["normalized_weight"] == pytest.approx(1 / 8) for row in result.samples)
 
@@ -347,6 +349,28 @@ def test_external_initial_population_validates_shapes() -> None:
         )
 
 
+def test_final_level_retains_nonuniform_weights_by_default() -> None:
+    result = run_suffix_direct_mh_smc(
+        PrefixDependentTinyModel(),
+        TinyTokenizer(),
+        CompletionTokenSumObservable(),
+        prompt="Once",
+        config=_config(
+            num_particles=24,
+            lambdas=(0.0, -20.0),
+            mcmc_steps_per_level=0,
+            ess_threshold=0.99,
+        ),
+    )
+
+    level = result.diagnostics["level_diagnostics"][1]
+    weights = [row["normalized_weight"] for row in result.samples]
+    assert not level["resampled"]
+    assert result.summary["resample_final"] is False
+    assert result.summary["final_ess_over_n"] < 0.99
+    assert not all(weight == pytest.approx(1 / 24) for weight in weights)
+
+
 def test_resampling_can_occur_before_and_at_final_level() -> None:
     result = run_suffix_direct_mh_smc(
         PrefixDependentTinyModel(),
@@ -358,6 +382,7 @@ def test_resampling_can_occur_before_and_at_final_level() -> None:
             lambdas=(0.0, -1.0, -20.0),
             mcmc_steps_per_level=0,
             ess_threshold=0.99,
+            resample_final=True,
         ),
     )
     levels = result.diagnostics["level_diagnostics"]
@@ -451,5 +476,9 @@ def test_active_sampler_has_no_balancing_or_reverse_scoring_path() -> None:
     )
     config = config_from_args(args)
     assert isinstance(config, SuffixDirectMHSMCConfig)
+    assert config.resample_final is False
     assert not hasattr(config, "balancing_function")
     assert not hasattr(config, "proposal_temperature")
+
+    resampled_config = config_from_args(parse_args(["--resample-final"]))
+    assert resampled_config.resample_final is True

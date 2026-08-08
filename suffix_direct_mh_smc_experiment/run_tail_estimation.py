@@ -72,6 +72,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mcmc-steps-per-level", type=int, default=5)
     parser.add_argument("--ess-threshold", type=float, default=0.5)
     parser.add_argument(
+        "--resample-final",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Resample the terminal population to uniform weights. Disabled by "
+            "default so the SNIS estimator uses the terminal SMC weights directly."
+        ),
+    )
+    parser.add_argument(
         "--suffix-mode",
         choices=["stochastic", "deterministic"],
         default="stochastic",
@@ -163,6 +172,7 @@ def _config_for_seed(
         "mcmc_steps_per_level": args.mcmc_steps_per_level,
         "ess_threshold": args.ess_threshold,
         "resampling": True,
+        "resample_final": args.resample_final,
         "suffix_mode": args.suffix_mode,
         "batch_size": args.batch_size,
         "seed": seed,
@@ -467,8 +477,8 @@ def _run_seed(
         )
     finally:
         progress.close()
-    if result.summary.get("resample_final") is not True:
-        raise RuntimeError("the final SMC population was not resampled")
+    if bool(result.summary.get("resample_final")) != bool(args.resample_final):
+        raise RuntimeError("final-resampling mode does not match the requested configuration")
     if len(result.samples) != config.num_particles:
         raise RuntimeError("final SMC sample count does not match num_particles")
 

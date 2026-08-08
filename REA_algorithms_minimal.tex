@@ -1,0 +1,477 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{enumitem}
+
+\title{Rare-Event Estimation for Language Models:\\
+Original TPS--MBAR and Suffix Direct-MH SMC}
+\author{}
+\date{}
+
+\newcommand{\pM}{p_{\mathcal M}}
+\newcommand{\E}{\mathbb E}
+\newcommand{\1}{\mathbb I}
+\newcommand{\ESS}{\operatorname{ESS}}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem and notation}
+
+Let $c$ be a fixed prompt and let
+\[
+X=X_{1:T}=(X_1,\ldots,X_T)
+\]
+be a completion of fixed length $T$. The language model defines
+\[
+\pM(x\mid c)
+=
+\prod_{t=1}^{T}\pM(x_t\mid c,x_{1:t-1}).
+\]
+Conditioning on $c$ is suppressed below.
+
+Let $\phi_{\rm raw}(x)$ be the observable of interest, which in our
+experiments is the Automated Readability Index (ARI). Sampling may be biased
+using either the raw observable or its capped version
+\[
+\psi_C(x)=\min\{\phi_{\rm raw}(x),C\}.
+\]
+The cap changes the sampling distribution, but not the event whose probability
+is estimated. For a threshold $a$, define
+\[
+f_a(x)=\1\{\phi_{\rm raw}(x)\geq a\}.
+\]
+Our target is
+\[
+\bar f=\E_{\pM}[f(X)].
+\]
+For $f=f_a$, this is the base-model tail probability
+\[
+\bar f_a
+=
+\mathbb P_{\pM}\!\left(\phi_{\rm raw}(X)\geq a\right).
+\]
+
+For a bias $\lambda$ and a sampling potential $\psi$, define
+\[
+\gamma_\lambda(x)=\pM(x)e^{-\lambda\psi(x)},
+\qquad
+Z_\lambda=\sum_x\gamma_\lambda(x),
+\qquad
+\pi_\lambda(x)=\frac{\gamma_\lambda(x)}{Z_\lambda}.
+\]
+Negative values of $\lambda$ favour large values of $\psi$. At $\lambda=0$,
+$\pi_0=\pM$ and $Z_0=1$.
+
+\section{Original algorithm: annealed TPS followed by MBAR}
+
+The original method first generates samples from several tilted distributions
+with annealed Transition Path Sampling (TPS). It then combines the samples
+using normalising constants obtained by MBAR.
+
+\subsection{Annealed TPS}
+
+Choose biases
+\[
+0=\lambda_0>\lambda_1>\cdots>\lambda_K
+\]
+and initialise a completion with $x\sim\pM$. At bias $\lambda_k$, one TPS
+transition is:
+
+\begin{enumerate}[label=\arabic*.]
+    \item Choose uniformly a suffix length $m\in\{1,\ldots,T\}$.
+
+    \item Preserve the first $T-m$ completion tokens. Writing
+    \[
+    x=(u,x^{\rm s}),
+    \]
+    generate a proposed suffix from the base model,
+    \[
+    y^{\rm s}\sim\pM(\,\cdot\mid c,u),
+    \qquad
+    y=(u,y^{\rm s}).
+    \]
+
+    \item Accept $y$ with probability
+    \[
+    \boxed{
+    A_k^{\rm TPS}(x,y)
+    =
+    \min\left\{
+    1,
+    e^{-\lambda_k[\psi(y)-\psi(x)]}
+    \right\}.}
+    \]
+    If the proposal is rejected, retain $x$.
+\end{enumerate}
+
+The transition is repeated at every bias. The final state at $\lambda_k$ is
+used to initialise the chain at $\lambda_{k+1}$, and the resulting states are
+stored as samples from the corresponding tilted distributions.
+
+The acceptance probability follows from the Metropolis--Hastings ratio. Since
+$x$ and $y$ share the prefix $u$,
+\[
+\pM(x)=\pM(u)\pM(x^{\rm s}\mid c,u),
+\qquad
+\pM(y)=\pM(u)\pM(y^{\rm s}\mid c,u).
+\]
+The language-model and proposal probabilities cancel, leaving
+\[
+\frac{
+\pi_{\lambda_k}(y)q_m(x\mid y)
+}{
+\pi_{\lambda_k}(x)q_m(y\mid x)
+}
+=
+e^{-\lambda_k[\psi(y)-\psi(x)]}.
+\]
+
+\subsection{Umbrella sampling and MBAR}
+
+For each bias $\lambda$, the normalising constant of the tilted distribution
+is
+\begin{align*}
+Z(\lambda)
+&=
+\sum_x \pM(x)e^{-\lambda\psi(x)}\\
+&=
+\E_{\pM}\!\left[e^{-\lambda\psi(X)}\right].
+\end{align*}
+This quantity is generally unknown.
+
+Choose $K$ tilted distributions $\pi_{\lambda_1},\ldots,
+\pi_{\lambda_K}$ and coefficients $\alpha_k>0$ such that
+$\sum_k\alpha_k=1$. Umbrella sampling introduces the mixture
+\[
+p_{\rm Mix}(x)
+=
+\sum_{k=1}^{K}\alpha_k\pi_{\lambda_k}(x).
+\]
+Substituting the definition of each tilted distribution gives
+\[
+\boxed{
+p_{\rm Mix}(x)
+=
+\pM(x)
+\sum_{k=1}^{K}
+\alpha_k Z(\lambda_k)^{-1}e^{-\lambda_k\psi(x)}.}
+\]
+Therefore the importance weight from the mixture back to the base model is
+\[
+\boxed{
+w_{\rm Mix}(x)
+=
+\frac{\pM(x)}{p_{\rm Mix}(x)}
+=
+\left[
+\sum_{k=1}^{K}
+\alpha_k Z(\lambda_k)^{-1}e^{-\lambda_k\psi(x)}
+\right]^{-1}.}
+\]
+The factor $\pM(x)$ cancels, but the weight still depends on all the unknown
+normalising constants.
+
+For any test function $f$, the umbrella-sampling identity is
+\begin{align*}
+\bar f
+&=
+\E_{p_{\rm Mix}}\!\left[w_{\rm Mix}(X)f(X)\right]\\
+&=
+\sum_{k=1}^{K}\alpha_k
+\E_{\pi_{\lambda_k}}\!\left[
+w_{\rm Mix}(X)f(X)
+\right].
+\end{align*}
+Taking $f(x)=e^{-\lambda_j\psi(x)}$ gives one equation for every partition
+function:
+\[
+\boxed{
+Z(\lambda_j)
+=
+\sum_{k=1}^{K}\alpha_k
+\E_{\pi_{\lambda_k}}\!\left[
+w_{\rm Mix}(X)e^{-\lambda_j\psi(X)}
+\right],
+\qquad j=1,\ldots,K.}
+\]
+Because $w_{\rm Mix}$ depends on every $Z(\lambda_k)$, these equations are
+solved jointly. This self-consistent umbrella-sampling estimator is MBAR.
+
+If $N_k$ samples $x_{k,1},\ldots,x_{k,N_k}$ are retained from component $k$,
+the expectation of interest is estimated by
+\[
+\boxed{
+\widehat{\bar f}_{\rm TPS\text{-}MBAR}
+=
+\frac{
+\displaystyle
+\sum_{k=1}^{K}\frac{\alpha_k}{N_k}
+\sum_{i=1}^{N_k}
+\widehat w_{\rm Mix}(x_{k,i})f(x_{k,i})
+}{
+\displaystyle
+\sum_{k=1}^{K}\frac{\alpha_k}{N_k}
+\sum_{i=1}^{N_k}
+\widehat w_{\rm Mix}(x_{k,i})
+}.}
+\]
+With the empirical mixture, $\alpha_k=N_k/N_{\rm tot}$, where
+$N_{\rm tot}=\sum_kN_k$. The samples from all tilted distributions are thus
+combined through one common mixture weight and one final ratio.
+
+\section{Our algorithm: suffix direct-MH SMC}
+
+Our method runs independent SMC samplers indexed by $j=1,\ldots,J$. Run $j$
+uses a cap $C_j$, a terminal bias $\lambda_j$, and its own bias schedule
+\[
+0=\lambda_{j,0}>\lambda_{j,1}>\cdots>
+\lambda_{j,L_j}=\lambda_j.
+\]
+At level $k$, define
+\[
+\gamma_{j,k}(x)
+=
+\pM(x)e^{-\lambda_{j,k}\psi_{C_j}(x)},
+\qquad
+\pi_{j,k}(x)
+=
+\frac{\gamma_{j,k}(x)}{Z_{j,k}}.
+\]
+
+\subsection{One SMC run}
+
+Generate $N_j$ initial particles independently from the base model,
+\[
+X_{j,0}^{(i)}\sim\pM,
+\qquad
+W_{j,0}^{(i)}=\frac{1}{N_j}.
+\]
+
+For $k=1,\ldots,L_j$, perform the following operations in order:
+
+\begin{enumerate}[label=\arabic*.]
+    \item Apply $M$ suffix direct-MH transitions to every particle. These
+    transitions leave $\pi_{j,k-1}$ invariant and use the acceptance
+    probability
+    \[
+    \boxed{
+    A_{j,k}^{\rm SMC}(x,y)
+    =
+    \min\left\{
+    1,
+    e^{-\lambda_{j,k-1}
+    [\psi_{C_j}(y)-\psi_{C_j}(x)]}
+    \right\}.}
+    \]
+    The suffix proposal is generated exactly as in TPS, except that its length
+    may be drawn from a chosen distribution over the allowed suffix lengths.
+
+    \item Move the weighted population from $\pi_{j,k-1}$ to $\pi_{j,k}$ with
+    the incremental potential
+    \[
+    G_{j,k}(x)
+    =
+    \frac{\gamma_{j,k}(x)}{\gamma_{j,k-1}(x)}
+    =
+    e^{-(\lambda_{j,k}-\lambda_{j,k-1})\psi_{C_j}(x)}.
+    \]
+    Thus
+    \[
+    \widetilde W_{j,k}^{(i)}
+    =
+    W_{j,k-1}^{(i)}G_{j,k}(X_{j,k}^{(i)}),
+    \qquad
+    W_{j,k}^{(i)}
+    =
+    \frac{\widetilde W_{j,k}^{(i)}}{
+    \sum_r\widetilde W_{j,k}^{(r)}}.
+    \]
+
+    \item Compute
+    \[
+    \ESS(W_{j,k})
+    =
+    \frac{1}{\sum_i(W_{j,k}^{(i)})^2}.
+    \]
+    At an intermediate level, resample if the normalised ESS is below the
+    chosen threshold, then reset all particle weights to $1/N_j$. At the final
+    level, the default algorithm does not resample: it retains the normalised
+    terminal weights $W_{j,i}=W_{j,L_j}^{(i)}$.
+\end{enumerate}
+
+Consequently, the final weighted empirical population
+\[
+\sum_{i=1}^{N_j}W_{j,i}\,\delta_{X_{j,i}}
+\]
+approximates
+\[
+q_j(x)
+=
+\frac{
+\pM(x)e^{-\lambda_j\psi_{C_j}(x)}
+}{Z_j}.
+\]
+
+\subsection{Our estimator}
+
+For every component $j$,
+\[
+\frac{\pM(x)}{q_j(x)}
+=
+Z_j e^{\lambda_j\psi_{C_j}(x)}.
+\]
+The unknown $Z_j$ cancels when numerator and denominator are normalised
+separately within that component. Therefore
+\[
+\boxed{
+\widehat{\bar f}_j
+=
+\frac{
+\displaystyle
+\sum_{i=1}^{N_j}
+W_{j,i}e^{\lambda_j\psi_{C_j}(X_{j,i})}f(X_{j,i})
+}{
+\displaystyle
+\sum_{i=1}^{N_j}
+W_{j,i}e^{\lambda_j\psi_{C_j}(X_{j,i})}
+}.}
+\]
+When $f=f_a$, we denote this separately normalised component estimator by
+$\widehat F_j(a)=\widehat{\bar f}_j$.
+For a tail probability,
+\[
+f(X_{j,i})
+=
+\1\{\phi_{\rm raw}(X_{j,i})\geq a\}.
+\]
+The cap appears only in the sampling correction; the event is always evaluated
+using the raw observable.
+
+Only after computing one self-normalised estimate for every component do we
+combine them. With equal component coefficients,
+\[
+\boxed{
+\widehat{\bar f}_{\rm SMC\text{-}SNIS}
+=
+\frac{1}{J}\sum_{j=1}^{J}\widehat{\bar f}_j.}
+\]
+More generally, chosen coefficients $\alpha_j>0$ with
+$\sum_j\alpha_j=1$ give
+\[
+\widehat{\bar f}_{\rm SMC\text{-}SNIS}
+=
+\sum_{j=1}^{J}\alpha_j\widehat{\bar f}_j.
+\]
+This is a mean of separately normalised component estimates. The samples from
+different components are not pooled into one numerator and denominator, and
+the estimator does not require the normalising constants $Z_j$.
+
+\subsection{Optional final resampling}
+
+If an unweighted terminal population is explicitly required, one may draw
+$\bar X_{j,1},\ldots,\bar X_{j,N_j}$ by resampling the terminal particles with
+probabilities $W_{j,1},\ldots,W_{j,N_j}$ and then set every weight to $1/N_j$.
+The common factor $1/N_j$ cancels from the estimator, yielding the previously
+used unweighted formula
+\[
+\widehat{\bar f}_j^{\rm res}
+=
+\frac{\sum_i e^{\lambda_j\psi_{C_j}(\bar X_{j,i})}f(\bar X_{j,i})}
+{\sum_i e^{\lambda_j\psi_{C_j}(\bar X_{j,i})}}.
+\]
+This is a valid special case, but it introduces an additional random
+resampling operation. Retaining $W_{j,i}$ is therefore the generic default and
+avoids that extra source of Monte Carlo variance.
+
+\section{Essential difference}
+
+The original method generates annealed TPS trajectories, uses MBAR
+normalising constants to correct the samples, and then combines all corrected
+samples in one ratio. Our method transports particle populations with SMC,
+retains the terminal SMC weights, computes one weighted self-normalised
+importance-sampling ratio for each terminal population, and averages those
+ratios only at the end. Final resampling remains an optional compatibility
+mode when unweighted output particles are needed.
+
+\section{Empirical comparison on the ARI experiment}
+
+The current matched experiment uses TinyStories-8M, a fixed 100-token
+completion, the public full-sequence ARI convention, and the prompt
+\begin{quote}
+\texttt{Once upon a time, in a big forest, there lived a rhinoc}.
+\end{quote}
+The IID reference contains 200,000 completions. One complete SMC seed group
+contains nine independently run components, with 256 final particles per
+component and different pairs $(C_j,\lambda_j)$. Table~\ref{tab:direct-smc}
+reports the mean of the nine estimators $\widehat F_j(a)$.
+These recorded runs used the optional final-resampling mode, so their terminal
+weights were uniform and the unweighted special case above was applied. The
+numbers remain valid for that implementation, but they can contain avoidable
+final-resampling variance; they are not presented as measurements from the new
+weighted-terminal default.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{c r r r}
+\hline
+ARI threshold $a$ & IID direct & SMC--SNIS & relative difference \\
+\hline
+6 & $2.7460\times10^{-2}$ & $3.184786\times10^{-2}$ & $+16.0\%$ \\
+7 & $5.1850\times10^{-3}$ & $5.089188\times10^{-3}$ & $-1.8\%$ \\
+8 & $9.9500\times10^{-4}$ & $8.242966\times10^{-4}$ & $-17.2\%$ \\
+\hline
+\end{tabular}
+\caption{Matched direct and component-averaged SMC--SNIS estimates.}
+\label{tab:direct-smc}
+\end{table}
+
+The mean corrected importance-sampling ESS divided by the number of component
+samples was 0.180. Direct sampling generated 20,000,000 completion tokens in
+1,119.8 seconds, whereas the nine SMC components generated 2,341,353 suffix
+tokens in 1,160.6 seconds on the recorded Colab run. The lower token count did
+not translate directly into lower wall time because SMC repeatedly evaluates
+ARI, performs suffix mutation, and manages particle populations.
+
+These numbers are preliminary. Only one complete seed group was available,
+so between-seed variance of the final averaged estimator was not measurable.
+The individual $\widehat F_j(a)$, corrected ESS, event counts, and reverse
+normalising-constant diagnostics vary substantially across terminal biases;
+they must be inspected before deciding which components are useful.
+
+\subsection{What is currently known relative to TPS}
+
+A previous one-seed experiment compared the sampling stages, without MBAR.
+For the selected configurations, suffix SMC required 441.7 seconds and
+annealed TPS required 3,881.1 seconds. Their final tilted mean ARI values were
+12.516 and 14.050, respectively. SMC had final weight ESS divided by particle
+count 0.496, while the TPS final-window temporal ESS was 9.17. The proposal
+budgets were different, so this result demonstrates neither equal-compute
+superiority nor probability-estimation accuracy.
+
+Consequently, no numerical claim is currently made that SMC--SNIS estimates
+base-model probabilities more accurately than TPS--MBAR. The accompanying
+TPS--MBAR notebook now makes that missing experiment reproducible: it runs
+independent annealed TPS chains, performs MBAR over all bias windows, and
+reports unbiased-state tail estimates and overlap. A valid final comparison
+must run both pipelines with the same model, prompt, completion length, ARI
+implementation, thresholds, and clearly stated compute budget.
+
+\section{Diagnostics and scope}
+
+For SMC, target ESS and corrected importance ESS answer different questions.
+The first diagnoses representation of the tilted target; the second diagnoses
+overlap after correction to $\pM$. A strong tilt may discover rare outputs
+while producing an unstable probability estimate. For TPS, temporal ESS,
+between-chain agreement, burn-in sensitivity, and MBAR overlap are required.
+Neither a large observed ARI nor completion of a finite run proves convergence.
+
+The QwenGuard-Gen experiment uses the same SMC machinery with Unsafe log-odds
+as $\phi$. It is included only to demonstrate that the observable is
+replaceable. Guard scores and category labels are proxies and are not, by
+themselves, calibrated probabilities of actionable harm.
+
+\end{document}

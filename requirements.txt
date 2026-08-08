@@ -6,3 +6,4 @@ transformers>=4.55,<5
 tqdm>=4.66
 pytest>=8.0
 psutil>=5.9
+pymbar>=4.0.3

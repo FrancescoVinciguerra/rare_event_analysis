@@ -14,6 +14,7 @@ dependencies = [
     "tqdm>=4.66",
     "transformers>=4.55,<5",
     "psutil>=5.9",
+    "pymbar>=4.0.3",
 ]
 
 [[tool.uv.index]]
@@ -28,4 +29,4 @@ torch = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests", "qwen_safety_smc_experiment/tests"]
+testpaths = ["tests"]

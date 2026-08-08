@@ -159,12 +159,11 @@ def test_response_template_contains_both_conversation_turns() -> None:
     assert "ASSISTANT: full response" in text
 
 
-def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
+def test_qwen_guard_smc_notebook_is_complete_and_readable_in_place() -> None:
     path = (
         Path(__file__).resolve().parents[1]
-        / "qwen_safety_smc_experiment"
         / "notebooks"
-        / "procedural_leakage_direct_experiment.ipynb"
+        / "03_qwen_guard_smc.ipynb"
     )
     notebook = json.loads(path.read_text(encoding="utf-8"))
     code_cells = []
@@ -182,41 +181,20 @@ def test_violent_category_notebook_is_complete_and_readable_in_place() -> None:
     headings = "\n".join(markdown_cells)
     assert notebook["nbformat"] == 4
     assert joined.count("# EDIT PARAMETERS HERE") == 1
+    assert "Qwen/Qwen2.5-1.5B-Instruct" in joined
     assert "Qwen/Qwen3Guard-Gen-0.6B" in joined
-    assert "GUARD_PHI_DEFINITION = 'unsafe_log_odds'" in joined
-    assert "GUARD_LOG_ODDS_CLIP = 20.0" in joined
-    assert "TARGET_CATEGORY = 'Violent'" in joined
-    assert "RUN_PROMPT_PILOT = True" in joined
-    assert "RUN_DIRECT = True" in joined
-    assert "RUN_SMC = True" in joined
-    assert joined.count("run_direct_in_memory(") == 2
-    assert joined.count("run_suffix_direct_mh_smc(") == 1
-    assert "PROMPT_VARIANTS" in joined
-    for prompt_variant in (
-        "direct",
-        "instruction_override",
-        "fictional_fable",
-        "syllable_reconstruction",
-        "affirmative_document",
-        "quoted_injection",
-    ):
-        assert f"'{prompt_variant}'" in joined
-    assert "selection_used_confirmatory_samples': False" in joined
-    assert "PILOT_SEED = SEED + 500" in joined
-    assert "DIRECT_SEED = SEED + 1000" in joined
-    assert "SMC_SEED = SEED + 2000" in joined
-    assert "estimate_base_expectation(" in joined
-    assert "attach_terminal_assessments(" in joined
-    assert "clip_floor_fraction" in joined
-    assert "Observable saturation" in joined
-    assert "display_completion_catalog(" in joined
-    assert "html_lib.escape(str(row.full_completion))" in joined
-    assert "off_category_samples_discarded': 0" in joined
-    assert "completion_text_truncated_in_catalog': False" in joined
     assert "GITHUB_TOKEN" in joined
+    assert "run_suffix_direct_mh_smc(" in joined
+    assert "RESAMPLE_FINAL = False" in joined
+    assert "resample_final=RESAMPLE_FINAL" in joined
+    assert "normalized_weight" in joined
+    assert "weighted_mean_observable_before_resampling" in joined
+    assert "unsafe_log_odds" in joined
+    assert "TARGET_CATEGORY = 'Violent'" in joined
+    assert "on_target_category" in joined
+    assert "guard.classify_batch" in joined
+    assert "html.escape(row.completion)" in joined
     assert "drive.mount" not in joined
     assert ".to_csv(" not in joined
     assert "files.download(" not in joined
-    assert "procedural leakage" not in headings.lower()
-    for section in range(1, 12):
-        assert f"## {section}." in headings
+    assert "mechanism demonstration" in headings.lower()

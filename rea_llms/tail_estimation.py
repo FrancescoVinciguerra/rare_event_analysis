@@ -234,9 +234,10 @@ def estimate_base_tails_by_component_average(
 
     Component ``j`` is treated as its own proposal
     ``p_M(x) exp(-lambda_j psi_j(x)) / Z_j``. Within that component, SNIS
-    corrects by ``exp(lambda_j psi_j(x))`` so ``Z_j`` cancels. The returned
-    probability is a weighted average of the component estimates, with equal
-    component weights by default.
+    combines terminal SMC weights ``W_ji`` with
+    ``exp(lambda_j psi_j(x))`` so ``Z_j`` cancels. The returned probability is
+    a weighted average of the component estimates, with equal component
+    weights by default.
     """
 
     _validate_independent_components(components)

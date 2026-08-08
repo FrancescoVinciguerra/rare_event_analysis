@@ -72,7 +72,7 @@ class SuffixDirectMHSMCConfig:
     mcmc_steps_per_level: int = 5
     ess_threshold: float = 0.5
     resampling: bool = True
-    resample_final: bool = True
+    resample_final: bool = False
     resampling_method: str = "systematic"
     suffix_mode: str = "stochastic"
     suffix_sizes: tuple[int, ...] | None = None
@@ -102,6 +102,8 @@ class SuffixDirectMHSMCConfig:
             raise ValueError("mcmc_steps_per_level must be >= 0")
         if not 0.0 <= self.ess_threshold <= 1.0:
             raise ValueError("ess_threshold must be in [0, 1]")
+        if self.resample_final and not self.resampling:
+            raise ValueError("resample_final requires resampling=True")
         if self.resampling_method != "systematic":
             raise ValueError("resampling_method must be 'systematic'")
         if self.suffix_mode not in {"stochastic", "deterministic"}:
@@ -826,8 +828,10 @@ def run_suffix_direct_mh_smc(
 
     The order at transition k is mutation under pi_{k-1}, incremental weighting
     from gamma_{k-1} to gamma_k, then optional systematic resampling. By default
-    the final level is resampled too, so returned particles carry uniform
-    empirical weights under the terminal tilted target. An externally sampled
+    the final level is not resampled: returned particles retain their normalized
+    terminal SMC weights, which the downstream SNIS correction must use. Set
+    ``resample_final=True`` only when an unweighted terminal population is needed;
+    that extra resampling step adds Monte Carlo variance. An externally sampled
     initial population may be supplied with unnormalized importance log-weights;
     this supports proposal distributions other than the base language model.
     """
@@ -1111,8 +1115,8 @@ def run_suffix_direct_mh_smc(
             )
             log_normalizing_constant += log_normalizer_increment
             # 3. Diagnose normalized weights. Intermediate low-ESS resampling
-            # helps subsequent mutation; final resampling returns an unweighted
-            # terminal population for the downstream SNIS correction.
+            # helps subsequent mutation. At the terminal level we retain the
+            # weights by default so downstream SNIS avoids extra resampling noise.
             ess = ess_from_normalized_log_weights(log_weights)
             ess_over_n_before = min(1.0, float((ess / config.num_particles).item()))
             weights_before = torch.exp(log_weights)

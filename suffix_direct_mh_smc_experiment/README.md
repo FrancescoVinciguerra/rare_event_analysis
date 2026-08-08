@@ -1,27 +1,26 @@
 # Suffix direct-MH SMC
 
-This package is the active research pipeline. It samples complete, fixed-length
-language-model completions along an exponential-tilt schedule and estimates
-base-model ARI tails from the final-resampled terminal population.
+This package contains the active rare-completion sampler.
 
-The mathematical specification and correctness derivation are in
-[`THEORY.md`](../THEORY.md). In particular, the active proposal is an exact
-temperature-one LM suffix proposal corrected by direct Metropolis-Hastings. It
-does not use Barker acceptance, a balancing function, reverse teacher forcing,
-or a vocabulary-wide proposal normalizer.
+- `smc_sampler.py` implements particle state, suffix regeneration, direct-MH
+  mutation, incremental weighting, ESS, resampling, and serialization.
+- `run_experiment.py` runs one independent SMC population with either ARI or a
+  Qwen3Guard-Gen terminal observable.
+- `run_tail_estimation.py` runs independent seeds and computes SNIS tail
+  estimates plus overlap diagnostics.
+- `run_tail_validation.py` runs independent `(cap, lambda_j)` components,
+  computes one separately normalized `F_j` per component, averages the `F_j`
+  values, and compares them with a matching IID direct reference.
 
-## Files
+Terminal resampling is disabled by default. Each `F_j` uses the normalized
+terminal SMC weights together with the reverse-tilt factor. Pass
+`--resample-final` to obtain an unweighted terminal population for compatibility;
+this is valid but adds a final resampling source of Monte Carlo variance.
 
-- `smc_sampler.py`: particle state, batched suffix generation, direct-MH
-  mutation, SMC weighting, ESS, resampling, and serialization.
-- `run_experiment.py`: one independent SMC run.
-- `run_tail_estimation.py`: multi-seed SNIS tail estimates and optional terminal
-  lambda schedule sweep.
-- `run_tail_validation.py`: independent cap/lambda components, per-component
-  SNIS estimates, and comparison with a matching
-  reproducible IID direct reference.
-
-## One run
+The proposal is the temperature-one base-LM conditional for a regenerated
+suffix. The completion length is fixed and the suffix-length law is
+state-independent, yielding the acceptance probability derived in
+[`REA_algorithms_minimal.tex`](../REA_algorithms_minimal.tex).
 
 ```bash
 python suffix_direct_mh_smc_experiment/run_experiment.py \
@@ -30,12 +29,7 @@ python suffix_direct_mh_smc_experiment/run_experiment.py \
   --suffix-sizes 1,2,4,8,16,32,64,100 --seed 12345
 ```
 
-Mutation at level `k` leaves `pi_(lambda[k-1])` invariant. Reweighting then
-applies `exp(-(lambda[k]-lambda[k-1])*phi)`. Resampling may occur below the ESS
-threshold at non-final levels, and the terminal population is resampled once so
-serialized final particles have uniform weights.
-
-## Tail estimation
+For multi-seed ARI tail estimation:
 
 ```bash
 python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
@@ -45,58 +39,7 @@ python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
   --mcmc-steps-per-level 10 --tail-thresholds 8,10,12,15
 ```
 
-Each seed is an independent SMC population. The report keeps final SMC ESS and
-corrected importance ESS separate. Generated run directories are ignored by
-Git; curate only compact, interpretable summaries under `results/`.
-
-## Tail validation
-
-```bash
-python suffix_direct_mh_smc_experiment/run_tail_validation.py \
-  --device cuda --seed-groups 200,300,400 \
-  --num-particles 256 --max-new-tokens 100 \
-  --lambda-step 0.25 --mcmc-steps-per-level 10 \
-  --thresholds 6,7,8,10
-```
-
-Every `(cap, terminal lambda, seed)` component is a separate complete SMC run.
-The runner stores one compact `.npz` archive per component and reuses it only
-when its full algorithm/configuration metadata matches. It corrects each
-component back to the base model with SNIS, then averages the component
-estimates; direct generation, TPS, and MBAR are not part of this runner.
-
-Before loading a model, the runner checks model, tokenizer, prompt, completion
-length, sampling temperature, truncation, EOS, fixed-length settings, and ARI
-convention against the IID direct-reference metadata. Incompatible caches are
-reported and never enter the comparison.
-
-Generate the matching IID direct reference once, explicitly:
-
-```bash
-python -m rea_llms.current_direct_reference \
-  --device cuda --num-samples 200000 --batch-size 256 \
-  --max-new-tokens 100 --thresholds 6,7,8,10 \
-  --output-dir /path/to/output/current_direct_reference
-```
-
-This sampler shares fixed-length generation and exact completion-token scoring
-with SMC, writes only `direct_ari.npz` and `summary.json`, and strictly validates
-metadata before cache reuse. It is never launched by tests or by the validation
-runner. Without a compatible direct summary, component caches can still be
-audited, but no direct-vs-SMC probability comparison is produced.
-
-Audit an existing cache without loading the model or generating missing runs:
-
-```bash
-python suffix_direct_mh_smc_experiment/run_tail_validation.py \
-  --audit-only --seed-groups 200,300 \
-  --output-root results/tail_probability_validation
-```
-
-The audit classifies each candidate as `exactly_reusable`,
-`comparable_but_not_cache_equivalent`, `incompatible`, or `unverifiable`.
-Only unique exact matches from a complete seed group enter the mixture
-denominator and corrected ESS. Exact archives from a partial group remain
-available for component-wise diagnostics but are not declared a complete
-mixture. The report compares SMC and reverse normalizing-constant diagnostics
-in log-space.
+The main ARI workflow is
+[`02_ari_smc_snis.ipynb`](../notebooks/02_ari_smc_snis.ipynb). Final SMC ESS
+and corrected importance ESS are reported separately. Generated run
+directories are ignored by Git.

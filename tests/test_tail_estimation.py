@@ -969,12 +969,13 @@ def test_tail_runner_builds_only_exact_direct_metropolis_smc() -> None:
         thresholds=(2.0, 4.0),
     )
     assert config.resampling
+    assert config.resample_final is False
     assert not hasattr(config, "balancing_function")
     assert not hasattr(config, "proposal_temperature")
 
 
 def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
-    path = ROOT / "notebooks" / "REA_Suffix_SMC_Quickstart.ipynb"
+    path = ROOT / "notebooks" / "02_ari_smc_snis.ipynb"
     notebook = json.loads(path.read_text(encoding="utf-8"))
     assert notebook["nbformat"] == 4
     code_cells = []
@@ -995,6 +996,10 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "COMPONENTS" in joined
     assert "SEED_GROUPS" in joined
     assert "LAMBDA_STEP" in joined
+    assert "RESAMPLE_FINAL = False" in joined
+    assert "--no-resample-final" in joined
+    assert "component.final_log_weights" in joined
+    assert "weighted_quantile" in joined
     assert "ARI_CONVENTION = 'official_public'" in joined
     assert "RUN_DRIVE_AUDIT = False" in joined
     assert "RUN_OFFICIAL_PUBLIC_DIRECT = False" in joined
@@ -1015,12 +1020,16 @@ def test_primary_colab_notebook_is_valid_and_calls_active_runner() -> None:
     assert "fast_cache=True" in joined
     assert "rea_llms.current_direct_reference" in joined
     assert "plt.show()" in joined
-    assert "plt.subplots(1, 2" in joined
+    assert "plt.subplots(2, 2" in joined
     assert "savefig" not in joined
     assert "to_csv" not in joined
     assert "REPORT.md" not in joined
     assert "RUN_SMOKE_TEST" not in joined
-    assert "SEED_GROUPS = [500]" in joined
+    assert "SEED_GROUPS = [500, 600, 700]" in joined
+    assert "Individual component estimators F_j(a)" in joined
+    assert "between-seed variance" in joined
+    assert "relative error" in joined
+    assert "boxplot" in joined
     assert "official_annealed_tps" not in joined
     assert "pymbar" not in joined.lower()
     assert "--smoke-mode" not in joined

@@ -9,6 +9,11 @@ official supplementary notebook:
 - replicated functions: `generate_tokens`, `generate_proposal`,
   `compute_tps_acceptance_factor`, `tps_step`, and `biased_sampling`.
 
+`mbar.py` collects post-burn-in samples from the TPS bias windows and uses
+`pymbar` to estimate normalizing constants, overlap, effective sample counts,
+and tail expectations at the unbiased state. The complete workflow is in
+[`01_original_tps_mbar.ipynb`](../notebooks/01_original_tps_mbar.ipynb).
+
 The notebook functions are not importable as a Python module. The adapter
 therefore ports only their cut-index, suffix-regeneration, acceptance, and
 annealing semantics. The official submodule is not modified.

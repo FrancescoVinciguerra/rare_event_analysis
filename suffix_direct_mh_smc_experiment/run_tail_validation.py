@@ -226,7 +226,7 @@ def _component_metadata(
         "ess_threshold": float(args.ess_threshold),
         "resampling": True,
         "resampling_method": "systematic",
-        "resample_final": True,
+        "resample_final": bool(args.resample_final),
         "suffix_mode": "stochastic",
         "suffix_sizes": list(suffix_sizes),
         "suffix_rhos": list(suffix_rhos) if suffix_rhos is not None else None,
@@ -530,6 +530,7 @@ def _run_component(
         mcmc_steps_per_level=args.mcmc_steps_per_level,
         ess_threshold=args.ess_threshold,
         resampling=True,
+        resample_final=args.resample_final,
         suffix_mode="stochastic",
         suffix_sizes=parse_int_list(args.suffix_sizes),
         suffix_rhos=(parse_float_list(args.suffix_rhos) if args.suffix_rhos else None),
@@ -562,8 +563,8 @@ def _run_component(
         )
     finally:
         progress.close()
-    if result.summary.get("resample_final") is not True:
-        raise RuntimeError("suffix SMC did not resample its final population")
+    if bool(result.summary.get("resample_final")) != bool(args.resample_final):
+        raise RuntimeError("final-resampling mode does not match cache metadata")
     if result.summary.get("algorithm_version") != ALGORITHM_VERSION:
         raise RuntimeError("suffix SMC algorithm version does not match cache metadata")
     raw_ari = np.asarray([row["raw_ari"] for row in result.samples], dtype=np.float64)
@@ -897,6 +898,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--num-particles", type=int, default=256)
     parser.add_argument("--mcmc-steps-per-level", type=int, default=10)
     parser.add_argument("--ess-threshold", type=float, default=0.5)
+    parser.add_argument(
+        "--resample-final",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Resample each terminal population to uniform weights. Disabled by "
+            "default to retain terminal SMC weights in every F_j estimator."
+        ),
+    )
     parser.add_argument("--max-new-tokens", type=int, default=100)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--suffix-sizes", default="1,2,4,8,16,32,64,100")
