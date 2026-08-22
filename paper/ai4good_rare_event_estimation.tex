@@ -36,19 +36,19 @@ with Multiple Exponential Tilts}
 Estimating the probability that a generative model produces a harmful output
 is difficult when the event is too rare to be reliably observed by direct
 sampling. We study this problem for masked diffusion language models (MDLMs),
-whose generation process defines a tractable law on denoising trajectories
-even when terminal-text probabilities are unavailable. We introduce a
-consistent estimation pipeline based on multiple exponentially tilted path
-distributions. Each tilt makes event-relevant outputs easier to observe; a
-self-normalized importance-sampling correction then recovers the event
-probability under the native model, and the corrected estimates are combined
-convexly. We instantiate the tilted-population step with Trajectory SMC, which
-proposes suffixes with the unchanged MDLM
-decoder and applies an exact Metropolis--Hastings correction. We evaluate the
-pipeline on rare toxicity events and compare alternative mechanisms for
-constructing tilted populations, including FK Steering. The evaluation keeps
-statistical accuracy, resampling genealogy, terminal-sample diversity, and
-computational cost as separate properties.
+using complete denoising trajectories even when terminal-text probabilities
+are unavailable. The construction samples from the native decoder, but its
+rollback-MH correction does not evaluate native transition probabilities
+because they cancel analytically. We introduce a consistent estimation
+pipeline based on multiple exponentially tilted path distributions. Each tilt
+makes event-relevant outputs easier to observe; self-normalized importance
+sampling recovers the event probability under the native model, and the
+corrected estimates are combined convexly. We instantiate the tilted-population
+step with Trajectory SMC, which proposes suffixes with the unchanged decoder
+and applies an exact Metropolis--Hastings correction. As a case study of the
+general framework, we evaluate rare toxicity events and include FK Steering as
+an alternative tilted sampler. The evaluation separates statistical accuracy,
+resampling genealogy, terminal-sample diversity, and computational cost.
 \end{abstract}
 
 \section{Introduction}
@@ -56,11 +56,16 @@ computational cost as separate properties.
 Safety evaluations of generative models often report whether a model can be
 induced to produce a harmful output. Deployment decisions, however, can also
 depend on a different quantity: the probability that such an output occurs
-under the model's ordinary generation process. This probability supports risk
-measurement and comparison, but it is difficult to estimate when harmful
-outputs are rare. With direct Monte Carlo, the relative error of an event-rate
-estimate grows rapidly as the probability decreases, and many evaluation runs
-may contain no event at all.
+under the model's ordinary generation process. More generally, the event may
+be any measurable failure of generated behavior, such as toxicity, a policy
+violation, an unsafe generated action, or an erroneous tool invocation. For a
+fixed prompt or context $c$, the corresponding target is the conditional
+failure probability under the native generative process; we do not evaluate
+that conditional setting here. This probability supports risk measurement and
+comparison, but it is difficult to estimate when failures are rare. With
+direct Monte Carlo, the relative error of an event-rate estimate grows rapidly
+as the probability decreases, and many evaluation runs may contain no event at
+all.
 
 We consider rare-event probability estimation for masked diffusion language
 models (MDLMs)~\citep{sahoo2024mdlm}. An MDLM generates a completion through a
@@ -94,9 +99,11 @@ Our contributions are:
     \item a consistent multi-tilt estimation pipeline that corrects separately
     normalized tilted populations by SNIS and combines them to estimate a
     rare-event probability under the original MDLM; and
-    \item Trajectory SMC, a path-space construction for MDLMs that
-    uses native-decoder suffix proposals with an exact rollback-MH correction,
-    without redefining the underlying decoding policy.
+    \item Trajectory SMC, a path-space construction for MDLMs whose
+    native-decoder suffix proposals make the decoder transition probabilities
+    cancel analytically in the rollback-MH ratio. Its acceptance probability
+    therefore depends only on the change in the terminal observable, without
+    redefining the underlying decoding policy.
 \end{itemize}
 
 \section{Relation to Prior Work}
@@ -144,6 +151,9 @@ text. The frozen decoder defines
 P(\tau)=p_T(x_T)\prod_{t=1}^{T}K_t(x_t,x_{t-1}).
 \label{eq:path-law}
 \end{equation}
+We write $P(\tau)$ for notational simplicity. For a fixed prompt or context
+$c$, the same construction applies conditionally by replacing $P(\tau)$
+throughout with $P(\tau\mid c)$.
 We can sample from $P$ by running the decoder, without evaluating the marginal
 probability of an intermediate state or terminal text.
 
@@ -204,17 +214,20 @@ and rollback mutation are specified and derived in
 Appendices~\ref{app:complete-algorithm}--\ref{app:rollback}.
 
 \paragraph{Step 3: average across several tilts.}
-A weak tilt may still observe too few events, while a strong tilt may lead to
-an unstable reverse correction. We therefore repeat Step 2 for
-$\Lambda=\{\lambda_1,\ldots,\lambda_J\}$ and use the pre-specified uniform
-average
+The best tilt is not known in advance and may depend on the model, event,
+observable, threshold, and particle budget. Weak tilts may expose too few rare
+events, whereas strong tilts can destabilize the reverse correction.
+Identifying one tilt through dedicated pilot runs would require additional
+expensive model evaluations. We therefore use a pre-specified tilt ladder
+$\Lambda=\{\lambda_1,\ldots,\lambda_J\}$ and combine all separately corrected
+estimates, rather than selecting one tilt from the evaluation data. In our
+experiments we use the uniform average
 \begin{equation}
 \widehat p=\frac{1}{J}\sum_{j=1}^{J}\widehat p_{\lambda_j}.
 \label{eq:convex-combination}
 \end{equation}
-The average reduces sensitivity to a particularly poor run at one tilt or
-seed, without selecting a single component from the evaluation results. The
-uniform weights are a design choice for our experiments, not a requirement of
+The uniform coefficients are fixed before evaluation and are not claimed to be
+optimal. They are a design choice for our experiments, not a requirement of
 the pipeline: more generally, the component estimates can be combined with
 nonnegative weights summing to one, and those weights may be optimized when a
 suitable selection procedure or pilot budget is available.
@@ -372,13 +385,13 @@ diversity.
 
 \section{Limitations}
 
-Our study estimates classifier-defined events for one unconditional MDLM.
-Prompt-conditioned estimation would replace $P(\tau)$ by a conditional path
-law $P(\tau\mid c)$, but this setting has not yet been evaluated. Broader
-experiments are also needed across MDLM architectures, domains, event
-thresholds, and decoding configurations. Results for the present model and
-implementation do not establish universal superiority of either
-tilted-population engine.
+Methodologically, the construction extends directly to a fixed conditional
+path law $P(\tau\mid c)$. Empirically, however, this study evaluates only
+classifier-defined events for one unconditional MDLM; prompt-conditioned
+generation has not been tested. Broader experiments are also needed across
+MDLM architectures, domains, event thresholds, and decoding configurations.
+Results for the present model and implementation do not establish universal
+superiority of either tilted-population engine.
 
 The toxicity classifier is an imperfect proxy for harmfulness and may contain
 domain, linguistic, and demographic biases; rare-event estimation does not
@@ -408,9 +421,10 @@ current tilted path measure. In the evaluated setting, its estimates agree
 with the direct Monte Carlo reference within the observed run-to-run
 uncertainty, and its strongest tilted component is more stable, at increased
 decoder cost. FK remains a valid alternative with cheaper runtime and high
-terminal uniqueness. This distinction between discovering
-harmful samples and estimating their base-model probability is important for
-quantitative evaluation of generative systems.
+terminal uniqueness. Rare-behavior discovery and rare-behavior probability
+estimation are distinct objectives: particle steering can expose rare failures
+while also serving as an auxiliary mechanism for estimating their probability
+under the unchanged native generative process.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
