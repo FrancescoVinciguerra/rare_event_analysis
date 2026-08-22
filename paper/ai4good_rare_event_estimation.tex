@@ -584,24 +584,12 @@ probabilities would have to remain in the acceptance ratio.
 \section{Consistency}
 \label{app:consistency}
 
-Standard SMC limit results imply consistency of the weighted particle
-approximation for each tilted target
-\citep{chopin2004clt,delmoral2006smcsamplers}. Applying this result to the
-numerator and denominator of the reverse-SNIS ratio, followed by the continuous
-mapping theorem, gives $\widehat p_{\lambda_j}\xrightarrow{p}p$. Since
-$0\leq\widehat p_{\lambda_j}\leq1$, each component is also asymptotically
-unbiased, although generally biased at a finite particle count.
-
-The final estimator is a finite weighted sum of these components. For fixed
-nonnegative coefficients $\alpha_j$ satisfying $\sum_{j=1}^{J}\alpha_j=1$,
-linearity of expectation gives
-\begin{equation}
-\E\!\left[\sum_{j=1}^{J}\alpha_j\widehat p_{\lambda_j}\right]
-=\sum_{j=1}^{J}\alpha_j\E[\widehat p_{\lambda_j}]
-\longrightarrow p.
-\end{equation}
-Thus the convex combination is also asymptotically unbiased. This conclusion
-does not require the component estimators to be independent.
+Under standard conditions for SMC samplers, each reverse-SNIS component
+$\widehat p_{\lambda_j}$ is asymptotically unbiased, although generally biased
+at a finite particle count~\citep{chopin2004clt,delmoral2006smcsamplers}. Our
+final estimator is a fixed finite convex combination of these component
+estimators and is therefore also asymptotically unbiased. Independence between
+components is not required for this conclusion.
 
 \section{FK Steering implementation}
 \label{app:fk}
