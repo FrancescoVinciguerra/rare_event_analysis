@@ -57,15 +57,14 @@ Safety evaluations of generative models often report whether a model can be
 induced to produce a harmful output. Deployment decisions, however, can also
 depend on a different quantity: the probability that such an output occurs
 under the model's ordinary generation process. More generally, the event may
-be any measurable failure of generated behavior, such as toxicity, a policy
-violation, an unsafe generated action, or an erroneous tool invocation. For a
-fixed prompt or context $c$, the corresponding target is the conditional
-failure probability under the native generative process; we do not evaluate
-that conditional setting here. This probability supports risk measurement and
-comparison, but it is difficult to estimate when failures are rare. With
-direct Monte Carlo, the relative error of an event-rate estimate grows rapidly
-as the probability decreases, and many evaluation runs may contain no event at
-all.
+be any measurable failure defined on the generated trajectory, such as
+toxicity, a policy violation, an unsafe generated action, or an erroneous tool
+invocation. The same objective can be defined conditionally for a fixed prompt
+or context $c$; our experiments focus on unconditional generation. This
+probability supports risk measurement and comparison, but it is difficult to
+estimate when failures are rare. With direct Monte Carlo, the relative error
+of an event-rate estimate grows rapidly as the probability decreases, and many
+evaluation runs may contain no event at all.
 
 We consider rare-event probability estimation for masked diffusion language
 models (MDLMs)~\citep{sahoo2024mdlm}. An MDLM generates a completion through a
@@ -114,8 +113,9 @@ progressively replaces masked positions with tokens. We build on the MDLM
 formulation of Sahoo et al.~\citep{sahoo2024mdlm} and use its native reverse
 transition kernel without retraining the model. Whereas prior evaluations of
 MDLMs primarily study generation quality and sampling efficiency, our
-objective is to estimate the probability of rare, classifier-defined events
-under the model's original path distribution.
+objective is to estimate the probability of rare events under the model's
+original path distribution; classifier-defined toxicity events provide the
+experimental instantiation studied here.
 
 \paragraph{Particle methods for diffusion generation.}
 Recent work uses interacting particle systems to improve or control
@@ -151,11 +151,11 @@ text. The frozen decoder defines
 P(\tau)=p_T(x_T)\prod_{t=1}^{T}K_t(x_t,x_{t-1}).
 \label{eq:path-law}
 \end{equation}
+We can sample from $P$ by running the decoder, without evaluating the marginal
+probability of an intermediate state or terminal text.
 We write $P(\tau)$ for notational simplicity. For a fixed prompt or context
 $c$, the same construction applies conditionally by replacing $P(\tau)$
 throughout with $P(\tau\mid c)$.
-We can sample from $P$ by running the decoder, without evaluating the marginal
-probability of an intermediate state or terminal text.
 
 Let $\mathcal A$ be a rare set of terminal outputs. We aim to estimate
 \begin{equation}
