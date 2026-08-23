@@ -400,7 +400,17 @@ The toxicity classifier is an imperfect proxy for harmfulness and may contain
 domain, linguistic, and demographic biases; rare-event estimation does not
 correct those measurement errors. We use one classifier-derived observable,
 and different observables or learned look-ahead functions may change the
-efficiency of the tilted populations. The direct reference has
+efficiency of the tilted populations. Our experimental observable is a bounded
+classifier score in $[0,1]$. Near
+the upper end of its range, increasingly severe outputs can receive very
+similar scores, limiting the resolution with which progressively rarer events
+can be defined. In our stored samples, terminal scores concentrate below
+approximately $0.9997$, and no outputs exceed $0.9999$, so thresholds
+substantially beyond $0.9995$ cannot be meaningfully evaluated in the current
+setting. This is a limitation of the experimental observable and benchmark,
+rather than of the path-space formulation itself.
+
+The direct reference has
 uncertainty, especially at the most extreme threshold. Exact token-sequence uniqueness also does not measure semantic
 diversity.
 
