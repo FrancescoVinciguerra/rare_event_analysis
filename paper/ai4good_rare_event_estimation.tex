@@ -126,7 +126,10 @@ completions~\citep{singhal2025fk}. Self-Rewarding SMC similarly maintains
 multiple MDLM trajectories, but derives its particle weights from
 trajectory-level model confidence~\citep{luo2026selfrewarding}. These methods
 demonstrate that particle computation can guide diffusion trajectories without
-additional model training.
+additional model training. To our knowledge, rare-event probability estimation
+for masked diffusion language models has not previously been studied. Unlike
+steering methods, our goal is to estimate the probability of a rare event under
+the model's original generation process.
 
 \paragraph{Rare-event simulation and path-space SMC.}
 Importance sampling and self-normalization are classical tools for estimating
