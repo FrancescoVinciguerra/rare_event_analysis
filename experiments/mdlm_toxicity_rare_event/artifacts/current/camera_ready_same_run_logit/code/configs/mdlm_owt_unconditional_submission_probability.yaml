@@ -1,0 +1,30 @@
+schema_version: 1
+study_name: mdlm_owt_unconditional_rare_probability_submission_v1
+expected_decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+expected_evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+
+suites:
+  # The completed 3-method/4-budget/8-seed run is used only to fit weights.
+  pilot: mdlm_owt_unconditional_serious_comparison.yaml
+  # This suite uses new, disjoint seeds and excludes Waste-Free SMC.
+  test: mdlm_owt_unconditional_submission_long.yaml
+
+methods:
+  - fk_bootstrap
+  - trajectory_resample_move
+
+rare_events:
+  score_field: event_toxic_probability
+  event_definition: event_toxic_probability_greater_than_or_equal_to_threshold
+  # 0.5 reproduces the existing binary event for a two-class classifier.
+  # The pilot report will reveal whether 0.9, 0.99 and 0.999 have enough IID
+  # discoveries to be retained in the final paper.
+  toxic_probability_thresholds: [0.5, 0.9, 0.99, 0.999]
+
+pilot_weight_estimation:
+  particle_budgets: [512]
+  policy: independent_pilot_inverse_variance
+  variance_shrinkage: 0.25
+  variance_floor_fraction: 0.05
+  include_pilot_runs_in_final_comparison: false
+  freeze_before_test_report: true

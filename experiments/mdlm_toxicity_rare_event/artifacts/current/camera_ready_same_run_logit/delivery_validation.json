@@ -1,0 +1,14 @@
+{
+  "status": "COMPLETE_VALIDATED",
+  "SMC_runs": 12,
+  "checkpoint_event_estimator_pairs": 1560,
+  "independent_MC_source_files": 192,
+  "available_MC_pool_samples": 354420,
+  "max_relative_recomputation_difference": 3.574837465927275e-15,
+  "relative_tolerance": 1e-12,
+  "normalizer_ledger_verified": true,
+  "no_final_resampling_verified": true,
+  "rejected_proposal_cost_verified": true,
+  "MC_blocks_and_all_prefix_estimates_verified": true,
+  "new_simulations_run": false
+}

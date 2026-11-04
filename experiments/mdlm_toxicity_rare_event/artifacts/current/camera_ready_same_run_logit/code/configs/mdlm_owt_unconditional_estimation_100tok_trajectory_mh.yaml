@@ -1,0 +1,14 @@
+extends: mdlm_owt_unconditional_estimation_100tok.yaml
+
+# Same rare-event estimator, components, reward, event and frozen decoder as
+# the FK baseline.  Only the sampler used to approximate each tilted
+# component changes.
+smc:
+  tilted_sampler:
+    type: trajectory_resample_move
+    implementation_version: exact_trajectory_rollback_mh_v1
+    num_tempering_levels: 8
+    mcmc_steps_per_level: 1
+    mutation_policy: every_level
+    rollback_steps: [4, 8, 16, 24, 32]
+    rollback_probabilities: [0.20, 0.20, 0.20, 0.20, 0.20]

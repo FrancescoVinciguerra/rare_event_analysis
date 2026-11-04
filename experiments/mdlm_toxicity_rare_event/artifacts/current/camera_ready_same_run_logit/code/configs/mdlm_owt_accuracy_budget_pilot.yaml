@@ -1,0 +1,44 @@
+schema_version: 1
+study_name: camera_ready_accuracy_budget_pilot
+base_config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+output_subdirectory: camera_ready_accuracy_budget_pilot
+thresholds: [0.9, 0.99, 0.999]
+plot_thresholds: [0.99, 0.999]
+control_threshold: 0.9
+independent_runs: 20
+base_seed: 1800000000
+comparison: measured_matched_wall_clock
+workers: 3
+calibration_repetitions: 3
+calibration_paths: 128
+warmup_paths: 16
+warmup_base_seed: 17747011
+crude_stream: 926081
+timing_tolerance_fraction: 0.05
+performance_summary: mean_and_median_across_independent_runs_no_accuracy_cutoffs
+reference:
+  samples: 200000
+  discoveries: [1516, 444, 26]
+  source: output/github_reviewer_artifact/data/final_analysis/direct_reference.csv
+  source_sha256: b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535
+  decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+  evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+configurations:
+  - {id: N16_L05, N: 16, schedule: [0.5], moves_per_level: 4}
+  - {id: N32_L05, N: 32, schedule: [0.5], moves_per_level: 4}
+  - {id: N64_L05, N: 64, schedule: [0.5], moves_per_level: 4}
+  - {id: N16_L10, N: 16, schedule: [0.5, 1.0], moves_per_level: 4}
+  - {id: N32_L10, N: 32, schedule: [0.5, 1.0], moves_per_level: 4}
+  - {id: N64_L10, N: 64, schedule: [0.5, 1.0], moves_per_level: 4}
+  - {id: N16_L15, N: 16, schedule: [0.5, 1.0, 1.5], moves_per_level: 4}
+  - {id: N32_L15, N: 32, schedule: [0.5, 1.0, 1.5], moves_per_level: 4}
+  - {id: N64_L15, N: 64, schedule: [0.5, 1.0, 1.5], moves_per_level: 4}
+  - {id: N16_L20, N: 16, schedule: [0.5, 1.0, 1.5, 2.0], moves_per_level: 4}
+  - {id: N32_L20, N: 32, schedule: [0.5, 1.0, 1.5, 2.0], moves_per_level: 4}
+  - {id: N64_L20, N: 64, schedule: [0.5, 1.0, 1.5, 2.0], moves_per_level: 4}
+  - {id: N16_L25, N: 16, schedule: [0.5, 1.0, 1.5, 2.0, 2.5], moves_per_level: 4}
+  - {id: N32_L25, N: 32, schedule: [0.5, 1.0, 1.5, 2.0, 2.5], moves_per_level: 4}
+  - {id: N64_L25, N: 64, schedule: [0.5, 1.0, 1.5, 2.0, 2.5], moves_per_level: 4}
+  - {id: N16_L30, N: 16, schedule: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0], moves_per_level: 4}
+  - {id: N32_L30, N: 32, schedule: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0], moves_per_level: 4}
+  - {id: N64_L30, N: 64, schedule: [0.5, 1.0, 1.5, 2.0, 2.5, 3.0], moves_per_level: 4}

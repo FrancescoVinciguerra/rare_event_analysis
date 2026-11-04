@@ -1,0 +1,9 @@
+extends: mdlm_owt_unconditional_common.yaml
+
+# No production default: pass --target-samples explicitly for a larger run.
+direct:
+  target_samples: null
+  base_seed: 8128
+  shard_size: 32
+  generation_microbatch_size: 4
+

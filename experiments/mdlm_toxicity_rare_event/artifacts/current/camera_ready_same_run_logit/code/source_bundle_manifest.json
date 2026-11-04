@@ -1,0 +1,315 @@
+{
+  "source_local": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event",
+  "destination": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code",
+  "old_source_and_results_modified": false,
+  "files": {
+    "analysis/plot_same_run_ladder.py": {
+      "SHA256": "8bce4d3825f6864d0c7d3aa303714bd0b808edd43d56023263c703d8b45eef1c",
+      "bytes": 8458
+    },
+    "analysis/same_run_timing.py": {
+      "SHA256": "8bdc6781f3b3de5950badc4d7235e24cf19d1fe27084365442348032491c02ab",
+      "bytes": 4445
+    },
+    "configs/mdlm_owt_accuracy_budget_pilot.yaml": {
+      "SHA256": "57677ecc9c2aa3331bcd9040a4ca2c1be91d5639032e82468bf1eed3886ca3cc",
+      "bytes": 2343
+    },
+    "configs/mdlm_owt_camera_ready_low_budget.yaml": {
+      "SHA256": "43dd7cd0eed5a6382faf7a366ce1a2d7bc45a2998250205d025c506f9a0e0b6a",
+      "bytes": 868
+    },
+    "configs/mdlm_owt_exploration_v2.yaml": {
+      "SHA256": "f1f07dabccd8dcd54b736d030987a1ea6f32be106e7d5853d517544fe394d673",
+      "bytes": 765
+    },
+    "configs/mdlm_owt_gradual_budget.yaml": {
+      "SHA256": "2154fb7c8dd43fa0b9b6646c4ff29ed326ef571a1cebd5e4a545bef9b170974b",
+      "bytes": 4356
+    },
+    "configs/mdlm_owt_same_run_ladder.yaml": {
+      "SHA256": "541ddbbab6f40f6bcb640b75268d2a215d85c74b11bd5d72aa073ea0cfa7e7f8",
+      "bytes": 1396
+    },
+    "configs/mdlm_owt_same_run_logit.yaml": {
+      "SHA256": "3c77114394845274e78ede6c1942a58878bb2bec99a7c64f454e6b3f3bb28367",
+      "bytes": 418
+    },
+    "configs/mdlm_owt_strong_tilt.yaml": {
+      "SHA256": "426a1ba420daeb942622e106edf0c23ffa996a9046fd38b1b5271f9dead750b4",
+      "bytes": 1861
+    },
+    "configs/mdlm_owt_unconditional_common.yaml": {
+      "SHA256": "9d21c6191c6a56981c45b4594074b8960ae818f73765471bac66a30ed2f13b10",
+      "bytes": 3598
+    },
+    "configs/mdlm_owt_unconditional_direct.yaml": {
+      "SHA256": "3139b35dfad0fc371b774841de50bf07a10cd7037f309efc4422b8a077c9623b",
+      "bytes": 220
+    },
+    "configs/mdlm_owt_unconditional_direct_32.yaml": {
+      "SHA256": "00dd41f6402b8edbd8f3021daca7a75d1d7032e3b4bbd0dd7b5eb35076af41e3",
+      "bytes": 402
+    },
+    "configs/mdlm_owt_unconditional_estimation_100tok.yaml": {
+      "SHA256": "4cf8a8c6a7fec2c69ac2080ddd41e9cfda0a533c4554777c2a511c95c42b9236",
+      "bytes": 1002
+    },
+    "configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml": {
+      "SHA256": "6d832348c25748abd54bbb42404639a08ba912e66fd725b285da015eb7cc5197",
+      "bytes": 528
+    },
+    "configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh_matched_fk.yaml": {
+      "SHA256": "9a00cdcd1bef29874255b25b34cedaaaf7cfb85e513b1f59baec4e92e19d1fe1",
+      "bytes": 594
+    },
+    "configs/mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml": {
+      "SHA256": "b1ddd1fe1c9e8cfe4f8eddb16f4719b635286c70cfe176d23875fa534f1e8483",
+      "bytes": 658
+    },
+    "configs/mdlm_owt_unconditional_estimation_template.yaml": {
+      "SHA256": "5e16128b29c82428ed745b0c5e6f0b8e18f8227ac3c6e5784639358b04fe5725",
+      "bytes": 674
+    },
+    "configs/mdlm_owt_unconditional_final_analysis.yaml": {
+      "SHA256": "d8adcd1851b40610cf85bd3b3d110d111c45876fe9274aae2c9c8cf6163256d8",
+      "bytes": 813
+    },
+    "configs/mdlm_owt_unconditional_final_confirmatory.yaml": {
+      "SHA256": "13cf9188bf3f4897a69e3cb4ce913c0b643ceab021a49e69c346b9bde2427af9",
+      "bytes": 1204
+    },
+    "configs/mdlm_owt_unconditional_lambda_calibration.yaml": {
+      "SHA256": "cae4dd879b9e611b614606085e47124fdf8c4e65a18e9fbf3809714161feb78f",
+      "bytes": 570
+    },
+    "configs/mdlm_owt_unconditional_lambda_progressive.yaml": {
+      "SHA256": "840c8cdc75366e5fd86da0fa1475fa248fd9959897c4b3e7e2214724931b3ee5",
+      "bytes": 594
+    },
+    "configs/mdlm_owt_unconditional_serious_comparison.yaml": {
+      "SHA256": "2eb80b14bd695962afb883f0d98d48b4ff081a95e814d1145672308f618501e3",
+      "bytes": 1358
+    },
+    "configs/mdlm_owt_unconditional_smc.yaml": {
+      "SHA256": "d020c0bdfb734a4e87a4f67f41a9032504892ad739c5bd7204f2690c6556f325",
+      "bytes": 408
+    },
+    "configs/mdlm_owt_unconditional_smoke.yaml": {
+      "SHA256": "05db3a0acb072f28f0f2ab6e02977efa29b4b2b36052823ac72abc0889345536",
+      "bytes": 54
+    },
+    "configs/mdlm_owt_unconditional_smoke_scientific.yaml": {
+      "SHA256": "9f389d20aa539fbdfb447aa491b2bec95819ad2927202ebef963dcb2496c3506",
+      "bytes": 540
+    },
+    "configs/mdlm_owt_unconditional_smoke_technical.yaml": {
+      "SHA256": "33946afe3805f4038f9fca9d06ebf9dd1b37fd547c68f4acfac9107e6340d236",
+      "bytes": 537
+    },
+    "configs/mdlm_owt_unconditional_submission_long.yaml": {
+      "SHA256": "d73d5c6189d9721a5522068ec7e1c3a442a4f03cd2d647e480a1aa7bb32a24f7",
+      "bytes": 1302
+    },
+    "configs/mdlm_owt_unconditional_submission_matched_runtime.yaml": {
+      "SHA256": "d7d9971f5dac417f1a10a536960f36db876d1ccba220d150d59781c5863cbeab",
+      "bytes": 1332
+    },
+    "configs/mdlm_owt_unconditional_submission_probability.yaml": {
+      "SHA256": "88894a81934d00d09115c5726f9d3bf8b3c22767ec37e0ac111a34213482a529",
+      "bytes": 1203
+    },
+    "configs/mdlm_owt_unconditional_three_smc_gpu_validation.yaml": {
+      "SHA256": "38c0006e90734cb07e78271cb472a06156290e348bbc3c682d9499e49e7e6ea2",
+      "bytes": 1192
+    },
+    "configs/mdlm_owt_wall_clock_followup.yaml": {
+      "SHA256": "d1d5e1dcc7e593348e64361958d276124f5933757deabbfa914b9e7190463eb2",
+      "bytes": 329
+    },
+    "docs/SAME_RUN_LOGIT.md": {
+      "SHA256": "e81d6704ad696d614bb61738143feb790106286d595214375f21a46fcaac27c7",
+      "bytes": 6465
+    },
+    "pytest_snapshot.ini": {
+      "SHA256": "d0354bf5ef9f54b46faed212b8a5d3305c274ea6b9ec1b1bf04eed35f5d4f9ef",
+      "bytes": 306
+    },
+    "scripts/avon_job_common.sh": {
+      "SHA256": "31e1ab95f32bd7967c0d3c8c68b6e8e5b50ba0fc17fa74c850cebbdbc5b8bcc7",
+      "bytes": 3078
+    },
+    "scripts/slurm_avon_same_run_phi.sh": {
+      "SHA256": "cf09c32e23650d63bfaf59d4f87d93eb2730b7213a4790d97ad01de236269fc0",
+      "bytes": 2925
+    },
+    "src/diffusion_toxicity_smc_experiment/__init__.py": {
+      "SHA256": "01beb5e08ebab3364eadb4cbad8a928dd80d35cc8bf5f7682b340d2521afe787",
+      "bytes": 74
+    },
+    "src/diffusion_toxicity_smc_experiment/accuracy_budget.py": {
+      "SHA256": "cbcbbfb7e48225effa0ba6bff78f17050865f185b04cf6499d828c0ebd86c51b",
+      "bytes": 26975
+    },
+    "src/diffusion_toxicity_smc_experiment/ancestral.py": {
+      "SHA256": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+      "bytes": 19526
+    },
+    "src/diffusion_toxicity_smc_experiment/calibration_report.py": {
+      "SHA256": "bba2df16f63731a69d379c17822e1ecb1f535ba06e249cf0c06b9738be4f7925",
+      "bytes": 8038
+    },
+    "src/diffusion_toxicity_smc_experiment/camera_ready_gpu.py": {
+      "SHA256": "30cf8c7fb6a3758cb857311fdc3b2cc97be1c3bbbbe894035aac045fafc3d34d",
+      "bytes": 12472
+    },
+    "src/diffusion_toxicity_smc_experiment/camera_ready_report.py": {
+      "SHA256": "e1b43bbf50b9ad396c622eb7c8ff30b345576df86fa15ff32d1b33a856a027e6",
+      "bytes": 13987
+    },
+    "src/diffusion_toxicity_smc_experiment/compare.py": {
+      "SHA256": "b208482ec06cb1ea74a547686fd1b8e1778373de9024f2337de8c610a651b872",
+      "bytes": 5670
+    },
+    "src/diffusion_toxicity_smc_experiment/component_export.py": {
+      "SHA256": "c8ceb8749cc2234890fbbde4a7067efcf1ec360c6b42d696c0fb62b3e5ca22d4",
+      "bytes": 5030
+    },
+    "src/diffusion_toxicity_smc_experiment/configuration.py": {
+      "SHA256": "a31d5d40e44607b320dd297314faf6271314aac6e602d802fa66d46a16aae623",
+      "bytes": 15779
+    },
+    "src/diffusion_toxicity_smc_experiment/evaluation.py": {
+      "SHA256": "206b656152b48bcb7802b9ba32be9bbd65f4419e5d743e355e98e5edc999a1dd",
+      "bytes": 5903
+    },
+    "src/diffusion_toxicity_smc_experiment/exploration_figures.py": {
+      "SHA256": "f40dc69396695e58768c4cf6fc6767e01b03313929b14fce89fde8fa6edea63f",
+      "bytes": 6868
+    },
+    "src/diffusion_toxicity_smc_experiment/exploratory.py": {
+      "SHA256": "290fa8e66947f958b9c2d1e1c2a1a4efc83be8d4384a54b3faa1de0f86306367",
+      "bytes": 16528
+    },
+    "src/diffusion_toxicity_smc_experiment/exploratory_kernel.py": {
+      "SHA256": "07c4db72e6a9ff66a8763dfd89e0690d8d3194fd092bc6555ce15811a5ff664a",
+      "bytes": 10931
+    },
+    "src/diffusion_toxicity_smc_experiment/exploratory_population.py": {
+      "SHA256": "2f50aae881988063dd84159b9d1ea805c68b69723ee5abe24ec9f0e7009c3535",
+      "bytes": 4905
+    },
+    "src/diffusion_toxicity_smc_experiment/final_analysis.py": {
+      "SHA256": "87e5ddea16657513bddecc0d8e37081a0e10d881f0a9a493cc80cfa8924c05c0",
+      "bytes": 29754
+    },
+    "src/diffusion_toxicity_smc_experiment/generate_direct.py": {
+      "SHA256": "4e8db1c130a61208148cfbee802562ede74e858001a2cba2e706369ebc4ffa20",
+      "bytes": 15809
+    },
+    "src/diffusion_toxicity_smc_experiment/low_budget.py": {
+      "SHA256": "bc8c4899978c84a064a6f1a34464e99b315c1dcd61fdcde1e06a444d7d7f2303",
+      "bytes": 7524
+    },
+    "src/diffusion_toxicity_smc_experiment/population_checkpoints.py": {
+      "SHA256": "f482cbf431e05d75f2f3fe752429f810ab712e9b77736e91dcfaaa9b99d4eaa8",
+      "bytes": 4374
+    },
+    "src/diffusion_toxicity_smc_experiment/potentials.py": {
+      "SHA256": "f9178eb5831a8e57ea95299d8ca7bc9e86e61abce77d2efbbb1e8337d63ac80a",
+      "bytes": 2961
+    },
+    "src/diffusion_toxicity_smc_experiment/prefetch_models.py": {
+      "SHA256": "fe249dc315c2def4655fd30ee4448e106aa688e988677664e12a503034e132d5",
+      "bytes": 4749
+    },
+    "src/diffusion_toxicity_smc_experiment/run_smc.py": {
+      "SHA256": "767287e623126c883d47781aa6d2b0e28973a0dc27e336dcbe1a004fd3bcdb8c",
+      "bytes": 32344
+    },
+    "src/diffusion_toxicity_smc_experiment/runtime.py": {
+      "SHA256": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+      "bytes": 4270
+    },
+    "src/diffusion_toxicity_smc_experiment/same_run_reuse.py": {
+      "SHA256": "6526b18b4c32f4589eacf75be16c484f34016a7edba646a517e5e693f44b6dbd",
+      "bytes": 20626
+    },
+    "src/diffusion_toxicity_smc_experiment/score_direct.py": {
+      "SHA256": "d42740b96b1da527c3911e0ac808405e232caede65e1cca5a0803249fed2c639",
+      "bytes": 10254
+    },
+    "src/diffusion_toxicity_smc_experiment/serious_comparison.py": {
+      "SHA256": "5180a9b3e9d89bf56699e36f63dd6f36044250b766c455e82015a591826e4c26",
+      "bytes": 40964
+    },
+    "src/diffusion_toxicity_smc_experiment/smc.py": {
+      "SHA256": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+      "bytes": 49522
+    },
+    "src/diffusion_toxicity_smc_experiment/storage.py": {
+      "SHA256": "2caf0fa015261199628a47b8804f51c2cac3eb7f1dea22c673024a4cfaa811fd",
+      "bytes": 4967
+    },
+    "src/diffusion_toxicity_smc_experiment/submission_probability.py": {
+      "SHA256": "7608e7b03d28790a0e55feae4a000dc04b6ad766f66d394ffa6bc8b09cbf0a48",
+      "bytes": 37097
+    },
+    "src/diffusion_toxicity_smc_experiment/wall_clock_followup.py": {
+      "SHA256": "5f7ae710fe1d8588dcaaa40cfba2a2f917037c5802122bff7d748b356dc6beba",
+      "bytes": 9066
+    },
+    "tests/test_accuracy_budget.py": {
+      "SHA256": "e7a21e18bba53c7c365eb713d9ec7b88642ce9331caddc7fc05accac1feaa0e0",
+      "bytes": 5819
+    },
+    "tests/test_avon_first_experiment_shell.py": {
+      "SHA256": "a5251b61e9d5f5b5d16f40b66f3c628b94f31f6f60332d88bc700f5cefa85808",
+      "bytes": 9787
+    },
+    "tests/test_exploratory.py": {
+      "SHA256": "b445c15c5c9b786647b4853128f6d8fc9dd4cbff5a0882501be9e524225c2943",
+      "bytes": 11321
+    },
+    "tests/test_final_analysis.py": {
+      "SHA256": "69c5f0c6c32e332ee06f7eb6b7f2ba261bf5e37129d7fa7b82dfc680f71f69e9",
+      "bytes": 2256
+    },
+    "tests/test_levels_assumed_clock.py": {
+      "SHA256": "701b5f04d9dd852fc5af36b8e734461071dd015983df14060cd8d47584ccc5ec",
+      "bytes": 2129
+    },
+    "tests/test_low_budget.py": {
+      "SHA256": "5df9adac9f0853b18a1e192060e36268b0e2865ffc045783a54aff8467edaace",
+      "bytes": 10930
+    },
+    "tests/test_mdlm_rare_event_benchmark.py": {
+      "SHA256": "51bf921af345c5f87621aa5aa3e8136c47611f06ddf664257aa7a0306a6c2461",
+      "bytes": 83942
+    },
+    "tests/test_population_checkpoints.py": {
+      "SHA256": "43fba4f0531b491ac05e13a0353c62f85e2bfea417dcee742c88b06fbade8e66",
+      "bytes": 8042
+    },
+    "tests/test_potentials.py": {
+      "SHA256": "22f9c6e28ea85321c71dd1ef70aed39f51cebcc37c24f9c840b6e9944a4fa3b4",
+      "bytes": 10663
+    },
+    "tests/test_same_run_reuse.py": {
+      "SHA256": "95cb5b0a961b32c6ce80ae4fb61030ca27d68fe798422c618dfcfb8aa5406616",
+      "bytes": 3836
+    },
+    "tests/test_same_run_timing.py": {
+      "SHA256": "8e4d0b702f322dbd18b5bf6ddc43b08d2217e59cfdf3405e764cc02356dc2f62",
+      "bytes": 1595
+    },
+    "tests/test_saved_levels.py": {
+      "SHA256": "6f234fe6c7ef0dd3f6eb979b1baae2395761edf0b08de53ac0c8fbdd459c0f8d",
+      "bytes": 3329
+    },
+    "tests/test_wall_clock_followup.py": {
+      "SHA256": "92c6a80eab60d776adffe3b4529402ed05ee53a544ab1308f3692e7852a4d9ac",
+      "bytes": 3798
+    }
+  }
+}

@@ -1,0 +1,20 @@
+schema_version: 1
+study_name: camera_ready_exploration_v2
+base_config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+output_subdirectory: camera_ready_exploration_v2
+thresholds: [0.9, 0.99]
+independent_runs: 8
+base_seed: 1400000000
+lambda_final: 3.0
+comparison: matched_transitions
+reference:
+  samples: 200000
+  discoveries: [1516, 444]
+  decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+  evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+schedules:
+  uniform_6: [0.50, 1.0, 1.5, 2.0, 2.5, 3.0]
+configurations:
+  - {id: A, N: 64, schedule: uniform_6, moves_per_level: 4}
+  - {id: B, N: 64, schedule: uniform_6, moves_per_level: 8}
+  - {id: C, N: 128, schedule: uniform_6, moves_per_level: 4}

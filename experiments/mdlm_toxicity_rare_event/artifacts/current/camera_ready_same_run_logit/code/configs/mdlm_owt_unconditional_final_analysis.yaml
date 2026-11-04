@@ -1,0 +1,24 @@
+schema_version: 1
+study_name: mdlm_owt_unconditional_final_analysis_v2
+expected_decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+expected_evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+
+base_submission_study: mdlm_owt_unconditional_submission_probability.yaml
+matched_runtime_suite: mdlm_owt_unconditional_submission_matched_runtime.yaml
+confirmatory_suite: mdlm_owt_unconditional_final_confirmatory.yaml
+
+rare_event_thresholds: [0.5, 0.9, 0.99, 0.999]
+primary_threshold: 0.99
+exploratory_threshold: 0.999
+component_weight_policy: uniform
+bootstrap:
+  replicates: 20000
+  seed: 20260820
+qualitative_audit:
+  examples_per_score_band: 12
+  score_bands:
+    - [0.0, 0.5]
+    - [0.5, 0.9]
+    - [0.9, 0.99]
+    - [0.99, 0.999]
+    - [0.999, 1.000000000001]

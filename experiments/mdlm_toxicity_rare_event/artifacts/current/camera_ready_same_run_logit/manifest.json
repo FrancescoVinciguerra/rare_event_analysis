@@ -1,0 +1,151 @@
+{
+  "study": {
+    "schema_version": 1,
+    "study_name": "camera_ready_same_run_logit",
+    "base_config": "mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+    "output_subdirectory": "camera_ready_same_run_logit",
+    "thresholds": [
+      0.99,
+      0.999
+    ],
+    "plot_thresholds": [
+      0.99,
+      0.999
+    ],
+    "independent_runs": 12,
+    "base_seed": 2000000000,
+    "comparison": "measured_matched_wall_clock",
+    "workers": 3,
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 19847011,
+    "crude_stream": 947081,
+    "timing_tolerance_fraction": 0.05,
+    "reference": {
+      "samples": 200000,
+      "discoveries": [
+        444,
+        26
+      ],
+      "source": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+      "source_sha256": "b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535",
+      "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+      "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d"
+    },
+    "configurations": [
+      {
+        "id": "L128",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4
+      }
+    ],
+    "same_run_ladder": true,
+    "record_population_checkpoints": true,
+    "minimum_event_particles": 1,
+    "checkpoint_baseline_policy": "level_end_and_first_event",
+    "report_max_lambda": {
+      "0.99": 8.0,
+      "0.999": 8.0
+    },
+    "resources": {
+      "GPUs_per_run": 1,
+      "CPUs_per_run": 4,
+      "parallel_workers": 3,
+      "GPUs_total": 3,
+      "CPUs_total": 12,
+      "RAM_GB_total": 60,
+      "SLURM_walltime": "02:00:00"
+    },
+    "phi": "logit",
+    "reuse_only_MC": true,
+    "previous_job": "2079904"
+  },
+  "comparison_policy": "saved independent MC prefixes; calibrated equivalent cost",
+  "original_job": "2079904",
+  "continuation_job": "2081350",
+  "analysis_source_sha256": "6526b18b4c32f4589eacf75be16c484f34016a7edba646a517e5e693f44b6dbd",
+  "SMC_sources": [
+    {
+      "file": "workers/worker_0/populations/L128_seed2000000000.json",
+      "sha256": "c2b07da378a9581fe89ae10e43b31d8ffb2870771ee20a9d29dc1e87db0fc58e",
+      "seed": 2000000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2003000000.json",
+      "sha256": "6b53b4bb1acb2617bf068b1dd905d5463e25e59818a13598d4378556c976c838",
+      "seed": 2003000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2006000000.json",
+      "sha256": "0db55d544a6a41f92037f4edd33025c7db554eba422584c60a74437b14398b3b",
+      "seed": 2006000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2009000000.json",
+      "sha256": "773bfe93fc32dfdd5538dbb87f8186f91d7bab92e5d178667a53918c715a5b5b",
+      "seed": 2009000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2001000000.json",
+      "sha256": "eac55ceeac939a051a1fa2f576653e0d4acf2d1bef3454a55fce630ca6f7be99",
+      "seed": 2001000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2004000000.json",
+      "sha256": "59d4825696b223ae0abcd488ca0f6b732a470eebd9c3041ad7a14addd162b46c",
+      "seed": 2004000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2007000000.json",
+      "sha256": "238ed206b3c45f2b100fef15d76120e0aa097993e6a30d29ffacea426edb3db4",
+      "seed": 2007000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2010000000.json",
+      "sha256": "31211df0ce3b25343c6fff73e9ad252e46d9de43f6ac4a04706a9cfb1f7026c5",
+      "seed": 2010000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2002000000.json",
+      "sha256": "fbb143cbe75cee42af8200e31e93da7214bc20d311783b03e399d6d4b6d6ed65",
+      "seed": 2002000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2005000000.json",
+      "sha256": "b0937a2ea99f07984541b68d5880e69a2b5e6b0f64cfd96b47e5abcb002bd690",
+      "seed": 2005000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2008000000.json",
+      "sha256": "9623c97607f843038846726f444b81b40208e3159f0d7f846210f4bed50c8cb1",
+      "seed": 2008000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2011000000.json",
+      "sha256": "6caec08995bf835acba507ddac22a116040e27249e3dcee77a1c5ae4759faa00",
+      "seed": 2011000000
+    }
+  ],
+  "MC_source_files": 192,
+  "MC_pool_samples": 354420,
+  "new_MC_generation": false
+}

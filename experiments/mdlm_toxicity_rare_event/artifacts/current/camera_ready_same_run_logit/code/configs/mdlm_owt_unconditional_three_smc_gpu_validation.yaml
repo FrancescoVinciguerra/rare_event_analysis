@@ -1,0 +1,34 @@
+schema_version: 1
+suite_name: mdlm_owt_unconditional_three_smc_gpu_validation_v1
+
+# This suite validates all production kernels with the real pinned MDLM and
+# toxicity classifier. It writes to distinct SMC IDs and is not used by the
+# final comparison report.
+direct:
+  generation_config: mdlm_owt_unconditional_direct_32.yaml
+  evaluation_config: mdlm_owt_unconditional_estimation_100tok.yaml
+  target_samples: 200000
+  reference_block_size: 500
+
+smc:
+  particle_budgets: [16, 64]
+  independent_runs: 2
+  base_seed: 731000
+  methods:
+    - key: fk_bootstrap
+      label: FK Steering validation
+      config: mdlm_owt_unconditional_estimation_100tok.yaml
+      seed_offset: 0
+    - key: trajectory_resample_move
+      label: Trajectory MH validation
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+      seed_offset: 100000000
+    - key: trajectory_waste_free
+      label: Waste-Free SMC validation
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml
+      seed_offset: 200000000
+
+report:
+  confidence_level: 0.95
+  primary_runtime: sum_of_four_component_runtime_seconds
+  primary_compute: sum_of_four_component_decoder_particle_steps

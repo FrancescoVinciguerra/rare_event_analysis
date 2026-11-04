@@ -1,0 +1,11 @@
+source_study: mdlm_owt_exploration_v2.yaml
+source_subdirectory: camera_ready_exploration_v2
+output_subdirectory: camera_ready_exploration_v2_wall_clock
+workers: 3
+source_node: gpu007
+calibration_repetitions: 3
+calibration_paths: 128
+warmup_paths: 16
+warmup_base_seed: 9847011
+crude_stream: 925082
+timing_tolerance_fraction: 0.05

@@ -1,0 +1,26 @@
+{
+  "job_id": "2081350",
+  "scientific_status": "COMPLETE_VALIDATED",
+  "completed_runs": 12,
+  "expected_runs": 12,
+  "scheduler_status": "FAILED",
+  "scheduler_exit_code": "1:0",
+  "GPU_worker_status": [
+    "COMPLETED",
+    "COMPLETED",
+    "COMPLETED"
+  ],
+  "GPU_worker_exit_codes": [
+    "0:0",
+    "0:0",
+    "0:0"
+  ],
+  "failure_stage": "optional remote plot rendering",
+  "error": "ModuleNotFoundError: No module named 'matplotlib'",
+  "plots_rendered_locally_from_saved_data": true,
+  "new_simulations_run": false,
+  "validated_checkpoint_event_estimator_pairs": 1560,
+  "verified_MC_source_files": 192,
+  "new_MC_samples_generated": 0,
+  "verified_utc": "2026-11-04T19:34:02.609088+00:00"
+}

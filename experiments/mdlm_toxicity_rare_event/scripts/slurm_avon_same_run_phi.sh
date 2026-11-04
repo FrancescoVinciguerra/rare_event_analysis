@@ -21,7 +21,11 @@ finalize() {
       --pool-root "$OUTPUT_ROOT/camera_ready_gradual_budget" || analysis_result=$?
     if test "$analysis_result" -eq 0; then
       python "$EXPERIMENT_DIR/analysis/same_run_timing.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
-      python "$EXPERIMENT_DIR/analysis/plot_same_run_ladder.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
+      if python -c "import importlib.util; raise SystemExit(importlib.util.find_spec('matplotlib') is None)"; then
+        python "$EXPERIMENT_DIR/analysis/plot_same_run_ladder.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
+      else
+        echo 'Matplotlib unavailable in this HPC environment: CSVs/report saved; render plots locally after download.'
+      fi
     fi
     tar -czf "$OUTPUT_ROOT/${name}_results.tar.gz" -C "$OUTPUT_ROOT" "$name" || analysis_result=$?
     echo "Report: $OUTPUT_ROOT/$name/REPORT.html"

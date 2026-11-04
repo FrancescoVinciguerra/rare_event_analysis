@@ -108,3 +108,24 @@ anche il percorso effettivo del package importato. I 18 controlli del job sono
 passati localmente con le stesse variabili SLURM simulate. La copia del codice
 del tentativo fallito viene conservata prima della correzione. Nessun risultato
 precedente o campione scientifico e' cancellato.
+
+## Risultato dell'esecuzione e recupero completo
+
+Il job 2081350 ha completato tutte le 12 ladder: i tre worker GPU hanno
+terminato con exit code 0. La fase scientifica e i CSV sono completi.
+Lo stato batch FAILED (exit 1) e' dovuto soltanto a Matplotlib assente durante
+la generazione delle immagini. Dopo il download, le due figure sono state
+prodotte localmente dagli stessi CSV, senza ripetere simulazioni. Lo script
+SLURM corrente rinvia il rendering al PC quando Matplotlib non e' disponibile,
+senza trasformare questa dipendenza grafica opzionale in un errore dei sampler.
+Lo snapshot `code/` conserva il sorgente effettivamente usato nel job.
+
+La verifica completa e' riproducibile senza caricare modelli:
+
+```bash
+python experiments/mdlm_toxicity_rare_event/analysis/verify_same_run_ladder_results.py --results experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit --study experiments/mdlm_toxicity_rare_event/configs/mdlm_owt_same_run_logit.yaml --mc-pool experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_gradual_budget
+```
+
+Sono stati verificati 1560 checkpoint/evento, i normalizzatori, i pesi, i
+conteggi delle transizioni e tutti i prefissi MC dai 192 file sorgente congelati.
+Nessun nuovo campione MC e nessuna nuova run SMC per la pubblicazione.

@@ -1,26 +1,28 @@
 {
   "schema_version": 1,
-  "published_snapshot_utc": "2026-11-04T17:15:20.256849+00:00",
+  "published_snapshot_utc": "2026-11-04T19:35:02.050664+00:00",
   "repository": "https://github.com/FrancescoVinciguerra/rare_event_analysis",
   "scope": "Available scientific experiment code, notebooks, raw runs, plots, and historical results; no simulations rerun for publication",
-  "files": 2546,
-  "bytes": 304869495,
+  "files": 2650,
+  "bytes": 320703723,
   "groups": {
     "experiments/RESULTS_INDEX.md": 1,
     "experiments/gaussian_rollback_gpu_previous": 54,
     "experiments/gaussian_rollback_resampling": 22,
     "experiments/gaussian_rollback_smc": 27,
-    "experiments/mdlm_toxicity_rare_event": 2375,
+    "experiments/mdlm_toxicity_rare_event": 2479,
     "output/github_reviewer_artifact": 63,
     "results/tail_probability_validation": 4
   },
-  "ongoing_experiment": {
+  "latest_experiment": {
     "job_id": "2081350",
     "study": "camera_ready_same_run_logit",
-    "completion": "See separately recorded job status; launch metadata is not a completed result"
+    "scientific_status": "COMPLETE_VALIDATED",
+    "completed_runs": 12,
+    "completion_record": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/COMPLETION_STATUS.json"
   },
   "audit": {
-    "index_files_checked": 2596,
+    "index_files_checked": 2700,
     "archives_inspected": 16,
     "unpublished_commits_checked": 0,
     "notebooks": [
@@ -90,9 +92,9 @@
   "entries": [
     {
       "path": "experiments/RESULTS_INDEX.md",
-      "bytes": 6603,
-      "SHA256": "a3992c6ed88228d3e456b950776afedf47a5d90d76963353527349c366eea6e1",
-      "git_blob": "e5b2a567c24e90c0720e81cb943125231b319a2e"
+      "bytes": 7204,
+      "SHA256": "fe8248f15eaad825455a5ef9399b9d442a7d461672302e88030fe70c589f20f2",
+      "git_blob": "8e6509c21b586a06eeb7a3e5aa4998b774f0c549"
     },
     {
       "path": "experiments/gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb",
@@ -783,6 +785,12 @@
       "bytes": 4445,
       "SHA256": "8bdc6781f3b3de5950badc4d7235e24cf19d1fe27084365442348032491c02ab",
       "git_blob": "dcdcafb01dd6843eae93a1bda33bf5b2fb25b0a9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/analysis/verify_same_run_ladder_results.py",
+      "bytes": 5406,
+      "SHA256": "4ec82f405e99ea87a56bc564568ffd5f70deda62370a064b26e19e8c81e8e51a",
+      "git_blob": "6cd339a1d154dde38b48f031bee346b5cf335ccf"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/README.md",
@@ -14057,6 +14065,12 @@
       "git_blob": "b1e099f4d08d9ab3ec5c10e3b5418e219aa30b0e"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/COMPLETION_STATUS.json",
+      "bytes": 729,
+      "SHA256": "fe04a47613a98d672ccc36bc00cd53e969e9be59569d0532023040440ccdfda9",
+      "git_blob": "a0ad3f1ab6e97293c88662364c7b33f2ee0a911e"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/LAUNCH.json",
       "bytes": 1240,
       "SHA256": "70e8204bcc0b1e69e24fef61cd6dcc7a633275056c5e0de964e06fd4f3291d97",
@@ -14064,15 +14078,573 @@
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json",
-      "bytes": 713,
-      "SHA256": "09752b7ba8da890b976cd756f6d5dbe292353b2351b6cd17ba169603bd5e669c",
-      "git_blob": "4cc5d5a598805fba56b940f4c5bcb4af35ea6f2b"
+      "bytes": 828,
+      "SHA256": "04ab4082bf1dee4419561788e5b5698ac65d0b5896e8c985c9027cb363c3a606",
+      "git_blob": "7dd8894fc109ff397473de56664f725b3b3412fc"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/REPORT.html",
+      "bytes": 3946,
+      "SHA256": "501b27afebcc86ef58292e955401429ef3f233d80996a172b7f078fa345e85e9",
+      "git_blob": "753d37fdc1d4207da74944d15d0cab2115840d0c"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/STARTUP_VERIFICATION.json",
       "bytes": 2474,
       "SHA256": "04f2227f3d0cb6f9cc26f8254d6a5a2b0fa9e54bf3feb451ced33e1d45a8fd3a",
       "git_blob": "61644c9b9106bcd6d44bd00f6ea46408947d303b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/checkpoint_runs.csv",
+      "bytes": 681541,
+      "SHA256": "c4957a13e9aebeeb8d89d40e24efbf879d32718950a8ed42247f7eba85ceb903",
+      "git_blob": "34df93d575525a874c73637ed5fef9682aa8e8ed"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/analysis/plot_same_run_ladder.py",
+      "bytes": 8458,
+      "SHA256": "8bce4d3825f6864d0c7d3aa303714bd0b808edd43d56023263c703d8b45eef1c",
+      "git_blob": "6ed1b41de6b3456d9f6d921a91d9da926e48ca63"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/analysis/same_run_timing.py",
+      "bytes": 4445,
+      "SHA256": "8bdc6781f3b3de5950badc4d7235e24cf19d1fe27084365442348032491c02ab",
+      "git_blob": "dcdcafb01dd6843eae93a1bda33bf5b2fb25b0a9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_accuracy_budget_pilot.yaml",
+      "bytes": 2343,
+      "SHA256": "57677ecc9c2aa3331bcd9040a4ca2c1be91d5639032e82468bf1eed3886ca3cc",
+      "git_blob": "469187ddeb3688ef0303d42d2f48a10fce440f1e"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_camera_ready_low_budget.yaml",
+      "bytes": 868,
+      "SHA256": "43dd7cd0eed5a6382faf7a366ce1a2d7bc45a2998250205d025c506f9a0e0b6a",
+      "git_blob": "e25630df05631eedf9d5da28b393c2b196b9254c"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_exploration_v2.yaml",
+      "bytes": 765,
+      "SHA256": "f1f07dabccd8dcd54b736d030987a1ea6f32be106e7d5853d517544fe394d673",
+      "git_blob": "f9e58f821560ce9f8416b3ef24802d7806a4eb96"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_gradual_budget.yaml",
+      "bytes": 4356,
+      "SHA256": "2154fb7c8dd43fa0b9b6646c4ff29ed326ef571a1cebd5e4a545bef9b170974b",
+      "git_blob": "7c7841a151b7fef4c37255f4474bfa3bc391ad7f"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_same_run_ladder.yaml",
+      "bytes": 1396,
+      "SHA256": "541ddbbab6f40f6bcb640b75268d2a215d85c74b11bd5d72aa073ea0cfa7e7f8",
+      "git_blob": "23b219940ac2e43230b4e7f934766870e39c4f2d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_same_run_logit.yaml",
+      "bytes": 418,
+      "SHA256": "3c77114394845274e78ede6c1942a58878bb2bec99a7c64f454e6b3f3bb28367",
+      "git_blob": "69784643364daba16e9ada73a5b6501fc365a85c"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_strong_tilt.yaml",
+      "bytes": 1861,
+      "SHA256": "426a1ba420daeb942622e106edf0c23ffa996a9046fd38b1b5271f9dead750b4",
+      "git_blob": "35cb8cf52e0e1094e2a783adea0c0766ad50d7c9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_common.yaml",
+      "bytes": 3598,
+      "SHA256": "9d21c6191c6a56981c45b4594074b8960ae818f73765471bac66a30ed2f13b10",
+      "git_blob": "22336c8fc7c221cf15be0f74d435b8fce6277318"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_direct.yaml",
+      "bytes": 220,
+      "SHA256": "3139b35dfad0fc371b774841de50bf07a10cd7037f309efc4422b8a077c9623b",
+      "git_blob": "1cf5ac60c42109399bc71b2155e73c675d8d6a43"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_direct_32.yaml",
+      "bytes": 402,
+      "SHA256": "00dd41f6402b8edbd8f3021daca7a75d1d7032e3b4bbd0dd7b5eb35076af41e3",
+      "git_blob": "8c3ad8cd521d08f43db58303c27b74082c4a5856"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_estimation_100tok.yaml",
+      "bytes": 1002,
+      "SHA256": "4cf8a8c6a7fec2c69ac2080ddd41e9cfda0a533c4554777c2a511c95c42b9236",
+      "git_blob": "2bf1a6e9238b4a064b6b719683479f6f258b8c29"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+      "bytes": 528,
+      "SHA256": "6d832348c25748abd54bbb42404639a08ba912e66fd725b285da015eb7cc5197",
+      "git_blob": "4f2c16deafe33c763d79506c1f67e7e7045e2af3"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh_matched_fk.yaml",
+      "bytes": 594,
+      "SHA256": "9a00cdcd1bef29874255b25b34cedaaaf7cfb85e513b1f59baec4e92e19d1fe1",
+      "git_blob": "fe46b05b88b8c41fdf960f3c36f2b7b04ac596b7"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml",
+      "bytes": 658,
+      "SHA256": "b1ddd1fe1c9e8cfe4f8eddb16f4719b635286c70cfe176d23875fa534f1e8483",
+      "git_blob": "d2ce436fb69bafa6d314623bac57139526c4e979"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_estimation_template.yaml",
+      "bytes": 674,
+      "SHA256": "5e16128b29c82428ed745b0c5e6f0b8e18f8227ac3c6e5784639358b04fe5725",
+      "git_blob": "20903f84774e36a25aa9350e9dece0c03b7f1ed4"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_final_analysis.yaml",
+      "bytes": 813,
+      "SHA256": "d8adcd1851b40610cf85bd3b3d110d111c45876fe9274aae2c9c8cf6163256d8",
+      "git_blob": "5bbc842f7b04934ee17cdd7aeb494b03e9d88f15"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_final_confirmatory.yaml",
+      "bytes": 1204,
+      "SHA256": "13cf9188bf3f4897a69e3cb4ce913c0b643ceab021a49e69c346b9bde2427af9",
+      "git_blob": "383b583fdb20050bf8fcc5f4e2631937af052a62"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_lambda_calibration.yaml",
+      "bytes": 570,
+      "SHA256": "cae4dd879b9e611b614606085e47124fdf8c4e65a18e9fbf3809714161feb78f",
+      "git_blob": "ea23cd7d46a4f1d21e64eb440fe5a1b426ed7502"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_lambda_progressive.yaml",
+      "bytes": 594,
+      "SHA256": "840c8cdc75366e5fd86da0fa1475fa248fd9959897c4b3e7e2214724931b3ee5",
+      "git_blob": "8cfd59599cfd94da5a0e7dd52a0157d41f18d473"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_serious_comparison.yaml",
+      "bytes": 1358,
+      "SHA256": "2eb80b14bd695962afb883f0d98d48b4ff081a95e814d1145672308f618501e3",
+      "git_blob": "3f8955aa340722204055828963a49f8ab683591d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_smc.yaml",
+      "bytes": 408,
+      "SHA256": "d020c0bdfb734a4e87a4f67f41a9032504892ad739c5bd7204f2690c6556f325",
+      "git_blob": "5f0b322a1946401b7d90180036a99f05f73f3eed"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_smoke.yaml",
+      "bytes": 54,
+      "SHA256": "05db3a0acb072f28f0f2ab6e02977efa29b4b2b36052823ac72abc0889345536",
+      "git_blob": "bfe2cb24c22d3dd4d6c8e98e03d78f176d6e0d95"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_smoke_scientific.yaml",
+      "bytes": 540,
+      "SHA256": "9f389d20aa539fbdfb447aa491b2bec95819ad2927202ebef963dcb2496c3506",
+      "git_blob": "06ec85cf97c3f0158b88bfe78e997822b64dcc0d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_smoke_technical.yaml",
+      "bytes": 537,
+      "SHA256": "33946afe3805f4038f9fca9d06ebf9dd1b37fd547c68f4acfac9107e6340d236",
+      "git_blob": "db9daefed6fe30b14cebeb78e36bc5c51276bc72"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_submission_long.yaml",
+      "bytes": 1302,
+      "SHA256": "d73d5c6189d9721a5522068ec7e1c3a442a4f03cd2d647e480a1aa7bb32a24f7",
+      "git_blob": "7a23830553bf926e8812c15101b342317c82c946"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_submission_matched_runtime.yaml",
+      "bytes": 1332,
+      "SHA256": "d7d9971f5dac417f1a10a536960f36db876d1ccba220d150d59781c5863cbeab",
+      "git_blob": "7293668e15007178611a9b2db8a01bf914a0ea96"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_submission_probability.yaml",
+      "bytes": 1203,
+      "SHA256": "88894a81934d00d09115c5726f9d3bf8b3c22767ec37e0ac111a34213482a529",
+      "git_blob": "ae466062ec7e4c084fb1b853691792fadd867302"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_unconditional_three_smc_gpu_validation.yaml",
+      "bytes": 1192,
+      "SHA256": "38c0006e90734cb07e78271cb472a06156290e348bbc3c682d9499e49e7e6ea2",
+      "git_blob": "85415ad4e646a03e0515a5a0a717fe7d379670e6"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/configs/mdlm_owt_wall_clock_followup.yaml",
+      "bytes": 329,
+      "SHA256": "d1d5e1dcc7e593348e64361958d276124f5933757deabbfa914b9e7190463eb2",
+      "git_blob": "4ab2b6ea818d166ad5a1aaf8ffa9aed9f0cc7eec"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/docs/SAME_RUN_LOGIT.md",
+      "bytes": 6465,
+      "SHA256": "e81d6704ad696d614bb61738143feb790106286d595214375f21a46fcaac27c7",
+      "git_blob": "756246341538031c1fa29e99246ec732198cd12b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/pytest_snapshot.ini",
+      "bytes": 306,
+      "SHA256": "d0354bf5ef9f54b46faed212b8a5d3305c274ea6b9ec1b1bf04eed35f5d4f9ef",
+      "git_blob": "a06cbf3362176ef01510cdf88242acbfd6f51603"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/scripts/avon_job_common.sh",
+      "bytes": 3078,
+      "SHA256": "31e1ab95f32bd7967c0d3c8c68b6e8e5b50ba0fc17fa74c850cebbdbc5b8bcc7",
+      "git_blob": "39dc51c0a4c67a5f7cd117ad7d045ea1bc4eb84d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/scripts/slurm_avon_same_run_phi.sh",
+      "bytes": 2925,
+      "SHA256": "cf09c32e23650d63bfaf59d4f87d93eb2730b7213a4790d97ad01de236269fc0",
+      "git_blob": "6d7ec84359bbfddc4fdc499a46d5323e3ef626c1"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/source_bundle_manifest.json",
+      "bytes": 13252,
+      "SHA256": "dbf5d9ecd0827520e5eaac8150f15b8e1d3aa88e75f1791738ec0435149b2e44",
+      "git_blob": "08794ff208def654132019c846eba7bf1c0ec0ad"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/__init__.py",
+      "bytes": 74,
+      "SHA256": "01beb5e08ebab3364eadb4cbad8a928dd80d35cc8bf5f7682b340d2521afe787",
+      "git_blob": "b9526c73aec2045df80587929ca35caf224e5b5d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/accuracy_budget.py",
+      "bytes": 26975,
+      "SHA256": "cbcbbfb7e48225effa0ba6bff78f17050865f185b04cf6499d828c0ebd86c51b",
+      "git_blob": "6b178577d1b663a2246a030956339ad630b721d0"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/ancestral.py",
+      "bytes": 19526,
+      "SHA256": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+      "git_blob": "4ead23422849a3571447ef61d2bf296afda5b8de"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/calibration_report.py",
+      "bytes": 8038,
+      "SHA256": "bba2df16f63731a69d379c17822e1ecb1f535ba06e249cf0c06b9738be4f7925",
+      "git_blob": "6be179a6e5fda411daf0cbd438e642fbcb89d1dc"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/camera_ready_gpu.py",
+      "bytes": 12472,
+      "SHA256": "30cf8c7fb6a3758cb857311fdc3b2cc97be1c3bbbbe894035aac045fafc3d34d",
+      "git_blob": "ba0ef608ee4c10bc8fa8c8d9768cc9a63e13aebc"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/camera_ready_report.py",
+      "bytes": 13987,
+      "SHA256": "e1b43bbf50b9ad396c622eb7c8ff30b345576df86fa15ff32d1b33a856a027e6",
+      "git_blob": "7dce3be6af3081e1f3a2926bc0df906ce21a58a0"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/compare.py",
+      "bytes": 5670,
+      "SHA256": "b208482ec06cb1ea74a547686fd1b8e1778373de9024f2337de8c610a651b872",
+      "git_blob": "3a87458cd9e9e481c6e1b116b383ba5610506005"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/component_export.py",
+      "bytes": 5030,
+      "SHA256": "c8ceb8749cc2234890fbbde4a7067efcf1ec360c6b42d696c0fb62b3e5ca22d4",
+      "git_blob": "d84f865e283aba4bab386728cbdb04378bdb4284"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/configuration.py",
+      "bytes": 15779,
+      "SHA256": "a31d5d40e44607b320dd297314faf6271314aac6e602d802fa66d46a16aae623",
+      "git_blob": "d69f7d9e97120d5f3e9c313cff262b477f1ab7ce"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/evaluation.py",
+      "bytes": 5903,
+      "SHA256": "206b656152b48bcb7802b9ba32be9bbd65f4419e5d743e355e98e5edc999a1dd",
+      "git_blob": "c935659cf8b27c0fe46bfe7a5b5caf7c80c27211"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/exploration_figures.py",
+      "bytes": 6868,
+      "SHA256": "f40dc69396695e58768c4cf6fc6767e01b03313929b14fce89fde8fa6edea63f",
+      "git_blob": "40e9b572236c0bdb1539d689131c519783140de8"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/exploratory.py",
+      "bytes": 16528,
+      "SHA256": "290fa8e66947f958b9c2d1e1c2a1a4efc83be8d4384a54b3faa1de0f86306367",
+      "git_blob": "fbaa5c503a90c17f9333f94351d1631e7b293557"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/exploratory_kernel.py",
+      "bytes": 10931,
+      "SHA256": "07c4db72e6a9ff66a8763dfd89e0690d8d3194fd092bc6555ce15811a5ff664a",
+      "git_blob": "effe1b05af8579e06e427cdce86bf8b40bce4b73"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/exploratory_population.py",
+      "bytes": 4905,
+      "SHA256": "2f50aae881988063dd84159b9d1ea805c68b69723ee5abe24ec9f0e7009c3535",
+      "git_blob": "60943a75e503ce1ba16369fdaefc213ab4dd0fd0"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/final_analysis.py",
+      "bytes": 29754,
+      "SHA256": "87e5ddea16657513bddecc0d8e37081a0e10d881f0a9a493cc80cfa8924c05c0",
+      "git_blob": "3818959bc4d3f0f428168d909d874a959cab220a"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/generate_direct.py",
+      "bytes": 15809,
+      "SHA256": "4e8db1c130a61208148cfbee802562ede74e858001a2cba2e706369ebc4ffa20",
+      "git_blob": "e6294c44a7895a8fba28aa1ec6cba738d44528fd"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/low_budget.py",
+      "bytes": 7524,
+      "SHA256": "bc8c4899978c84a064a6f1a34464e99b315c1dcd61fdcde1e06a444d7d7f2303",
+      "git_blob": "016b428ae42fc55ef0392676e2451b79376da1a5"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/population_checkpoints.py",
+      "bytes": 4374,
+      "SHA256": "f482cbf431e05d75f2f3fe752429f810ab712e9b77736e91dcfaaa9b99d4eaa8",
+      "git_blob": "34106d4c96c3925d817d81116da350f065baeb87"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/potentials.py",
+      "bytes": 2961,
+      "SHA256": "f9178eb5831a8e57ea95299d8ca7bc9e86e61abce77d2efbbb1e8337d63ac80a",
+      "git_blob": "c1387e4ce5a2781c87eb20e7249af02e1eabbc79"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/prefetch_models.py",
+      "bytes": 4749,
+      "SHA256": "fe249dc315c2def4655fd30ee4448e106aa688e988677664e12a503034e132d5",
+      "git_blob": "2342f064e1f5e104b4d79428774d706f812ccb40"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/run_smc.py",
+      "bytes": 32344,
+      "SHA256": "767287e623126c883d47781aa6d2b0e28973a0dc27e336dcbe1a004fd3bcdb8c",
+      "git_blob": "5f6fad9f83937be6229176cbcc088eaa638175ee"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/runtime.py",
+      "bytes": 4270,
+      "SHA256": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+      "git_blob": "69f64e91c310e6e5af8efa8af969004badf8e540"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/same_run_reuse.py",
+      "bytes": 20626,
+      "SHA256": "6526b18b4c32f4589eacf75be16c484f34016a7edba646a517e5e693f44b6dbd",
+      "git_blob": "2cb8e1e3c1783a6a8f212a8628c08b484c9ecf91"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/score_direct.py",
+      "bytes": 10254,
+      "SHA256": "d42740b96b1da527c3911e0ac808405e232caede65e1cca5a0803249fed2c639",
+      "git_blob": "35b11afb11d2d15d12f60ee9e91831b0c5284138"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/serious_comparison.py",
+      "bytes": 40964,
+      "SHA256": "5180a9b3e9d89bf56699e36f63dd6f36044250b766c455e82015a591826e4c26",
+      "git_blob": "0468933a64f84ab2c248bb560fe67f9276d84f71"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/smc.py",
+      "bytes": 49522,
+      "SHA256": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+      "git_blob": "b3bf133681dc629e0c3ab0b29cb1f9f5a73e6624"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/storage.py",
+      "bytes": 4967,
+      "SHA256": "2caf0fa015261199628a47b8804f51c2cac3eb7f1dea22c673024a4cfaa811fd",
+      "git_blob": "001584fa8629b6c19c151b8f6cb1fbdfcad6c154"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/submission_probability.py",
+      "bytes": 37097,
+      "SHA256": "7608e7b03d28790a0e55feae4a000dc04b6ad766f66d394ffa6bc8b09cbf0a48",
+      "git_blob": "6ac14de2f0e6ea93846607d42e336b21b8062fb9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/src/diffusion_toxicity_smc_experiment/wall_clock_followup.py",
+      "bytes": 9066,
+      "SHA256": "5f7ae710fe1d8588dcaaa40cfba2a2f917037c5802122bff7d748b356dc6beba",
+      "git_blob": "31c7a5a0b91ac71f93bd61171631f6e85f6e6fe5"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_accuracy_budget.py",
+      "bytes": 5819,
+      "SHA256": "e7a21e18bba53c7c365eb713d9ec7b88642ce9331caddc7fc05accac1feaa0e0",
+      "git_blob": "321e905cda3b182b48a0eae640174919f99bcfde"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_avon_first_experiment_shell.py",
+      "bytes": 9787,
+      "SHA256": "a5251b61e9d5f5b5d16f40b66f3c628b94f31f6f60332d88bc700f5cefa85808",
+      "git_blob": "59ecbf9e08d587a07dccea9199e28ed681c42ae8"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_exploratory.py",
+      "bytes": 11321,
+      "SHA256": "b445c15c5c9b786647b4853128f6d8fc9dd4cbff5a0882501be9e524225c2943",
+      "git_blob": "857e1886060ad617095eeddb35a014ff43dd6803"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_final_analysis.py",
+      "bytes": 2256,
+      "SHA256": "69c5f0c6c32e332ee06f7eb6b7f2ba261bf5e37129d7fa7b82dfc680f71f69e9",
+      "git_blob": "2c8631734d85be62b53b80827fa0a570cacce371"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_levels_assumed_clock.py",
+      "bytes": 2129,
+      "SHA256": "701b5f04d9dd852fc5af36b8e734461071dd015983df14060cd8d47584ccc5ec",
+      "git_blob": "b92db7ded199e9e729af3133830d446212937325"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_low_budget.py",
+      "bytes": 10930,
+      "SHA256": "5df9adac9f0853b18a1e192060e36268b0e2865ffc045783a54aff8467edaace",
+      "git_blob": "0756ac1008c31c76375f4785518a381220fcfcab"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_mdlm_rare_event_benchmark.py",
+      "bytes": 83942,
+      "SHA256": "51bf921af345c5f87621aa5aa3e8136c47611f06ddf664257aa7a0306a6c2461",
+      "git_blob": "f97e23512898d1e305f908e635596b37b4a62d12"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_population_checkpoints.py",
+      "bytes": 8042,
+      "SHA256": "43fba4f0531b491ac05e13a0353c62f85e2bfea417dcee742c88b06fbade8e66",
+      "git_blob": "fb9b86de85fb6273c9e3c326bf25346aabdca2bf"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_potentials.py",
+      "bytes": 10663,
+      "SHA256": "22f9c6e28ea85321c71dd1ef70aed39f51cebcc37c24f9c840b6e9944a4fa3b4",
+      "git_blob": "edcbaadabab96e685a272ac8d183dbc59c5bdac2"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_same_run_reuse.py",
+      "bytes": 3836,
+      "SHA256": "95cb5b0a961b32c6ce80ae4fb61030ca27d68fe798422c618dfcfb8aa5406616",
+      "git_blob": "4c4b52ff13651b9585d4ef4c9882640b959b2d68"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_same_run_timing.py",
+      "bytes": 1595,
+      "SHA256": "8e4d0b702f322dbd18b5bf6ddc43b08d2217e59cfdf3405e764cc02356dc2f62",
+      "git_blob": "bb05d84e3d793ad374afe287fd0be8470b8b2dc3"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_saved_levels.py",
+      "bytes": 3329,
+      "SHA256": "6f234fe6c7ef0dd3f6eb979b1baae2395761edf0b08de53ac0c8fbdd459c0f8d",
+      "git_blob": "842a782d3db5e136fd6dfd19d89f485ead3402ec"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/tests/test_wall_clock_followup.py",
+      "bytes": 3798,
+      "SHA256": "92c6a80eab60d776adffe3b4529402ed05ee53a544ab1308f3692e7852a4d9ac",
+      "git_blob": "d78ea6efa102d67c7c95f19537a2979c5396d754"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/comparison_policy.json",
+      "bytes": 47923,
+      "SHA256": "f5c24547db0da898de1bef4fc6fda9c4e0605b3c7da1f9f497358457cd1cbdb5",
+      "git_blob": "8c52ebb8496ca3c916e20e402710d2e3053104f2"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/delivery_validation.json",
+      "bytes": 495,
+      "SHA256": "6f62a3832d6288c0aab919bcba02798017a6c05deb23d2a5734efa3d8e8375eb",
+      "git_blob": "7f7c3f31d79eff09b565745d884f5c1a5a8b976a"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/first_event_runs.csv",
+      "bytes": 11087,
+      "SHA256": "41676f62170fafda76058e4362cf5ec8fe777cdd288431ab1c22e33d97c72d98",
+      "git_blob": "7bda70a4d9d62e544483fac7aa8307940ace9041"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/manifest.json",
+      "bytes": 4707,
+      "SHA256": "8bf1e2f09c5ae959b73fbb3b3149d70f7a2fb3caeada05ef56c3cc3ef926541a",
+      "git_blob": "337fb9c9be6083470b39aeba8eb16dc0e86b6da4"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/recovery_provenance.json",
+      "bytes": 309,
+      "SHA256": "074436cfaf6d1bf08bb32f164924662ba477001efd2e14ff3f4c7c08ece4583e",
+      "git_blob": "939235f29c3c3b87e11d3a6e7abf4e10e7a9d87b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/report_status.json",
+      "bytes": 184,
+      "SHA256": "77daebedbc322210d53b8ae3a5702c504bd3cbbc107a54907000417ad3c289ba",
+      "git_blob": "8070688a4cdf745feba8d3e58e4d247082f2e73d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/runs.csv",
+      "bytes": 11104,
+      "SHA256": "7c557922502ab9a10bf07845023fcf600522e2e0c70698f5b016d99007bd2d02",
+      "git_blob": "aa765a9426372d022897539f784508e6be98afd2"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_log_error.png",
+      "bytes": 1141106,
+      "SHA256": "c96812e31f21d329497b94d199945ab1dcd45f56e0e28e55ada023f6e29544da",
+      "git_blob": "70ab0556813cadec4ce6e4f20e3a64f29ec3e88a"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_plot_audit.json",
+      "bytes": 192115,
+      "SHA256": "4ee38a45c8f22c79f685d58b86ae2cce9dab826ad4d5c3d91223fffff5da4278",
+      "git_blob": "4388bbe7e680c96abc25484b5a31e28a3265f58b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio.png",
+      "bytes": 1084425,
+      "SHA256": "0505356f654ffdbe5301def683699d1a772f0001dd2060000821f713767917af",
+      "git_blob": "c069680364b3dc2e97c29c86d8bacf6f3fc45723"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/saved_MC_blocks.json",
+      "bytes": 1613141,
+      "SHA256": "11f7b3f08b7a9c3a79f5185ed00922ce494c2625878783b0a34da81539a0b5be",
+      "git_blob": "1fbe2478b2d47963e662283f20277a4732ccbc1f"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/summary.csv",
+      "bytes": 7762,
+      "SHA256": "bbe4bf24aa91c939c95085bcf67ac72682d87265cdbac5ce71af9512802b6d78",
+      "git_blob": "2e412d5f38502b8eb21d4cc346fd61ac1e63bf0d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/timing_steps.csv",
+      "bytes": 78858,
+      "SHA256": "815e49b719bb042f460ee3718e11a7192ee4ae67e1c54095329ef1adfb6fb576",
+      "git_blob": "ff137cfd49b466b54f4adb41694fce7e98e675ab"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/calibration_1793789965293116547.json",
@@ -14091,6 +14663,24 @@
       "bytes": 1138060,
       "SHA256": "c2b07da378a9581fe89ae10e43b31d8ffb2870771ee20a9d29dc1e87db0fc58e",
       "git_blob": "54bf2368bad7ed117cf7d111a20b38d0a727f3de"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/populations/L128_seed2003000000.json",
+      "bytes": 1150694,
+      "SHA256": "6b53b4bb1acb2617bf068b1dd905d5463e25e59818a13598d4378556c976c838",
+      "git_blob": "494063dab75e77c5cf0500f0c2895421d010a115"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/populations/L128_seed2006000000.json",
+      "bytes": 1136390,
+      "SHA256": "0db55d544a6a41f92037f4edd33025c7db554eba422584c60a74437b14398b3b",
+      "git_blob": "3a3f9d2715819c3b307c9607780e2115385ca9c1"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/populations/L128_seed2009000000.json",
+      "bytes": 1150514,
+      "SHA256": "773bfe93fc32dfdd5538dbb87f8186f91d7bab92e5d178667a53918c715a5b5b",
+      "git_blob": "3d0ae4be3903073c49f4bd4df9d536525524f13b"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/warmup_2081350.json",
@@ -14117,6 +14707,24 @@
       "git_blob": "d6075fb8b9c60d18f95186acb463ad2948366d98"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/populations/L128_seed2004000000.json",
+      "bytes": 1144083,
+      "SHA256": "59d4825696b223ae0abcd488ca0f6b732a470eebd9c3041ad7a14addd162b46c",
+      "git_blob": "3aa4d9bdc91e7a7bbba13e431813d6442c18d80b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/populations/L128_seed2007000000.json",
+      "bytes": 1142330,
+      "SHA256": "238ed206b3c45f2b100fef15d76120e0aa097993e6a30d29ffacea426edb3db4",
+      "git_blob": "2893cceddfb2bb9a32234e0c03e9e1e1162f427c"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/populations/L128_seed2010000000.json",
+      "bytes": 1139814,
+      "SHA256": "31211df0ce3b25343c6fff73e9ad252e46d9de43f6ac4a04706a9cfb1f7026c5",
+      "git_blob": "77425ef0671beca25aad7e711fa8f7b9e2b5889c"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/warmup_2081350.json",
       "bytes": 716,
       "SHA256": "71161a4b167b2b3265f7857ca98025aa50f8f0dba9d80c08757b9418ef59765b",
@@ -14139,6 +14747,24 @@
       "bytes": 1139507,
       "SHA256": "fbb143cbe75cee42af8200e31e93da7214bc20d311783b03e399d6d4b6d6ed65",
       "git_blob": "26da21cebbb488ec039fa0b6930e9af8cfa28fd8"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/populations/L128_seed2005000000.json",
+      "bytes": 1144961,
+      "SHA256": "b0937a2ea99f07984541b68d5880e69a2b5e6b0f64cfd96b47e5abcb002bd690",
+      "git_blob": "e4be71432c715a28831a5283be808ad09446f5de"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/populations/L128_seed2008000000.json",
+      "bytes": 1139578,
+      "SHA256": "9623c97607f843038846726f444b81b40208e3159f0d7f846210f4bed50c8cb1",
+      "git_blob": "510b0c9afc3f159a1397ba7e76e634993b8d64d1"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/populations/L128_seed2011000000.json",
+      "bytes": 1143005,
+      "SHA256": "6caec08995bf835acba507ddac22a116040e27249e3dcee77a1c5ae4759faa00",
+      "git_blob": "fa437085a8c87638fc350dfd01a12d69fde40712"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/warmup_2081350.json",
@@ -14178,9 +14804,9 @@
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/same_run_logit_job_status.json",
-      "bytes": 1598,
-      "SHA256": "fac9333e829de1d9ee2c22fc770e5897defca46d1f1b743ef8a01d8b0d6b1164",
-      "git_blob": "07e5f5612b33e8460cc65841d6252db6e7865814"
+      "bytes": 2874,
+      "SHA256": "2c3672694be207603212829615fd33092681bb9f17df8162fd01cf9fb1bfadfd",
+      "git_blob": "1daeb83a143b242c342f445dfe8960cc7ff2c538"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/wall_clock_followup_job_status.json",
@@ -14418,9 +15044,9 @@
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/docs/SAME_RUN_LOGIT.md",
-      "bytes": 6465,
-      "SHA256": "e81d6704ad696d614bb61738143feb790106286d595214375f21a46fcaac27c7",
-      "git_blob": "756246341538031c1fa29e99246ec732198cd12b"
+      "bytes": 7776,
+      "SHA256": "557135654788d8a076e18e9ad533cd16ecdfe218ce9a5b2a6ae0d23d42fc64f3",
+      "git_blob": "fe415bcfed7681fcb7193ab36bdc103010ecf171"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/docs/SAME_RUN_MC_REUSE.md",
@@ -14532,9 +15158,9 @@
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/scripts/slurm_avon_same_run_phi.sh",
-      "bytes": 2925,
-      "SHA256": "cf09c32e23650d63bfaf59d4f87d93eb2730b7213a4790d97ad01de236269fc0",
-      "git_blob": "6d7ec84359bbfddc4fdc499a46d5323e3ef626c1"
+      "bytes": 3181,
+      "SHA256": "cecf299cd9c494f67c5fca0d22b6652ff53b283244d6b396872bbefa232cc612",
+      "git_blob": "36e194d274b64d971a2d1a353d320a901c93bbc7"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/scripts/slurm_avon_same_run_reuse.sh",

@@ -1,0 +1,34 @@
+schema_version: 1
+suite_name: mdlm_owt_unconditional_submission_matched_runtime_v1
+sampler_set_policy: configured_subset
+
+# Reuse the existing IID reference. No direct generations are produced by
+# this suite.
+direct:
+  generation_config: mdlm_owt_unconditional_direct_32.yaml
+  evaluation_config: mdlm_owt_unconditional_estimation_100tok.yaml
+  target_samples: 200000
+  reference_block_size: 500
+
+# The completed submission experiment measured median runtimes of 679.55 s
+# for FK N=512 and 1889.25 s for Trajectory MH N=512. Under the observed
+# approximately linear scaling, 512 * 679.55 / 1889.25 = 184.2 particles.
+# N=192 is the nearest microbatch-aligned budget (microbatch 16).
+smc:
+  particle_budgets: [192]
+  independent_runs: 32
+  base_seed: 900000000
+  methods:
+    - key: trajectory_resample_move
+      label: Trajectory MH (runtime matched)
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+      seed_offset: 0
+
+report:
+  comparison_target: fk_bootstrap_n512_from_submission_long_v1
+  calibration_runtime_seconds:
+    fk_bootstrap_n512: 679.5515592115407
+    trajectory_resample_move_n512: 1889.2486776109727
+  predicted_trajectory_runtime_seconds_n192: 708.4682541041148
+  primary_runtime: sum_of_four_component_runtime_seconds
+  primary_compute: sum_of_four_component_decoder_particle_steps

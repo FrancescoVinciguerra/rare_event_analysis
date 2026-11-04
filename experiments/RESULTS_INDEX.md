@@ -35,22 +35,26 @@ above and these estimated probabilities must not be conflated.
 | Study | Results |
 |---|---|
 | Completed same-run ladder, Phi=log(q), N=128, 12 seeds, lambda=0.5,...,8, 4 MH/level | [Report](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/REPORT.html), [all checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/checkpoint_runs.csv), [log-error plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/same_run_ladder_log_error.png), [ratio plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/same_run_ladder_ratio.png) |
-| Logit-Phi follow-up, same parameters | [Configuration](mdlm_toxicity_rare_event/configs/mdlm_owt_same_run_logit.yaml), [methods](mdlm_toxicity_rare_event/docs/SAME_RUN_LOGIT.md), [status](mdlm_toxicity_rare_event/artifacts/same_run_logit_job_status.json), [available artifacts](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/) |
+| Completed logit-Phi follow-up, same parameters and 12 seeds | [Report](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/REPORT.html), [all checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/checkpoint_runs.csv), [log-error plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_log_error.png), [ratio plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio.png), [validation](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/delivery_validation.json) |
 | Gradual low-budget / strong-tilt screening | [Report and run data](mdlm_toxicity_rare_event/artifacts/current/camera_ready_gradual_budget/) |
 | Accuracy-budget pilot | [Report and run data](mdlm_toxicity_rare_event/artifacts/current/camera_ready_accuracy_budget_pilot/) |
 | Earlier schedule / mutation exploration | [Transition comparison](mdlm_toxicity_rare_event/artifacts/current/camera_ready_exploration_v2/), [wall-clock follow-up](mdlm_toxicity_rare_event/artifacts/current/camera_ready_exploration_v2_wall_clock/) |
 | Earlier low-budget pilot | [Report and run data](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_budget_v1/) |
 | Historical Avon outputs | [Archive](mdlm_toxicity_rare_event/artifacts/archive/), [completeness notes](mdlm_toxicity_rare_event/artifacts/README.md) |
 
-**Logit job 2081350 was still running when this publication was prepared.**
-The [partial snapshot](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json)
-contains the first **3 completed ladders out of 12 planned**, with their raw
-65-checkpoint populations in `workers/worker_*/populations/`. All 390
-checkpoint/event estimator pairs were independently recomputed from saved
-weights, Phi, and normalizers; remaining differences were below 2e-15 relative.
-Launch metadata and code do not constitute completed experimental results.
-Available run files and the status JSON distinguish partial from completed
-studies; no unavailable results are inferred or regenerated for publication.
+**All 12 logit ladders are complete and validated.** The [completion record](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/COMPLETION_STATUS.json)
+distinguishes successful scientific runs from the scheduler's final status:
+all three GPU workers exited successfully; the batch job reported FAILED only
+because Matplotlib was absent during plotting. Both figures were subsequently
+rendered locally from the saved data. No simulation was repeated.
+
+All 1560 checkpoint/event estimator pairs were recomputed from saved weights,
+Phi, and normalizers, and all MC prefix estimates and source hashes were
+verified. Cross-platform float64 differences were below 4e-15 relative.
+The earlier [3-run partial snapshot](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json)
+is retained as historical provenance; it is superseded by the completion record.
+See also the [configuration](mdlm_toxicity_rare_event/configs/mdlm_owt_same_run_logit.yaml)
+and [methods](mdlm_toxicity_rare_event/docs/SAME_RUN_LOGIT.md).
 
 For the completed same-run ladder, MC reuses a frozen pool of independent
 native trajectories in fixed disjoint blocks across seeds, with nested prefixes

@@ -1,0 +1,26 @@
+extends: mdlm_owt_unconditional_common.yaml
+
+decoder:
+  denoising_steps: 1000
+
+direct:
+  target_samples: 2
+  base_seed: 9128
+  shard_size: 2
+  generation_microbatch_size: 1
+
+smc:
+  num_particles: 8
+  independent_runs: 1
+  tilted_lambdas: [5.0, 10.0]
+  tilted_component_weights_a: [0.5, 0.5]
+  component_weight_policy: uniform
+  optimize_component_weights: false
+  diagnostic_lambdas: [0.0]
+  base_seed: 27000
+  ess_threshold: 0.5
+  resampling_method: multinomial
+  reward_frequency: 20
+  beta_start_fraction: 0.0
+  final_resampling: false
+

@@ -16,5 +16,7 @@
   "max_relative_recomputation_difference": 1.8417944171319513e-15,
   "new_MC_samples_generated": 0,
   "new_SMC_runs_started_by_retrieval": 0,
-  "note": "Raw completed populations only. The remaining scheduled seeds continue on Avon; no full-study results are claimed."
+  "note": "Historical snapshot of the first three downloaded ladders. All 12 ladders have since been recovered and validated; see COMPLETION_STATUS.json.",
+  "snapshot_is_historical": true,
+  "current_status_file": "COMPLETION_STATUS.json"
 }

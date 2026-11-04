@@ -1,0 +1,33 @@
+schema_version: 1
+suite_name: mdlm_owt_unconditional_final_confirmatory_v1
+sampler_set_policy: configured_subset
+
+# Reuse the frozen 200k IID reference. This job produces SMC samples only.
+direct:
+  generation_config: mdlm_owt_unconditional_direct_32.yaml
+  evaluation_config: mdlm_owt_unconditional_estimation_100tok.yaml
+  target_samples: 200000
+  reference_block_size: 500
+
+# Confirmatory populations use seeds disjoint from every pilot, submission,
+# and runtime-matched run. Both budgets are retained so that the final report
+# contains an estimator-quality and a cost curve, not only one selected point.
+smc:
+  particle_budgets: [192, 512]
+  independent_runs: 32
+  base_seed: 1100000000
+  budget_seed_stride: 50000000
+  methods:
+    - key: fk_bootstrap
+      label: FK Steering
+      config: mdlm_owt_unconditional_estimation_100tok.yaml
+      seed_offset: 0
+    - key: trajectory_resample_move
+      label: Trajectory MH
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+      seed_offset: 100000000
+
+report:
+  role: independent_confirmatory_extension
+  primary_runtime: sum_of_four_component_runtime_seconds
+  primary_compute: sum_of_four_component_decoder_particle_steps
