@@ -1,0 +1,25 @@
+{
+  "ground_truth": 0.001,
+  "threshold_theoretical": 3.090232306167813,
+  "N_smc": 128,
+  "pilot_N": 64,
+  "R": 4,
+  "beta_schedule": "beta_k = k lambda / 4, k=0,...,4",
+  "terminal_tilts": [
+    0.5,
+    1.0,
+    1.5,
+    2.0
+  ],
+  "T": 16,
+  "depths": "uniform integers 1,...,16",
+  "ESS_trigger": "ESS/N < 0.5, only when k < R",
+  "reps_smc_and_path_MC": 1200,
+  "reps_direct_control": 600,
+  "pilot_reps_per_tilt": 200,
+  "warmup_repetitions": 50,
+  "root_seed": 20260929,
+  "gpu": "NVIDIA GeForce MX570 A",
+  "dtype": "torch.float32",
+  "timing": "perf_counter around full estimate, cuda.synchronize before and after"
+}

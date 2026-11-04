@@ -1,0 +1,65 @@
+schema_version: 1
+study_name: camera_ready_same_run_ladder
+base_config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+output_subdirectory: camera_ready_same_run_ladder
+thresholds:
+- 0.99
+- 0.999
+plot_thresholds:
+- 0.99
+- 0.999
+independent_runs: 12
+base_seed: 2000000000
+comparison: measured_matched_wall_clock
+workers: 3
+calibration_repetitions: 3
+calibration_paths: 128
+warmup_paths: 16
+warmup_base_seed: 19847011
+crude_stream: 947081
+timing_tolerance_fraction: 0.05
+reference:
+  samples: 200000
+  discoveries:
+  - 444
+  - 26
+  source: output/github_reviewer_artifact/data/final_analysis/direct_reference.csv
+  source_sha256: b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535
+  decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+  evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+configurations:
+- id: L128
+  N: 128
+  schedule:
+  - 0.5
+  - 1.0
+  - 1.5
+  - 2.0
+  - 2.5
+  - 3.0
+  - 3.5
+  - 4.0
+  - 4.5
+  - 5.0
+  - 5.5
+  - 6.0
+  - 6.5
+  - 7.0
+  - 7.5
+  - 8.0
+  moves_per_level: 4
+same_run_ladder: true
+record_population_checkpoints: true
+minimum_event_particles: 1
+checkpoint_baseline_policy: level_end_and_first_event
+report_max_lambda:
+  0.99: 8.0
+  0.999: 8.0
+resources:
+  GPUs_per_run: 1
+  CPUs_per_run: 4
+  parallel_workers: 3
+  GPUs_total: 3
+  CPUs_total: 12
+  RAM_GB_total: 60
+  SLURM_walltime: '12:00:00'

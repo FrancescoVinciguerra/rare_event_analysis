@@ -1,0 +1,31 @@
+hostname=gpu015
+git_commit=6ccde4f7de4a4a617f6ee669dbf21cfd87ee2f9e
+project_dir=/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code
+experiment_dir=/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event
+hf_home=/gpfs/home/stats/stuhvh/hf-cache
+modules=GCCcore/13.2.0 Python/3.11.5
+Thu Aug 13 13:14:08 2026       
++---------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.54.03              Driver Version: 535.54.03    CUDA Version: 12.2     |
+|-----------------------------------------+----------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |         Memory-Usage | GPU-Util  Compute M. |
+|                                         |                      |               MIG M. |
+|=========================================+======================+======================|
+|   0  Quadro RTX 6000                On  | 00000000:3B:00.0 Off |                    0 |
+| N/A   38C    P8              23W / 250W |      0MiB / 23040MiB |      0%      Default |
+|                                         |                      |                  N/A |
++-----------------------------------------+----------------------+----------------------+
+                                                                                         
++---------------------------------------------------------------------------------------+
+| Processes:                                                                            |
+|  GPU   GI   CI        PID   Type   Process name                            GPU Memory |
+|        ID   ID                                                             Usage      |
+|=======================================================================================|
+|  No running processes found                                                           |
++---------------------------------------------------------------------------------------+
+{"bf16_supported": true, "compute_capability": [7, 5], "cuda_available": true, "gpu": "Quadro RTX 6000", "python": "3.11.5", "torch": "2.6.0+cu118", "torch_cuda": "11.8"}
+/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/mdlm_owt/smc/cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609/9112984202c8cd896ac056c0cd732b3e32b060409e814ac7682b9ecda29bd388/ebbee60e165b350fb67233e65c10dd526e0cfb3d50db1785850a84fe7a42da6e
+peak_cuda_memory_allocated_bytes=3022947328
+name, memory.used [MiB], memory.total [MiB]
+Quadro RTX 6000, 0 MiB, 23040 MiB

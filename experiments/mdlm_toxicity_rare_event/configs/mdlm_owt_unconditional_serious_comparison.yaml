@@ -1,0 +1,36 @@
+schema_version: 1
+suite_name: mdlm_owt_unconditional_three_smc_serious_v2
+
+# The direct reference is an IID Monte Carlo estimate, not an exact probability.
+# Each append-only shard receives its own deterministic RNG seed.
+direct:
+  generation_config: mdlm_owt_unconditional_direct_32.yaml
+  evaluation_config: mdlm_owt_unconditional_estimation_100tok.yaml
+  target_samples: 200000
+  reference_block_size: 500
+
+# All three samplers estimate the same four tilted components and use the same
+# decoder/evaluator.  A run contains four independent component populations.
+# Method-specific seed offsets prevent population reuse across methods.
+smc:
+  particle_budgets: [64, 128, 256, 512]
+  independent_runs: 8
+  base_seed: 91000
+  methods:
+    - key: fk_bootstrap
+      label: FK Steering
+      config: mdlm_owt_unconditional_estimation_100tok.yaml
+      seed_offset: 0
+    - key: trajectory_resample_move
+      label: Trajectory MH
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+      seed_offset: 100000000
+    - key: trajectory_waste_free
+      label: Waste-Free SMC
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml
+      seed_offset: 200000000
+
+report:
+  confidence_level: 0.95
+  primary_runtime: sum_of_four_component_runtime_seconds
+  primary_compute: sum_of_four_component_decoder_particle_steps

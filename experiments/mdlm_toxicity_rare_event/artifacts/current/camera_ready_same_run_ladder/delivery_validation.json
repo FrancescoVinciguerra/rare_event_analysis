@@ -1,0 +1,19 @@
+{
+  "validated_SMC_runs": 12,
+  "validated_checkpoint_event_estimates": 1560,
+  "validated_original_MC_sources": 192,
+  "new_MC_generation": false,
+  "full_ladder_seconds": {
+    "mean": 793.4149052264789
+  },
+  "level_seconds": {
+    "mean": 48.23732250300236,
+    "minimum": 45.195823684334755,
+    "maximum": 51.734312653541565
+  },
+  "MC_added_per_level": {
+    "mean": 280.546875,
+    "minimum": 262,
+    "maximum": 302
+  }
+}

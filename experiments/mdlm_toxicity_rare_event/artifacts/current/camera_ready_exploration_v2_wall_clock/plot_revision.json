@@ -1,0 +1,9 @@
+{
+  "simulations_rerun": false,
+  "changes": [
+    "Corrected UTF-8 plotting labels",
+    "Changed residual transition-matching label to wall-clock matching"
+  ],
+  "plotter_sha256": "eed648b5614fc02f3db3b77f9c6e8c91ab16ebb8b0a1dfcff60615389ce482d9",
+  "runs_csv_sha256": "dc96bf45f998948968ac64e6d1c7685ffe042bfc462154da1ea5e849b264ff3f"
+}

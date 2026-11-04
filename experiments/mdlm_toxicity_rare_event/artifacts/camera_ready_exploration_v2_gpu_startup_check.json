@@ -1,0 +1,42 @@
+{
+  "job_id": "2076203",
+  "checked_utc": "2026-11-02T17:21:54.919009+00:00",
+  "GPU_separation_verified": true,
+  "warmup_finished_all_workers": true,
+  "workers": [
+    {
+      "seeds": [
+        9834811,
+        9834812
+      ],
+      "seconds": 50.521803200244904,
+      "excluded_from_results_and_per_run_times": true,
+      "worker_id": 0,
+      "CUDA_VISIBLE_DEVICES": "0",
+      "SLURM_STEP_GPUS": "0"
+    },
+    {
+      "seeds": [
+        9834911,
+        9834912
+      ],
+      "seconds": 51.648320496082306,
+      "excluded_from_results_and_per_run_times": true,
+      "worker_id": 1,
+      "CUDA_VISIBLE_DEVICES": "0",
+      "SLURM_STEP_GPUS": "1"
+    },
+    {
+      "seeds": [
+        9835011,
+        9835012
+      ],
+      "seconds": 50.452353566884995,
+      "excluded_from_results_and_per_run_times": true,
+      "worker_id": 2,
+      "CUDA_VISIBLE_DEVICES": "0",
+      "SLURM_STEP_GPUS": "2"
+    }
+  ],
+  "source_log": "request_fa9c308543904359af99c3065c7fd294.log"
+}

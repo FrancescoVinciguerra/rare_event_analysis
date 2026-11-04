@@ -1,0 +1,7 @@
+{
+  "simulations_rerun": false,
+  "change": "Separated legend from caption; stated uniform tilt increment 0.5",
+  "plotter": "experiments\\mdlm_toxicity_rare_event\\analysis\\plot_camera_ready_exploration.py",
+  "plotter_sha256": "54b68bdbccf6dde8bc77ec6389cccbe01da5d0df43a77c91927b08d583e3d984",
+  "runs_csv_sha256": "355df875ff642bba6a23110440e0d2a91b93fbc8f4339828f98bd5cf255304e9"
+}

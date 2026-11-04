@@ -24,3 +24,31 @@ suffix_direct_mh_smc_experiment/results/
 **/*samples.jsonl
 **/*samples.csv
 *.log
+
+# Experiment results are versioned alongside the code. Runtime scratch files,
+# credentials, caches, and private Avon operating notes remain local.
+experiments/mdlm_toxicity_rare_event/artifacts/logs/*
+!experiments/mdlm_toxicity_rare_event/artifacts/logs/.gitkeep
+.codex-private/
+tmp/
+*.egg-info/
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.tmp
+
+# Explicit publication of scientific data overrides the generic rules above.
+!experiments/**/results/
+!experiments/**/results/**
+!experiments/**/data/
+!experiments/**/data/**
+!experiments/**/samples.jsonl
+!experiments/**/*samples.jsonl
+!experiments/**/*samples.csv
+!results/
+results/*
+!results/tail_probability_validation/
+!results/tail_probability_validation/**
+!output/github_reviewer_artifact/data/
+!output/github_reviewer_artifact/data/**

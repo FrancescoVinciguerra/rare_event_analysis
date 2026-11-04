@@ -1,0 +1,14 @@
+{
+  "seed": 20260929,
+  "stream": 3,
+  "n": 2048,
+  "replicates": 4000,
+  "mean": 0.0009930419921875,
+  "variance": 4.897414371054541e-07,
+  "theoretical_variance": 4.8779296875e-07,
+  "exact_se_sample_variance": 1.2161463443226716e-08,
+  "variance_z_score": 0.16021660259475398,
+  "zero_frequency": 0.13325,
+  "theoretical_zero_frequency": 0.12886052215370547,
+  "seconds": 18.11505669998587
+}

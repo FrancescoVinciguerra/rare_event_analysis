@@ -1,0 +1,18 @@
+{
+  "seconds": 96.00133597385138,
+  "seeds": [
+    9824711,
+    9824712,
+    9824713,
+    9824714,
+    9824715
+  ],
+  "crude_calibration_seconds": [
+    21.842682206071913,
+    21.908540019765496,
+    21.939268096350133
+  ],
+  "crude_calibration_n": 128,
+  "seconds_per_crude_sample": 0.17116046890441794,
+  "excluded_from_estimates_and_measured_run_times": true
+}

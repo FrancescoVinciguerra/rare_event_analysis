@@ -1,0 +1,2162 @@
+[
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 11,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 10,
+    "outside_zoom": 9
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 10
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 5,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 5,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 4,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 4,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 1,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 1,
+    "outside_zoom": 9
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 0,
+    "outside_zoom": 12
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 11,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N16",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 10,
+    "outside_zoom": 10
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 8,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 11
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 5,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N32",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 17,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 13,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 14,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 6,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 5,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 4,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 4,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 1,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 1,
+    "outside_zoom": 10
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 7,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 0,
+    "outside_zoom": 16
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 2,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 0.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 19,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 1.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 20,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 15,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 2.5,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 20,
+    "zeros": 16,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "N64",
+    "threshold": 0.999,
+    "lambda": 3.0,
+    "method": "crude",
+    "runs": 20,
+    "zeros": 18,
+    "outside_zoom": 2
+  }
+]

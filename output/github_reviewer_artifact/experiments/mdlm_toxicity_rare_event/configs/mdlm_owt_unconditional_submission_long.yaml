@@ -1,0 +1,35 @@
+schema_version: 1
+suite_name: mdlm_owt_unconditional_submission_long_v1
+sampler_set_policy: configured_subset
+
+# The existing IID reference is reused.  Its continuous classifier scores are
+# re-thresholded by submission_probability.py; this suite never changes them.
+direct:
+  generation_config: mdlm_owt_unconditional_direct_32.yaml
+  evaluation_config: mdlm_owt_unconditional_estimation_100tok.yaml
+  target_samples: 200000
+  reference_block_size: 500
+
+# Submission test populations.  Seeds are disjoint from the eight-run pilot
+# suite.  Waste-Free is deliberately excluded.  The four lambda components of
+# every run remain independent and are sampled once; uniform and frozen-pilot
+# aggregation are both evaluated post hoc from those same test components.
+smc:
+  particle_budgets: [512]
+  independent_runs: 32
+  base_seed: 500000000
+  methods:
+    - key: fk_bootstrap
+      label: FK Steering
+      config: mdlm_owt_unconditional_estimation_100tok.yaml
+      seed_offset: 0
+    - key: trajectory_resample_move
+      label: Trajectory MH
+      config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+      seed_offset: 100000000
+
+report:
+  confidence_level: 0.95
+  primary_runtime: sum_of_four_component_runtime_seconds
+  primary_compute: sum_of_four_component_decoder_particle_steps
+

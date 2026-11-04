@@ -1,0 +1,16 @@
+extends: mdlm_owt_unconditional_estimation_100tok.yaml
+
+# Waste-free version of the same unconditional rare-event estimator.  The
+# decoder, reward, event, lambda components and uniform component mixture are
+# inherited unchanged.  N=512 is represented at every eta level by M=128
+# rollback-MH chains with P=4 retained states each.
+smc:
+  final_resampling: false
+  tilted_sampler:
+    type: trajectory_waste_free
+    implementation_version: waste_free_trajectory_rollback_mh_v1
+    num_tempering_levels: 8
+    mutation_policy: every_level
+    chain_length: 4
+    rollback_steps: [4, 8, 16, 24, 32]
+    rollback_probabilities: [0.20, 0.20, 0.20, 0.20, 0.20]

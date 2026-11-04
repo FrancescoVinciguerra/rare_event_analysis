@@ -1,0 +1,992 @@
+                                                                       Self-Rewarding Sequential Monte Carlo for
+                                                                           Masked Diffusion Language Models
+
+
+                                                                   Ziwei Luo 1 Ziqi Jin 2 3 Lei Wang 2 Lidong Bing 2 Thomas B. Schön 1
+
+
+                                                                    Abstract                                recently, diffusion models have further shown strong poten-
+                                                This work presents self-rewarding sequential                tial for discrete data generation, particularly for text (Sahoo
+                                                Monte Carlo (SMC), an inference-time scaling                et al., 2024; Arriola et al., 2025; Nie et al., 2025; Ye et al.,
+arXiv:2602.01849v1 [cs.LG] 2 Feb 2026
+
+
+
+
+                                                algorithm enabling effective sampling of masked             2025), by modeling a forward masking process and iter-
+                                                diffusion language models (MDLMs). Our algo-                atively predicting masked tokens at inference (Lou et al.,
+                                                rithm stems from the observation that most exist-           2024; Chang et al., 2022). Despite this progress, exist-
+                                                ing MDLMs rely on a confidence-based sampling               ing masked diffusion language models (MDLMs) adopt a
+                                                strategy, where only tokens with the highest pre-           greedy, confidence-based sampling strategy (Sahoo et al.,
+                                                diction confidence are preserved at each step. This         2024), in which only tokens with the highest prediction
+                                                restricts the generation to a noise-sensitive, greedy       probability are preserved at each step, leading to myopic tra-
+                                                decoding paradigm, resulting in an inevitable col-          jectory exploration and suboptimal generation performance.
+                                                lapse in the diversity of possible paths. We ad-            Inference-time scaling methods have been proposed to im-
+                                                dress this problem by launching multiple interact-          prove MDLMs’ sample diversity and quality without modi-
+                                                ing diffusion processes in parallel, referred to as         fying pretrained models (Dang et al., 2025; Singhal et al.,
+                                                particles, for trajectory exploration. Importantly,         2025). Typically, they leverage human preference guidance,
+                                                we introduce the trajectory-level confidence as             such as promoting fluency, enforcing structured format, or
+                                                a self-rewarding signal for assigning particle im-          controlling toxicity (Dathathri et al., 2019; Rafailov et al.,
+                                                portance weights. During sampling, particles are            2023; Loula et al., 2025), to tilt the generation trajectories
+                                                iteratively weighted and resampled to systemati-            towards high-reward target distributions (Dang et al., 2025;
+                                                cally steer generation towards globally confident,          Uehara et al., 2025). While their results are impressive, such
+                                                high-quality samples. Our self-rewarding SMC is             methods rely on external reward signals that are often task-
+                                                verified on various masked diffusion language               specific and require hand-crafted tuning, which restricts
+                                                models and benchmarks, achieving significant                their applicability to general MDLM-based generation.
+                                                improvement without extra training or reward
+                                                guidance, while effectively converting parallel             In this work, we revisit the confidence-based sampling of
+                                                inference capacity into improved sampling qual-             masked diffusion and propose a self-rewarding sequential
+                                                ity. Our code is available at https://github.               Monte Carlo (SMC) algorithm for inference-time scaling
+                                                com/Algolzw/self-rewarding-smc.                             on general tasks. Specifically, we maintain a set of interact-
+                                                                                                            ing diffusion processes, referred to as particles, to explore
+                                                                                                            multiple trajectories in parallel. These particles still fol-
+                                        1. Introduction                                                     low the low-confidence remasking strategy of MDLMs but
+                                                                                                            will be resampled based on their trajectory-level confidence,
+                                        Generative modeling with diffusion models (Sohl-Dickstein           which is serving as an implicit reward signal to assign impor-
+                                        et al., 2015; Ho et al., 2020) has led to remarkable advances       tance weights to each particle. Conceptually, our algorithm
+                                        across a wide range of applications, including image gen-           runs multiple generation processes, periodically duplicating
+                                        eration (Dhariwal & Nichol, 2021; Rombach et al., 2022;             promising candidates and discarding less confident ones
+                                        Peebles & Xie, 2023), text-to-image generation (Saharia             based on their accumulated likelihood. The resulting self-
+                                        et al., 2022; Zhang et al., 2023; Gu et al., 2022), and video       rewarding SMC enables principled trajectory exploration
+                                        synthesis (Ho et al., 2022; Blattmann et al., 2023). More           and steers the sampling process towards stable, globally
+                                            1                                                               confident, and high-quality outputs, without extra reward
+                                             Uppsala University, Sweden 2 MiroMind AI, Singapore
+                                        3
+                                         Nanyang Technological University, Singapore. Correspondence        models or task-specific design as guidance.
+                                        to: Lei Wang <lei.wang@miromind.ai>.                                Our method is verified on various masked diffusion lan-
+                                        Preprint. February 3, 2026.                                         guage models including MDLM (Sahoo et al., 2024) and
+
+                                                                                                        1
+                       Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+BD3-LMs (Arriola et al., 2025), and diffusion large lan-              inference, the reverse unmasking process is parametrized as
+guage models (dLLMs) including LLaDA 1.5 (Zhu et al.,                 pθ (xs | xt , x̂0 ), where x̂0 ∼ Cat(x0 ; pθ (xt )) is sampled
+2025) and Dream (Ye et al., 2025). The results show that              from the model predictive distribution. To simplify the
+the proposed self-rewarding SMC consistently improves the             notation, we only consider sampling from the diffusion
+baseline models across multiple benchmarks.                           reverse process and denote t := t(i) as the discrete time
+                                                                      step throughout the work.
+In summary, we make the follow contributions:
+                                                                      2.2. Importance Sampling and Sequential Monte Carlo
+  1. We propose a general, self-rewarding sequential Monte
+     Carlo algorithm for masked diffusion language models.            Assume we want to estimate expectations under trajectory
+     The proposed method improves sampling without extra              target distribution π(xt:T ), such as Eπ [f (xt:T )], where f (·)
+     training or reward signals.                                      is a test function. Sampling from π is generally intractable.
+  2. We unify the sampling and remasking strategy of                  Importance sampling (IS) (Robert et al., 1999) introduces
+     MDLMs from the probabilistic perspective, and the-               a proposal distribution q(xt:T ) that allows the expectation
+     oretically show that the trajectory-level confidence is          to be rewritten as
+     naturally a self-rewarding signal for SMC.                                                                      N
+                                                                                           π̃(xt:T )              1 X i
+                                                                      Eπ [f (xt:T )] = Eq [          f (xt:T )] ≈      w f (xit:T ),
+  3. Extensive experiments and analysis demonstrate our                                    q(xt:T )               N i=1 t
+     self-rewarding SMC improves sample quality on dif-                                                                          (3)
+     ferent pretrained models and benchmarks.                         where xit:T ∼ q(xt:T ) and π̃ is the unnormalized density.
+                                                                                            PN
+                                                                      Moreover, wti = w̃ti / j=1 w̃tj is the normalized importance
+2. Background                                                         weight, where w̃ti = π̃(xit:T )/q(xit:T ) gauges the discrep-
+                                                                      ancy between the target distribution and the proposal dis-
+ Notation We consider variables x = {x1 , . . . , xL } as a
+                                                                      tribution. While conceptually simple, importance sampling
+ sequence of L tokens, where each token xℓ = x(ℓ) is a
+                                                                      often suffers from unfavorably high variance.
+‘one-hot’ columnPvector with V categories in the space V ≜
+                    V
+ {x ∈ {0, 1}V : i=1 x(i) = 1} ⊂ ∆V for the simplex ∆V .               Sequential Monte Carlo (SMC) (Del Moral et al., 2006)
+             th
+We let the V category denote a special [MASK] token, where            improves upon IS by introducing a sequence of interme-
+ m ∈ V is its one-hot vector. Moreover, we define Cat(·; p)           diate unnormalized path measures π̃t (xt:T ), whose termi-
+ as a categorical distribution with probability p ∈ ∆V .              nal distribution coincides with the desired trajectory target
+                                                                      distribution. SMC incorporates resampling and sequential
+2.1. Masked Diffusion Models                                          weighting techniques across the trajectory, thereby reducing
+                                                                      variance in practice. We begain by defining the incremental
+Given prior distribution Cat(·; m), masked diffusion mod-             importance weights as
+els (MDMs) (Austin et al., 2021; Arriola et al., 2025; Chang
+et al., 2022; Sahoo et al., 2024) are characterized by paramet-                                          π̃t−1 (xt−1:T )
+                                                                              w̃t−1 (xt−1:T ) =                                 ,      (4)
+ric models pθ trained to reverse a forward masking process                                        π̃t (xt:T ) qt−1 (xt−1 | xt )
+for new data sampling from a full masked sequence. For
+finite-time process, we let T be the number of diffusion              where qt−1 (xt−1 | xt ) is a Markovian sequential proposal
+steps and t(i) = Ti ∈ [0, 1] be the continuous time. The              operating in reverse time (see Appendix A.1 for more de-
+marginal distribution of xt(i) conditioned on target data x0          tails). During sampling, we initialize a set of N particles
+is as follows (Sahoo et al., 2024):                                   xiT ∼ qT (xT ), each representing a trajectory distribution,
+                                                                      with weights wTi = π̃T (xiT )/qT (xiT ). At each iteration e.g.,
+        p(xt | x0 ) = Cat(xt ; αt x0 + (1 − αt )m),        (1)        from t to t − 1, SMC takes the follows three steps:
+
+where αt denotes a monotonically decreasing schedule sat-                i) Resample: resample ancestor {xit }Ni=1 according to the
+isfying α0 ≈ 1 and α1 ≈ 0, such that x1 ∼ Cat(·; m).                        weights {wti }N
+                                                                                          i=1 ;
+Let s(i) = i−1
+            T be the time step directly preceding t(i), the
+                                                                        ii) Propagate: sample new particles from proposal distri-
+time-reversal conditional posterior for all [MASK] tokens i.e.,             bution xit−1 ∼ qt−1 (xt−1 | xit );
+xt = m, can be obtained by                                             iii) Re-weight: compute and accumulate the incremental
+                                                                                                              i                 w̃i
+                              αs − αt      1 − αs                          weights in Eq. (4), and normalize wt−1 = PN t−1
+                                                                                                                        w̃j
+                                                                                                                                            .
+  p(xs | xt , x0 ) = Cat(xs ;         x0 +        xt ). (2)                                                                    j=1    t−1
+
+                              1 − αt       1 − αt
+                                                                      The resulting collection of weighted particles provides an
+Notably, unmasked tokens i.e., xt ̸= m, remain unchanged              asymptotically consistent approximation of the trajectory
+in the reverse process. Since x0 is not available during              target distribution.
+
+                                                                  2
+                                                                   If           wet             ,           stay         home
+
+
+
+
+                               Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+
+
+
+  𝐱 𝐭"𝟏     If    M       M         M   M    95%              If        sunny         M       stay      M      86%                If   sunny         ,   stay    home     72%
+
+
+                                                   (a) Diffusion sampling with token-level confidence.
+
+    𝟏
+  𝐱 𝐭"𝟏     If    M       M         M   M    95%              If        sunny         M       stay      M      64%                If   sunny         ,    go     home     72%
+
+
+
+
+                                                                                                                          a.
+                                                                                                                      Re s
+                                                Re
+                                                   sa
+    𝟐
+  𝐱 𝐭"𝟏     If    M       M         M   M    95%              If        wet      M            stay      M      90%                If   wet       ,       stay   outside   76%
+
+                                                      .
+                                                                                                                       Re
+                                                                                                                            sa.
+    𝟑
+  𝐱 𝐭"𝟏     M     M       M         M   ,    24%              If        wet      M        M          outside   54%                If   wet       ,       stay    home     94%
+                                                     Re
+                                                      sa
+                                                         .
+
+
+    𝟒
+  𝐱 𝐭"𝟏     M    stay     M         M   M    66%              If        M         ,           go        M      92%                If   sunny         ,    go    outside   98%
+
+
+Particle              State 𝐱 𝐭"𝟏                                               State 𝐱 𝐭                                                       State 𝐱 𝐭$𝟏               Conf.
+
+                                    (b) Our self-rewarding SMC with trajectory-level confidence for diffusion sampling.
+
+Figure 1. Illustrative example of text generation using (a) masked diffusion models and (b) our self-rewarding SMC framework. Here, ‘M’
+represents [MASK] tokens and ‘Resa.’ denotes resampling. SMC maintains multiple diffusion processes, called particles, to explore the
+sampling trajectories in parallel. At each iteration, we take three steps: resample, propagate, and re-weight, to perform as an interactive
+optimization process. Importantly, traditional diffusion sampling only considers token-level confidence, while our algorithm uses the
+trajectory-level confidence as importance weights, calculated using Eq. (13), to select globally confident outputs.
+
+
+3. Self-Rewarding Sequential Monte Carlo                                                       function of t, or be more flexible by explicitly defining ρt
+                                                                                               as a confidence threshold (Wu et al., 2025b), such that
+3.1. Reformulate the Sampling of MDMs
+                                                                                                                   Stthr = { j ∈ Mt : ct (j) ≥ ρt },                        (8)
+We consider sampling from a pretrained masked diffusion
+model pθ (xt ). Given a mask set Mt ≜ {ℓ : xt (ℓ) =                                            which enables faster sampling while preserving performance
+[MASK]} at time t, recall that the learned posterior pθ (xt−1 |                                when the model is confident in its predictions.
+xt , x̂0 ) in Eq. (2) is only applied for mask tokens i.e.,
+                                                                                               In summary, the reverse transition distribution of each token
+           xt−1 (j) ∼ pθ (xt−1 (j) | xt , x̂0 ),             j ∈ Mt ,            (5)           xt (j) can be formulated by
+                                                                                                                     
+where x̂0 ∼ Cat(x0 ; pθ (xt )) is sampled from the model                                                             pθ (xt−1 (j) | xt , x̂0 ), j ∈ St ,
+                                                                                                                     
+predictive distribution. For each token xt−1 (j), we directly                                  pθ (xt−1 (j) | xt ) = Cat(xt−1 (j); m),           j ∈ Mt \ St ,
+define its confidence as the model probability on j, as
+                                                                                                                     
+                                                                                                                       Cat(xt−1 (j); xt ),       j∈/ Mt ,
+                                                                                                                     
+                                                                                                                                                         (9)
+            ct (j) := pθ x̂0 (j) | xt , j ∈ Mt .          (6)
+                                                                                               where Cat(xt−1 (j); xt ) is like a Dirac delta distribution
+At each iteration, MDMs update a subset St ⊆ Mt follow-                                        concentrated at xt (j). Accordingly, the reverse transition
+ing a predefined policy, such as the low-confidence remask-                                    kernel over the full sequence xt is
+ing strategy (Chang et al., 2022; Nie et al., 2025), to ensure                                                                         L
+                                                                                                                                       Y
+an iterative unmasking process from xT to x0 .                                                                 Kt (xt , xt−1 ) =             pθ (xt−1 (j) | xt ).          (10)
+                                                                                                                                       j=1
+Low-confidence remasking has been widely used in dif-
+fusion large language models as an efficient strategy for                                      This transition kernel deterministically preserves unmasked
+sequence generation. Typically, by defining a schedule ρt to                                   tokens, remasks low-confidence tokens, and samples newly
+specify the number of tokens to be unmasked at step t, we                                      accepted tokens according to the model prediction.
+introduce the following policy:
+                                                                                               One problem of sampling from Eq. (9) is that only step-wise
+              Sttop-k = { j ∈ Mt :          Top-ρt {ct (j)} },                   (7)           confidence i.e., ct in Eq. (6), is utilized for remasking. This
+                                                                                               often bias generation towards locally optimal tokens, in-
+which indicates only the highest probability tokens are pre-                                   ducing noise-sensitive, myopic exploration of the sequence
+served at each step. Note that the schedule ρt can be a scalar                                 trajectory, as illustrated in Figure 1.
+
+                                                                                          3
+                         Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+3.2. Confidence-based Sequential Monte Carlo                             Algorithm 1 Self-Rewarding SMC (SR-SMC)
+Assume that we have N diffusion sampling processes, called               Require: Pretrained diffusion model pθ , sampling steps T , num-
+                                                                             ber of particles N , remasking policy S ELECT(·).
+particles, to generate N sequences in parallel. To tilt sam-             Ensure: Generated sequence x̂0 .
+pling towards globally confident sequence generation, we                  1: Initialize N particles i.e., sequences {xiT }N i=1 with all tokens
+define a Feynman–Kac model (Del Moral, 2004) with po-                        set to [MASK], and weights wTi = 1/N for all i.
+tential                                                                   2: for t = T, . . . , 1 do
+                                                                          3:    Resample {xit }N                                i N
+                                                                                                   i=1 according to weights {wt }i=1 .
+                                                                          4: Propagate with mask set Mit for all i:
+                             Y
+         Gt−1 (xt , xt−1 ) =    pθ (xt−1 (j) | xt ),     (11)
+                               j∈St
+                                                                          5:       i) sample xi0 ∼ pθ (xit ) and compute confidence cit .
+                                                                          6:       ii) select update set Sti ← S ELECT(cit , Mit ).
+which is the joint probability of accepted tokens within                  7:       iii) sample xit−1 ∼ Kt (xit , xit−1 ) using Eq. (9).
+                                                                                                              i
+the set St . Intuitively, the potential denotes how confident             8:    Re-weight by computing w̃t−1       using Eq. (13).
+                                                                          9: end for
+the model is in the tokens at step t, performing as a self-                                      ⋆
+                                                                         10: return x̂0 ← xi0 where i⋆ = arg maxi w̃0i .
+rewarding signal for SMC update. In addition, we define
+the intermediate unnormalized path measures π̃t (xt:T ) to
+satisfy the following recursion:
+                                                                         resample, propagate, and re-weight as a standard SMC de-
+  π̃t−1 (xt−1:T ) = π̃t (xt:T ) Kt (xt , xt−1 ) Gt−1 (xt , xt−1 ),       scribed in Sec. 2.2. Specifically, the diffusion sampling
+                                                              (12)       with local confidence-based remasking is performed during
+where Kt (xt , xt−1 ) is the reverse diffusion transition ker-           propagation, denoted by the transition kernel in Eq. (9) and
+nel in Eq. (10). Recall that SMC defines an incremental                  Eq. (10). Then each particle is reweighted according to
+importance weight for each particle (see Eq. (4)). By letting            Eq. (13), which forms a trajectory-level confidence score
+its proposal equal the transition kernel in Eq. (12), we obtain          for resampling. The final output is selected from the result-
+the following result:                                                    ing particle set with the maximum weight. In addition, we
+                                                                         use effective sample size (ESS) (Zheng et al., 2024) and
+Proposition 3.1. Given a pretrained diffusion model pθ ,                 Gumbel-Max trick (Zheng et al., 2024) to further improve
+let {π̃t (xt:T )}Tt=0 denote the unnormalized path measures              the sample efficiency.
+defined by the recursion in Eq. (12). If the sequential pro-
+posal in SMC is chosen to be the diffusion transition kernel,
+i.e., qt−1 (xt−1 | xt ) = Kt (xt , xt−1 ), then the incremental          Adaptive resampling. In practice, resampling at every
+importance weights at step t − 1 is given by                             diffusion step might be unnecessary in particular when the
+                                                                         variance of weights wt is low. We therefore adopt an adap-
+                                     Y
+                   w̃t−1 (xt−1:T ) =      ct (j),          (13)          tive resampling strategy based on the effective sample size,
+                                      j∈St                               which is defined as
+                                 
+where ct (j) := pθ x̂0 (j) | xt is the token confidence and                                                    1
+                                                                                               ESS = PN                                  (14)
+                                                                                                                  i 2
+St denotes the selected mask subset to be updated at step t.                                                i=1 (wt )
+
+The proof is provided in Appendix A.2. Under our SMC                     We follow a common practical setting (Doucet et al., 2001)
+framework, Eq. (13) defines a trajectory-level confidence-               to let resample be triggered only when ESS falls below N/2,
+based weight, since it accumulates confidence scores across              which indicates significant weight degeneracy.
+sampling steps until all tokens are unmasked.
+Moreover, we note that this choice of proposal corresponds               Gumbel-Max sampling. Following Zheng et al. (2024),
+to a bootstrap SMC scheme (Doucet et al., 2001), further                 we employ the Gumbel-Max trick to sample discrete to-
+showing that reweighting particles by trajectory-level con-              kens from a controlled categorical distribution for masked
+fidence is not a heuristic choice but follows naturally from             diffusion models. Particularly, given logits zℓ over the vo-
+the underlying diffusion-based formulation.                              cabulary, token sampling is performed as
+                                                                                                     
+3.3. Practical Sampling with Self-Rewarding SMC                                x = arg max zℓ /τ + gℓ ,            gℓ ∼ G(0, 1),         (15)
+                                                                                         ℓ
+We now describe how Eq. (13) is incorporated into the sam-
+pling procedure of masked diffusion models via sequential                where τ is a temperature and G denotes the Gumbel distribu-
+Monte Carlo. As shown in Figure 1 and Algorithm 1, we                    tion. This Gumbel-Max trick approximates sampling from
+begin by initializing N particles that are fully masked se-              Cat(·; softmax(z)). Note that τ = 0 means argmax and
+quences, with uniform weights. At each step, we perform                  τ = 1 recovers the standard categorical sampling.
+
+                                                                     4
+                       Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+4. Experiment                                                       Table 1. Generative perplexity (Gen. PPL; ↓) and the number of
+                                                                    function evaluations (NFEs; ↓) of 300 samples of lengths L =
+Our self-rewarding SMC is evaluated across multiple bench-          1024, 2048. All models are trained on the OWT dataset. For
+marks to demonstrate its ability to improve sampling of             BD3-LMs (Arriola et al., 2025) and its SR-SMC implementation,
+                                                                    we also report results with different block sizes L′ . We set the
+pretrained diffusion language models.                               resample frequency to 128 for all our SR-SMC variants.
+
+4.1. Experimental Setup                                                                                                          L = 1024                              L = 2048
+                                                                                Model                                    Gen. PPL(↓)            NFEs        Gen. PPL(↓)            NFEs
+Pretrained models We investigate two kinds of pre-                              Autoregressive                                  14.1               1K             13.2              2K
+trained models: 1) masked diffusion language models, in-                        Diffusion
+cluding MDLM (Sahoo et al., 2024) and BD3-LMs (Ar-                              SEDD                                            52.0               1K              –                 –
+riola et al., 2025) pretrained on the OpenWebText (OWT)                         MDLM                                            46.8               1K             41.3              2K
+                                                                                MDLM w/ SR-SMC                                  25.8               4K             25.9              8K
+dataset (Gokaslan & Cohen, 2019) for sample quality eval-
+                                                                                Block Diffusion
+uation; and 2) diffusion large language models including                        SSD-LM
+LLaDA 1.5 (Zhu et al., 2025) and Dream-7b (Ye et al.,                                     L′ = 25                                37.2            40K              35.3             80K
+                                                                                          L′ = 25                               281.3             1K             281.9              2K
+2025). All of them are pretrained and finetuned on >2T                          BD3-LMs
+tokens for general task evaluations. Both settings adopt                                  L′ = 16                               33.4               1K             31.5              2K
+a semi-autoregressive (Semi-AR) generation structure for                                  L′ = 8                                30.4               1K             28.2              2K
+                                                                                          L′ = 4                                25.7               1K             23.6              2K
+higher-quality sequence generation. In addition, all models
+                                                                                BD3-LMs w/ SR-SMC
+except MDLM employ a block-wise generation policy for a                                 L′ = 16                                 21.1               4K             20.2              8K
+more efficient sampling.                                                                L′ = 8                                  18.9               4K             17.3              8K
+                                                                                        L′ = 4                                  16.1               4K             15.1              8K
+
+Implementation For our self-rewarding SMC, the adap-
+                                                                                                  Sequence length L = 1024                              Sequence length L = 2048
+tive sample strategy is used in all experiments. More specif-                        50          46.8
+ically we set the resample frequency to 128 for MDLM                                 40
+                                                                                                                                                     41.3
+and BD3-LMs, and to per-block for all dLLMs. The de-                                                        33.4
+                                                                    Generative PPL
+
+
+
+
+                                                                                                                     30.4                                       31.5
+                                                                                     30            25.8                          25.7                    25.9            28.2
+fault number of particles is set to 4. Moreover, we use                                                       21.1                                                                 23.6
+                                                                                                                         18.9                                     20.2
+                                                                                     20                                            16.1                                     17.3     15.1
+temperature τ = 1 and identical decoding settings for all                                 14.1                                                13.2
+                                                                                     10
+comparisons. For dLLMs experiments, we follow Wu et al.
+                                                                                     0
+(2025b) to enable KV cache and parallel decoding (i.e.,                                   AR     MDLM BD3-LMs BD3-LMs BD3-LMs                 AR        MDLM BD3-LMs BD3-LMs BD3-LMs
+                                                                                                       L'=16    L'=8    L'=4                                  L'=16    L'=8    L'=4
+with a threshold-based policy, see Eq. (8)) for inference                                               Autoregressive             Baseline              Baseline + SR-SMC
+acceleration. We test MDLM and BD3-LMs on a single
+                                                                    Figure 2. Generative perplexity (↓) comparison of our self-
+NVIDIA H200 GPU and evaluate all dLLMs experiments
+                                                                    rewarding SMC and the corresponding baselines.
+on 8 NVIDIA A800 GPUs with a single batch size.
+
+4.2. Sample Quality Evaluation                                      sity, rather than collapsing generation toward low-entropy
+We first investigate our self-rewarding SMC on pretrained           or overly greedy solutions.
+masked diffusion language models (MDLM (Sahoo et al.,
+2024) and BD3-LMs (Arriola et al., 2025)) for text sample           4.3. Results on Diffusion Large Language Models
+quality evaluation. The other baselines include Autoregres-
+                                                                    To further evaluate the effectiveness and generalizability
+sive (AR), SEDD (Lou et al., 2024), and SSD-LM (Han
+                                                                    of our SR-SMC, we conduct experiments on two represen-
+et al., 2023). In Table 1 and Figure 2, we generate sequences
+                                                                    tative diffusion large language models: LLaDA-1.5 (Zhu
+of lengths L = 1024, 2048 and measure their generative per-
+                                                                    et al., 2025) and Dream-7B (Ye et al., 2025). Following Wu
+plexity under GPT2-Large. The results show that by scaling
+                                                                    et al. (2025b), we evaluate these models across four chal-
+the inference compute with our SR-SMC, we significantly
+                                                                    lenging benchmarks: GSM8K and MATH for mathematical
+improve the sample quality for both diffusion and block dif-
+                                                                    reasoning, and HumanEval and MBPP for code generation.
+fusion baselines. The block diffusion variant of BD3-LMs
+                                                                    The performance is measured using two different generation
+with size L′ = 4, 8 achieves generative perplexity below
+                                                                    lengths (L ∈ {256, 512}) with a block size of 32.
+20, substantially narrowing the performance gap between
+diffusion-based models and autoregressive baselines. To             The results are summarized in Table 2. Overall, incorporat-
+further assess the impact on sample diversity, we also report       ing SR-SMC in sampling consistently improves the results
+the corresponding entropy results of the generated texts in         across all benchmarks, model architectures, and genera-
+the Appendix (Table 6). These results indicate that SR-SMC          tion lengths. Typically, our algorithm achieves average
+improves text quality while maintaining high output diver-          performance gains of 2.8+ and 4.5+ for LLaDA-1.5 and
+
+                                                                5
+                                             Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+                                 GSM8K                    47
+                                                                                MATH                                   HumanEval                                           MBPP
+               82             81.7                                                     45.6
+                                                                                                       57
+                                                                                                                                                                 LLaDA-1.5 + SR-SMC       48.6
+                                                          46                                   45.2 54                           54.6     53.7 48
+               81                        80.7     80.7    45                                                            52.4                                     Dream-7B + SR-SMC
+                    79.8                                  44                43.2                       51
+Accuracy (%)
+
+
+
+               80                                                                                                                                46
+                                                          43                                                  47.9
+               79                                         42      41.6      41.8       41.8    41.8 48                                                                 44.2       44.2    44.2
+                                         77.9     78.0                                                 45                                        44                    43.6
+               78                                         41
+                                                          40                                           42                                 41.5 42            42.0
+               77   76.2      76.3                        39      38.2                                 39     38.7      39.0     39.0                        40.4
+               76                                         38                                                                                     40
+                                                                                                       36
+                    1        2           3        4               1         2          3       4              1         2        3       4                   1         2          3       4
+                             #Particles                                    #Particles                                  #Particles                                     #Particles
+
+Figure 3. Comparison results of LLaDA 1.5 and Dream-7B using different numbers of particles on four tasks. Each marker denotes the
+empirical result while the dashed curves indicate first-order polynomial fits used solely to illustrating overall trends as N increases.
+
+
+Table 2. Performance of Self-Rewarding SMC (SR-SMC) on                                                 Table 3. Ablation results of scaling the number of particles N for
+Diffusion Large Language Models. Results compare baselines                                             LLaDA-1.5 and Dream-7B across four benchmarks (L = 256).
+versus SR-SMC variants using block decoding with block size =
+32 with KV cache and parallel decoding enabled.                                                             Model           Benchmark            N =1            N =2         N =3       N =4
+                                                                                                                            GSM8K (5-shot)            79.8          81.7      80.7       80.7
+      Benchmark            Length    LLaDA-1.5        w/ SR-SMC       Dream-7B     w/ SR-SMC                                MATH (4-shot)             38.2          41.8      41.8       41.8
+      GSM8K                 256          79.8            80.7            76.2          78.0                 LLaDA-1.5       HumanEval (0-shot)        38.7          39.0      39.0       41.5
+      (5-shot)              512          80.4            82.0            78.0          78.0                                 MBPP (3-shot)             40.4          44.2      44.2       44.2
+      MATH                  256          38.2            41.8            41.6          45.2                                 Average                   49.3          51.7      51.4       52.1
+      (4-shot)              512          41.4            45.4            44.6          47.6
+                                                                                                                            GSM8K (5-shot)            76.2          76.3      77.9       78.0
+      HumanEval             256          38.7            41.5            47.9          53.7
+                                                                                                                            MATH (4-shot)             41.6          43.2      45.6       45.2
+      (0-shot)              512          35.4            41.5            45.1          53.7
+                                                                                                            Dream-7B        HumanEval (0-shot)        47.9          52.4      54.6       53.7
+      MBPP                  256          40.4            44.2            42.0          48.6                                 MBPP (3-shot)             42.0          43.6      44.2       48.6
+      (3-shot)              512          40.2            43.2            39.6          46.4
+                                                                                                                            Average                   51.9          53.9      55.6       56.4
+                            256          49.3            52.1            51.9          56.4
+      Average
+                            512          49.4            53.0            51.8          56.4
+
+
+                                                                                                       lowing the model to recover from locally suboptimal token
+Dream-7B, respectively. This indicates a strong and consis-                                            choices and accumulate higher trajectory-level confidence.
+tent benefit of inference-time scaling through particle-based                                          Interestingly, even a modest increase to N = 2 yields sig-
+sampling. Moreover, the improvements on both mathemati-                                                nificant gains over the baseline, highlighting SR-SMC as
+cal and coding tasks suggest that SR-SMC generalizes well                                              a practical and scalable inference-time method to masked
+across different task domains. These gains are also sustained                                          diffusion language models.
+when generating much longer sequences, indicating that our
+trajectory-level resampling effectively mitigates error accu-
+                                                                                                       Analysis of Particle Overtake To investigate the mechan-
+mulation in diffusion-based generation. Collectively, these
+                                                                                                       ical advantage of maintaining multiple interacting trajecto-
+findings suggest that SR-SMC can serve as an effective and
+                                                                                                       ries, we quantify the occurrence of overtake events during
+robust solution to computational scaling in dLLMs.
+                                                                                                       the block-wise generation process. We define an overtake
+                                                                                                       event as a case where the particle with the highest probabil-
+5. Discussion and Analysis                                                                             ity at the end of a block was not the dominant particle (i.e.,
+                                                                                                       highest probability) at the start of that same block.
+Scaling the Number of Particles As the number of parti-
+cles N increases, we observe a clear and consistent improve-                                           As shown in Table 4, we analyzed 640 blocks per benchmark
+ment in performance across both LLaDA-1.5 and Dream-7B                                                 using LLaDA-1.5. We observe that overtake events occur
+on all four benchmarks, as shown in Table 3 and Figure 3.                                              in approximately 24% to 31% of all blocks across different
+When N = 1, the models reduce to standard parallel decod-                                              tasks. This empirical evidence indicates that the particles in
+ing, which serves as a lower bound on performance across                                               SR-SMC are not merely performing idle exploration around
+all benchmarks. Scaling the particles to N = 2, 3, 4 steadily                                          greedy trajectories. Instead, the resampling mechanism
+improves performance (see Figure 3), with the strongest                                                preserves initially non-dominant but high-potential trajec-
+gains typically achieved at N = 3 or N = 4. On average,                                                tories, allowing them to eventually outperform the local
+scaling particles to N = 4 improves LLaDA-1.5 from 49.3                                                greedy choices that standard decoding methods would oth-
+to 52.1 and Dream-7B from 51.9 to 56.4. These results                                                  erwise lock into. Notably, such behavior cannot be captured
+suggest that increasing the number of particles effectively                                            by single-trajectory decoding or purely greedy confidence-
+expands the search space over generation trajectories, al-                                             based remasking, which irreversible commit to the locally
+
+                                                                                                   6
+                             Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+     Qualitative Comparison: Mathematical Reasoning (MATH)
+
+     Problem: In the land of Ink, the money system is unique. One Trinket is equal to 4 Blinkets, and 3 Blinkets are equal to 7
+     Drinkets. In Trinkets, what is the value of 56 Drinkets?
+     Reference Answer: 6
+          Greedy Decoding (τ = 0)                                                   w/ SR-SMC (τ = 1, N = 4)
+
+         To find the value of 56 Drinkets in Trinkets, we need to convert all       To find the value of 56 Drinkets in Trinkets, we need to convert Drinkets
+         units to Trinkets. We know the following conversion rates:                 to Blinkets first and then from Blinkets to Trinkets.
+         1. 1 Trinket = 4 Blinkets
+         2. 3 Blinkets = 7 Blinkets (Local Consistency Error)                       1. Convert Drinkets to Blinkets:
+                                                                                    - We know that 3 Blinkets are equal to 7 Drinkets.
+         First, let’s convert 3 Blinkets to Trinkets:                               - Therefore, 1 Drinket is equal to 37 Blinkets.
+         3 Blinkets = 34 Trinkets.                                                  - So, 56 Drinkets is equal to 56 × 73 = 24 Blinkets.
+         Next, let’s convert 7 Blinkets to Trinkets:
+         7 Blinkets = 7 × 34 Trinkets = 5.25 Trinkets.                              2. Convert Blinkets to Trinkets:
+         Now, let’s convert 56 Drinkets to Trinkets:                                - We know that 1 Trinket is equal to 4 Blinkets.
+         56 Drinkets = 56 × 5.25 Trinkets = 294 Trinkets.                           - Therefore, 1 Trinket is equal to 14 Trinkets.
+                                                                                    - So, 24 Blinkets is equal to 24 × 14 = 6 Trinkets.
+          Final Answer: 294 ✗
+                                                                                    Therefore, the value of 56 Drinkets in Trinkets is 6 Trinkets.
+
+                                                                                    Final Answer: 6 ✓
+
+
+
+
+Figure 4. A qualitative comparison of reasoning trajectories. Greedy decoding focus on step-wise confidence (Sahoo et al., 2024) leads to
+a hallucinated identity (3 Blinkets = 7 Blinkets) that persists through the chain. SR-SMC utilizes trajectory-level confidence to explore
+multiple trajectories in parallel and successfully recovers the correct multi-step conversion.
+
+
+Table 4. Analysis of particle “Overtake”. An overtake occurs when                   the model in suboptimal generative trajectories. In con-
+the particle with the highest probability at the end of a block was
+not the dominant particle at the start of that same block.
+                                                                                    trast, SR-SMC with N = 4 particles demonstrates superior
+                                                                                    robustness across the entire temperature range. By maintain-
+          Benchmark                  # Overtake        Percentage                   ing multiple interacting particles and performing resampling
+          GSM8K (5-shot)              160 / 640           25.0%                     based on trajectory-level confidence, SR-SMC effectively
+          MBPP (3-shot)               154 / 640           24.1%                     explores the generative space and steers the sampling pro-
+          MATH (4-shot)               197 / 640           30.8%                     cess away from repetitive or low-confidence regions.
+          HumanEval (0-shot)          196 / 640           30.6%
+                                                                                    For LLaDA-1.5, although the baseline does not exhibit the
+          Average                          -              27.6%
+                                                                                    same catastrophic collapse at low temperatures, SR-SMC
+                                                                                    still consistently outperforms the baseline across most tem-
+dominant particle at the beginning of each block.                                   perature settings. The results show that SR-SMC provides
+                                                                                    the most significant gains at moderate to high temperatures,
+Analysis of Gumbel Noise We investigate the impact of                               where it can better leverage the diverse candidates generated
+sampling stochasticity on the performance of masked dif-                            by the stochastic diffusion process. These findings highlight
+fusion language models. Traditional sampling strategies                             that SR-SMC is not only an effective inference-time scaling
+for MDLMs often rely on confidence-based greedy decod-                              method but also a principled framework that enhances the
+ing, which can lead to myopic trajectory exploration and a                          stability and reliability of diffusion-based language genera-
+lack of generation diversity. To examine how our proposed                           tion regardless of the chosen sampling temperature. Figure 4
+self-rewarding SMC interacts with different levels of ran-                          further illustrates a qualitative comparison of decoding tra-
+domness, we provide ablation experiments to evaluate the                            jectories with different sampling strategies.
+performance of LLaDA-1.5 and Dream-7B across a range
+of Gumbel noise temperatures τ ∈ [0, 1.0] during sampling.
+                                                                                    Zero-Shot Evaluation To further evaluate the generaliz-
+As illustrated in Figure 5, the baseline performance using                          ability of our method across different prompting configu-
+standard parallel decoding is highly sensitive to the sam-                          rations, we conduct a zero-shot evaluation on the GSM8K
+pling temperature. For the Dream-7B model, we observe a                             and MATH benchmarks. We note that the results for Hu-
+significant performance collapse at low temperatures (start-                        manEval presented in our main experiments (Table 2) are
+ing from τ = 0.1) on both MBPP and MATH benchmarks.                                 inherently zero-shot. For the MBPP benchmark, however,
+This failure is primarily attributed to excessive token repeti-                     we observed that both base models failed to produce code
+tion during the deterministic decoding process, which traps                         in the requisite format for automated post-processing with-
+
+                                                                                7
+                                               Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+                            LLaDA-1.5 (MBPP)                 55
+                                                                          Dream-7B (MBPP)                  46
+                                                                                                                        LLaDA-1.5 (MATH)              55
+                                                                                                                                                                   Dream-7B (MATH)
+               46
+                                                             50                                                                                       50
+               45                                                                                          44
+                                                             45                                                                                       45
+               44                                            40                                                                                       40
+Accuracy (%)
+
+
+
+
+                                                                                                           42
+               43                                            35                                                                                       35
+                                                             30                                            40                                         30
+               42
+                                                             25                                                                                       25
+               41                                                                                          38
+                                                             20                                                                                       20
+                                                                                                                                                                              Baseline
+               40                                            15                                            36                                         15                      Baseline + SR-SMC
+                                                             10                                                                                       10
+                    0.0   0.2     0.4    0.6     0.8   1.0        0.0   0.2      0.4   0.6     0.8   1.0        0.0   0.2    0.4   0.6    0.8   1.0        0.0   0.2    0.4    0.6    0.8    1.0
+                                 Temperature                                   Temperature                                  Temperature                                Temperature
+
+Figure 5. Effect of sampling temperature τ on model performance across different benchmarks. We report the accuracy of LLaDA-1.5
+and Dream-7B on MBPP and MATH datasets as the temperature varies uniformly from 0.0 to 1.0. The blue circles represent the baseline
+with standard parallel decoding, while the red stars denote the results using our SR-SMC with N = 4 particles. SR-SMC consistently
+demonstrates better robustness across the entire temperature range. Notably, while the baseline performance of Dream-7B collapses at low
+temperatures (startig from 0.1) due to repetition, SR-SMC maintains stable and high accuracy by effectively exploring the generative
+space through particle re-weighting and resampling.
+
+
+Table 5. Zero-shot performance of LLaDA-1.5 and DREAM-                                                     MDLMs, further improving inference efficiency and their
+7B variants on GSM8K and MATH benchmarks across different
+generation lengths.
+                                                                                                           potential for real-world applications.
+                                                                                                           Despite these advances, existing MDLMs primarily improve
+       Benchmark                Length   LLaDA-1.5      w/ SR-SMC       Dream-7B       w/ SR-SMC
+       GSM8K                     256           75.4          76.3             77.9           81.1
+                                                                                                           performance through model scaling (Nie et al., 2024; 2025),
+       (0-shot)                  512           80.4          82.0             78.0           78.0          architectural modifications (Wu et al., 2025a; Bie et al.,
+       MATH                      256           35.2          36.6             44.2           49.2          2025), or training-time interventions (Schiff et al., 2024;
+       (0-shot)                  512           39.0          44.8             48.8           51.6          Hersche et al., 2025), while the role of inference-time scal-
+                                                                                                           ing remains largely unexplored. As a primary work, Ma
+out few-shot exemples. Unlike few-shot settings, where                                                     et al. (2025) first proposed scaling test-time compute for
+in-context demonstrations provide a template for the out-                                                  diffusion models, substantially improving the performance
+put, zero-shot generation relies exclusively on the model’s                                                beyond simply scaling diffusion sampling steps. Singhal
+intrinsic reasoning capabilities and the effectiveness of the                                              et al. (2025) illustrated this idea on MDLMs using the se-
+inference-time exploration.                                                                                quential Monte Carlo framework. Dang et al. (2025) further
+                                                                                                           extend it with particle Gibbs sampling that enables gener-
+As illustrated in Table 5, SR-SMC consistently enhances                                                    ation refinement via an external task-specific reward guid-
+the performance of both LLaDA-1.5 and Dream-7B in these                                                    ance. In parallel, ReMDM (Wang et al., 2025) introduces a
+zero-shot settings. These results demonstrate that trajectory-                                             principled remasking strategy to improve text quality with
+level confidence serves as a robust implicit reward signal,                                                more sampling steps. In contrast, our proposed algorithm
+enabling the model to effectively navigate a wider explo-                                                  is self-rewarding and can be used for general tasks with
+ration space and steer away from low-quality outputs even                                                  arbitrary pretrained models and remasking strategies.
+in the absence of prompting demonstrations.
+                                                                                                           7. Conclusion
+6. Related Work
+                                                                                                           In this paper, we propose a novel inference-time scaling
+As D3PM (Austin et al., 2021) introduced the state absorb-                                                 algorithm for masked diffusion language models (MDLMs).
+ing with mask token for discrete diffusion models, masked                                                  Our algorithm is a sequential Monte Carlo (SMC) method
+diffusion language models have attracted increasing atten-                                                 where the trajectory confidence is used as importance
+tion as a promising alternative to auto-regressive (AR) mod-                                               weights. This results in a self-rewarding SMC framework
+els (Sahoo et al., 2024; Lou et al., 2024; Schiff et al., 2024;                                            that promotes globally confident generation trajectories,
+Shi et al., 2024; Arriola et al., 2025). Built upon MDLMs,                                                 without requiring additional training or external reward guid-
+diffusion large language models such as LLaDAs (Nie et al.,                                                ance. Extensive experiments and ablation studies across
+2025; Zhu et al., 2025; Bie et al., 2025) Dream (Ye et al.,                                                multiple benchmarks and model families demonstrate that
+2025), and DiffuLLaMA (Gong et al., 2024) have demon-                                                      our self-rewarding SMC significantly improves pretrained
+strated strong scalability and achieved competitive perfor-                                                MDLMs in terms of both sample quality and diversity, un-
+mance when compared to similarly sized AR models. Subse-                                                   locking an effective and principled inference-time scaling
+quently, dLLM-Cache (Liu et al., 2025) and Fast-dLLM (Wu                                                   dimension for diffusion-based language generation.
+et al., 2025b) introduced caching and parallel decoding to
+
+                                                                                                       8
+                      Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+Acknowledgements                                                   Del Moral, P., Doucet, A., and Jasra, A. Sequential monte
+                                                                     carlo samplers. Journal of the Royal Statistical Society
+This research was supported by Kjell & Märta Beijer Foun-           Series B: Statistical Methodology, 68(3):411–436, 2006.
+dation and by the project Deep Probabilistic Regression –            2
+New Models and Learning Algorithms (contract number:
+2021-04301) funded by the Swedish Research Council.                Dhariwal, P. and Nichol, A. Diffusion models beat gans
+Some of the computations were enabled by resources pro-              on image synthesis. Advances in neural information
+vided by the National Academic Infrastructure for Super-             processing systems, 34:8780–8794, 2021. 1
+computing in Sweden (NAISS), partially funded by the
+Swedish Research Council through grant agreement no.               Doucet, A., De Freitas, N., and Gordon, N. An introduction
+2022-06725.                                                          to sequential monte carlo methods. In Sequential Monte
+                                                                     Carlo methods in practice, pp. 3–14. Springer, 2001. 4
+
+References                                                         Gokaslan, A. and Cohen, V.   Openwebtext cor-
+                                                                     pus.       http://Skylion007.github.io/
+Arriola, M., Sahoo, S. S., Gokaslan, A., Yang, Z., Qi,
+                                                                     OpenWebTextCorpus, 2019. 5
+  Z., Han, J., Chiu, J. T., and Kuleshov, V. Block
+  diffusion: Interpolating between autoregressive and              Gong, S., Agarwal, S., Zhang, Y., Ye, J., Zheng, L., Li, M.,
+  diffusion language models. In The Thirteenth In-                  An, C., Zhao, P., Bi, W., Han, J., et al. Scaling diffu-
+  ternational Conference on Learning Representations,                sion language models via adaptation from autoregressive
+  2025. URL https://openreview.net/forum?                            models. arXiv preprint arXiv:2410.17891, 2024. 8
+  id=tyEyYT267x. 1, 2, 5, 8
+                                                                   Gu, S., Chen, D., Bao, J., Wen, F., Zhang, B., Chen,
+Austin, J., Johnson, D. D., Ho, J., Tarlow, D., and Van              D., Yuan, L., and Guo, B. Vector quantized diffusion
+  Den Berg, R. Structured denoising diffusion models in              model for text-to-image synthesis. In Proceedings of the
+  discrete state-spaces. Advances in neural information             IEEE/CVF conference on computer vision and pattern
+  processing systems, 34:17981–17993, 2021. 2, 8                     recognition, pp. 10696–10706, 2022. 1
+Bie, T., Cao, M., Chen, K., Du, L., Gong, M., Gong, Z., Gu,        Han, X., Kumar, S., and Tsvetkov, Y. Ssd-lm: Semi-
+  Y., Hu, J., Huang, Z., Lan, Z., et al. Llada2. 0: Scaling          autoregressive simplex-based diffusion language model
+  up diffusion language models to 100b. arXiv preprint               for text generation and modular control. In Proceed-
+  arXiv:2512.15745, 2025. 8                                          ings of the 61st Annual Meeting of the Association for
+                                                                     Computational Linguistics (Volume 1: Long Papers), pp.
+Blattmann, A., Dockhorn, T., Kulal, S., Mendelevitch, D.,
+                                                                    11575–11596, 2023. 5
+  Kilian, M., Lorenz, D., Levi, Y., English, Z., Voleti, V.,
+  Letts, A., et al. Stable video diffusion: Scaling latent         Hersche, M., Moor-Smith, S., Hofmann, T., and Rahimi, A.
+  video diffusion models to large datasets. arXiv preprint           Soft-masked diffusion language models. arXiv preprint
+  arXiv:2311.15127, 2023. 1                                          arXiv:2510.17206, 2025. 8
+Chang, H., Zhang, H., Jiang, L., Liu, C., and Freeman,             Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-
+  W. T. Maskgit: Masked generative image transformer. In             bilistic models. Advances in neural information process-
+  Proceedings of the IEEE/CVF conference on computer                 ing systems, 33:6840–6851, 2020. 1
+  vision and pattern recognition, pp. 11315–11325, 2022.
+ 1, 2, 3                                                           Ho, J., Salimans, T., Gritsenko, A., Chan, W., Norouzi, M.,
+                                                                     and Fleet, D. J. Video diffusion models. Advances in
+Dang, M., Han, J., Xu, M., Xu, K., Srivastava, A., and Er-           neural information processing systems, 35:8633–8646,
+  mon, S. Inference-time scaling of diffusion language               2022. 1
+  models with particle gibbs sampling. arXiv preprint
+  arXiv:2507.08390, 2025. 1, 8                                     Liu, Z., Yang, Y., Zhang, Y., Chen, J., Zou, C., Wei, Q.,
+                                                                     Wang, S., and Zhang, L. dllm-cache: Accelerating diffu-
+Dathathri, S., Madotto, A., Lan, J., Hung, J., Frank, E.,            sion large language models with adaptive caching. arXiv
+  Molino, P., Yosinski, J., and Liu, R. Plug and play lan-           preprint arXiv:2506.06295, 2025. 8
+  guage models: A simple approach to controlled text gen-
+  eration. arXiv preprint arXiv:1912.02164, 2019. 1                Lou, A., Meng, C., and Ermon, S. Discrete diffusion
+                                                                     modeling by estimating the ratios of the data distribu-
+Del Moral, P. Feynman-kac formulae. In Feynman-Kac                   tion. In Forty-first International Conference on Machine
+ Formulae: Genealogical and Interacting Particle Systems             Learning, 2024. URL https://openreview.net/
+  with Applications, pp. 47–93. Springer, 2004. 4                    forum?id=CNicRIVIPA. 1, 5, 8
+
+                                                               9
+                       Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+Loula, J., LeBrun, B., Du, L., Lipkin, B., Pasti, C., Grand,           Shi, J., Han, K., Wang, Z., Doucet, A., and Titsias, M.
+  G., Liu, T., Emara, Y., Freedman, M., Eisner, J., et al. Syn-          Simplified and generalized masked diffusion for discrete
+  tactic and semantic control of large language models via               data. Advances in neural information processing systems,
+  sequential monte carlo. arXiv preprint arXiv:2504.13139,               37:103131–103167, 2024. 8
+  2025. 1
+                                                                       Singhal, R., Horvitz, Z., Teehan, R., Ren, M., Yu, Z., McK-
+Ma, N., Tong, S., Jia, H., Hu, H., Su, Y.-C., Zhang, M., Yang,           eown, K., and Ranganath, R. A general framework for
+ X., Li, Y., Jaakkola, T., Jia, X., et al. Inference-time                inference-time scaling and steering of diffusion models.
+ scaling for diffusion models beyond scaling denoising                   In Forty-second International Conference on Machine
+ steps. arXiv preprint arXiv:2501.09732, 2025. 8                         Learning, 2025. URL https://openreview.net/
+                                                                         forum?id=Jp988ELppQ. 1, 8
+Nie, S., Zhu, F., Du, C., Pang, T., Liu, Q., Zeng, G., Lin, M.,
+  and Li, C. Scaling up masked diffusion models on text.               Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and
+  arXiv preprint arXiv:2410.18514, 2024. 8                               Ganguli, S. Deep unsupervised learning using nonequi-
+                                                                         librium thermodynamics. In International conference on
+Nie, S., Zhu, F., You, Z., Zhang, X., Ou, J., Hu, J., Zhou, J.,          machine learning, pp. 2256–2265. pmlr, 2015. 1
+  Lin, Y., Wen, J.-R., and Li, C. Large language diffusion
+  models. arXiv preprint arXiv:2502.09992, 2025. 1, 3, 8               Uehara, M., Zhao, Y., Wang, C., Li, X., Regev, A., Levine,
+                                                                         S., and Biancalani, T. Inference-time alignment in diffu-
+Peebles, W. and Xie, S. Scalable diffusion models with                   sion models with reward-guided generation: Tutorial and
+  transformers. In Proceedings of the IEEE/CVF interna-                  review. arXiv preprint arXiv:2501.09685, 2025. 1
+  tional conference on computer vision, pp. 4195–4205,
+                                                                       Wang, G., Schiff, Y., Sahoo, S. S., and Kuleshov, V. Re-
+  2023. 1
+                                                                        masking discrete diffusion models with inference-time
+Rafailov, R., Sharma, A., Mitchell, E., Manning, C. D.,                 scaling. arXiv preprint arXiv:2503.00307, 2025. 8, 12
+  Ermon, S., and Finn, C. Direct preference optimiza-
+                                                                       Wu, C., Zhang, H., Xue, S., Diao, S., Fu, Y., Liu, Z.,
+  tion: Your language model is secretly a reward model.
+                                                                        Molchanov, P., Luo, P., Han, S., and Xie, E. Fast-
+  Advances in neural information processing systems, 36:
+                                                                        dllm v2: Efficient block-diffusion llm. arXiv preprint
+  53728–53741, 2023. 1
+                                                                        arXiv:2509.26328, 2025a. 8
+Robert, C. P., Casella, G., and Casella, G. Monte Carlo                Wu, C., Zhang, H., Xue, S., Liu, Z., Diao, S., Zhu, L., Luo,
+  statistical methods, volume 2. Springer, 1999. 2                      P., Han, S., and Xie, E. Fast-dllm: Training-free acceler-
+Rombach, R., Blattmann, A., Lorenz, D., Esser, P., and                  ation of diffusion llm by enabling kv cache and parallel
+  Ommer, B. High-resolution image synthesis with latent                 decoding. arXiv preprint arXiv:2505.22618, 2025b. 3, 5,
+  diffusion models. In Proceedings of the IEEE/CVF con-                 8
+  ference on computer vision and pattern recognition, pp.              Ye, J., Xie, Z., Zheng, L., Gao, J., Wu, Z., Jiang, X., Li,
+ 10684–10695, 2022. 1                                                    Z., and Kong, L. Dream 7b: Diffusion large language
+                                                                         models. arXiv preprint arXiv:2508.15487, 2025. 1, 2, 5,
+Saharia, C., Chan, W., Saxena, S., Li, L., Whang, J., Denton,
+                                                                         8, 12
+  E. L., Ghasemipour, K., Gontijo Lopes, R., Karagol Ayan,
+  B., Salimans, T., et al. Photorealistic text-to-image dif-           Zhang, L., Rao, A., and Agrawala, M. Adding conditional
+  fusion models with deep language understanding. Ad-                    control to text-to-image diffusion models. In Proceedings
+  vances in neural information processing systems, 35:                   of the IEEE/CVF international conference on computer
+  36479–36494, 2022. 1                                                   vision, pp. 3836–3847, 2023. 1
+Sahoo, S., Arriola, M., Schiff, Y., Gokaslan, A., Marroquin,           Zheng, K., Chen, Y., Mao, H., Liu, M.-Y., Zhu, J., and
+  E., Chiu, J., Rush, A., and Kuleshov, V. Simple and                    Zhang, Q. Masked diffusion models are secretly time-
+  effective masked diffusion language models. Advances                   agnostic masked models and exploit inaccurate categor-
+  in Neural Information Processing Systems, 37:130136–                   ical sampling. arXiv preprint arXiv:2409.02908, 2024.
+  130184, 2024. 1, 2, 5, 7, 8                                            4
+
+Schiff, Y., Sahoo, S. S., Phung, H., Wang, G., Boshar, S.,             Zhu, F., Wang, R., Nie, S., Zhang, X., Wu, C., Hu, J., Zhou,
+  Dalla-torre, H., de Almeida, B. P., Rush, A., Pierrot, T.,             J., Chen, J., Lin, Y., Wen, J.-R., et al. Llada 1.5: Variance-
+  and Kuleshov, V. Simple guidance mechanisms for dis-                   reduced preference optimization for large language diffu-
+  crete diffusion models. arXiv preprint arXiv:2412.10193,               sion models. arXiv preprint arXiv:2505.19223, 2025. 2,
+  2024. 8                                                                5, 8, 12
+
+                                                                  10
+                        Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+A. Sequential Monte Carlo for Diffusion Reverse Process
+A.1. Incremental Importance Weights
+Consider a sequence of tokens xT , . . . , x0 in the diffusion reverse path, with unnormalized intermediate target distribution
+π̃t (xt:T ). We define the following Markov sequential proposal
+                                                                      −1
+                                                                     TY
+                                             qt (xt:T ) = qT (xT )         qk (xk | xt+1 ),                               (16)
+                                                                     k=t
+
+so that it satisfies a standard factorization:
+
+                                           qt−1 (xt−1:T ) = qt (xt:T ) qt−1 (xt−1 | xt ).                                 (17)
+
+The importance weight of trajectory xt:T (from the full-mask tokens to a partial masked state) at time t is given by
+                                                                        π̃t (xt:T )
+                                                        W̃t (xt:T ) =               .                                     (18)
+                                                                        qt (xt:T )
+Likewise, at next step, we could write
+                                                      π̃t−1 (xt−1:T )
+                                     W̃t−1 (xt−1:T ) =                                                                    (19)
+                                                      qt−1 (xt−1:T )
+                                                             π̃t−1 (xt−1:T )
+                                                    =                                                                     (20)
+                                                      qt (xt:T ) qt−1 (xt−1 | xt )
+                                                             π̃t−1 (xt−1:T )         π̃t (xt:T )
+                                                    =                              ·             ,                        (21)
+                                                      π̃t (xt:T ) qt−1 (xt−1 | xt ) qt (xt:T )
+                                                      |             {z            } | {z }
+                                                                =w̃t−1 (xt−1:T )         =W̃t (xt:T )
+
+
+where W̃t (xt:T ) is the previous weight as in Eq. (18), and w̃t−1 (xt−1:T ) is the incremental importance weights in Eq. (4).
+Conceptually, w̃t−1 (xt−1:T ) is the local ratio that updates the global path-wise importance weight when extending trajectory
+with more unmasked tokens i.e., from xt:T to xt−1:T . In practice, SMC maintains particle weights recursively via Eq. (21)
+and performs resampling using normalized version of W̃t−1 (xt:T ).
+
+A.2. Proof for Confidence-based Sequential Monte Carlo
+Proposition 3.1. Given a pretrained diffusion model pθ , let {π̃t (xt:T )}Tt=0 denote the unnormalized path measures
+defined by the recursion in Eq. (12). If the sequential proposal in SMC is chosen to be the diffusion transition kernel, i.e.,
+qt−1 (xt−1 | xt ) = Kt (xt , xt−1 ), then the incremental importance weights at step t − 1 is given by
+                                                                    Y
+                                                  w̃t−1 (xt−1:T ) =   ct (j),                                           (22)
+                                                                          j∈St
+                                
+where ct (j) := pθ x̂0 (j) | xt is the token confidence and St denotes the selected mask subset to be updated at step t.
+
+Proof. Recall that in sequential Monte Carlo, the incremental importance weight at step t − 1 is defined as
+                                                                       π̃t−1 (xt−1:T )
+                                          w̃t−1 (xt−1:T ) =                                   ,                           (23)
+                                                                π̃t (xt:T ) qt−1 (xt−1 | xt )
+Substituting the path recursion in Eq. (12) into the numerator yields
+                                                        π̃t (xt:T ) Kt (xt , xt−1 ) Gt−1 (xt , xt−1 )
+                                    w̃t−1 (xt−1:T ) =                                                 .                   (24)
+                                                                 π̃t (xt:T ) qt−1 (xt−1 | xt )
+Removing π̃t (xt:T ) in both numerator and denominator, we obtain
+                                                             Kt (xt , xt−1 ) Gt−1 (xt , xt−1 )
+                                        w̃t−1 (xt−1:T ) =                                      .                          (25)
+                                                                     qt−1 (xt−1 | xt )
+
+                                                                   11
+                        Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+When the proposal distribution qt−1 (xt−1 | xt ) is selected to be the same as the diffusion transition kernel, i.e, qt−1 (xt−1 |
+xt ) = Kt (xt , xt−1 ), the transition kernel disappear, and
+                                                w̃t−1 (xt−1:T ) = Gt−1 (xt , xt−1 ).                                              (26)
+And
+Q recall that we define the potential as the joint probability            of accepted tokens within set St , i.e., Gt−1 (xt , xt−1 ) =
+ j∈St pθ (x t−1 (j) | xt ), and that c t (j) := pθ  x̂ 0 (j) | xt   , we finally have the following
+                                                                      Y
+                                              w̃t−1 (xt−1:T ) =           pθ (xt−1 (j) | xt )                                      (27)
+                                                                  j∈St
+                                                                  Y
+                                                              =          ct (j),                                                  (28)
+                                                                  j∈St
+
+which completes the proof.
+
+B. Limitation and Future Work
+While the proposed self-rewarding SMC provides a principled framework for trajectory-level confidence-guided sampling,
+there are several worth-noting limitations. First, our method increases inference-time computation by running multiple
+diffusion processes in parallel. This trade-off is inherent to inference-time scaling methods and can be controllable by
+adjusting the number of particles. Second, the proposed trajectory confidence relies solely on model likelihood. While this
+choice is generic and task-agnostic, it does not explicitly optimize for downstream objectives such as reasoning correctness
+or human preference. In our future work, we plan to explore more informed proposals, such as look-ahead or twisted
+diffusion transitions, to further improve sampling efficiency and quality.
+
+C. Additional Experiment
+C.1. Entropy Results of Text Generation
+We also report the entropy values of text generation with our self-rewarding SMC in Table 6. Note that the generative
+perplexity and entropy of the original data are 14.8 and 5.44, respectively, as reported in Wang et al. (2025), which
+demonstrate that our method improves sample quality while preserving text diversity.
+Table 6. Generative perplexity (Gen. PPL; ↓), entropy, and the number of function evaluations (NFEs; ↓) of 300 samples of lengths
+L = 1024, 2048. All models are trained on OWT dataset. For reference, the Gen. PPL and entropy of the original data are 14.8 and 5.44,
+respectively, as reported by Wang et al. (2025).
+
+                                                                      L = 1024                             L = 2048
+               Model                                    Gen. PPL(↓)      Entropy(↑)   NFEs   Gen. PPL(↓)     Entropy(↑)   NFEs
+               MDLM w/ SR-SMC                              25.8             5.15      4K        25.9            5.41      8K
+                                              L′ = 16      21.1             5.19      4K        20.2            5.46      8K
+               BD3-LMs w/ SR-SMC              L′ = 8       18.9             5.18      4K        17.3            5.45      8K
+                                              L′ = 4       16.1             5.20      4K        15.1            5.49      8K
+
+
+
+C.2. Detailed Results of Inference with Gumbel Noise
+We provide the detailed results of diffusion sampling with different Gumbel noise temperatures τ ranging from 0.0 to
+1.0, as shown in Table 7. We observe that our self-reward SMC (SR-SMC) consistently outperforms the baseline models
+LLaDA-1.5 (Zhu et al., 2025) and Dream-7B (Ye et al., 2025) over a wide range of noise temperatures across both MBPP
+and MATH benckmarks. Notably, Dream-7B baseline is highly sensitive to noise temperatures, as its performance degrades
+severely when slightly increase τ to 0.1 and 0.2. While our method significantly improves its robustness over all noise
+temperatures. This behavior underscores the brittleness of traditional diffusion sampling strategies , showing a great potential
+of our SR-SMC that mitigates this issue through particle-based exploration and resampling.
+
+C.3. Additional Examples
+We include more examples of comparison of the paths between greedy decoding and our self-rewarding SMC in Figure 6
+and 7. These qualitative results further illustrate how standard greedy decoding is prone to local consistency errors and
+
+                                                                  12
+                              Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+calculation hallucinations, whereas SR-SMC maintains global coherence through its particle resampling mechanism.
+
+                                         Table 7. Effect of Gumbel noise temperature τ on MBPP and MATH.
+
+ Benchmark     Method                        τ = 0.0     τ = 0.1   τ = 0.2     τ = 0.3   τ = 0.4    τ = 0.5     τ = 0.6       τ = 0.7   τ = 0.8    τ = 0.9        τ = 1.0
+               LLaDA-1.5                       42.6        42.2     42.8        42.8      41.0        42.0        40.2         42.6       40.6       41.6          40.4
+               LLaDA-1.5 w/ SR-SMC             43.8        43.2     43.0        42.6      43.4        45.2        43.2         44.0       43.6       43.4          44.2
+ MBPP
+               Dream-7B                        48.2        1.80     5.60        14.2      28.0        34.0        39.0         41.2       41.4       41.8          42.0
+               Dream-7B w/ SR-SMC              49.6        43.4     46.8        47.4      48.4        48.6        47.4         48.4       48.6       48.0          48.6
+               LLaDA-1.5                       39.8        39.8     38.0        37.6      40.0        38.4        38.8         37.2       38.8       38.2          38.2
+               LLaDA-1.5 w/ SR-SMC             39.2        39.2     41.0        42.0      40.0        39.4        39.2         41.4       39.6       40.6          41.8
+ MATH
+               Dream-7B                        42.4        2.40     10.4        22.2      29.2        38.0        39.8         38.0       41.0       42.4          41.6
+               Dream-7B w/ SR-SMC              46.8        42.0     44.6        42.4      44.2        45.0        43.0         43.8       44.6       46.2          45.2
+
+
+
+   Qualitative Comparison: More Examples on Arithmetic Reasoning
+
+   Problem: Simplify 15 · 87 ÷ 12
+                               20
+                                  .
+                        8
+   Reference Answer: 21
+
+        Greedy Decoding (τ = 0)                                                            w/ SR-SMC (τ = 1, N = 4)
+
+        First, simplify the multiplication of the fractions:                                                                    12
+                                                                                           To simplify the expression 15 · 87 ÷ 20 , we can follow these steps:
+                                     1 8  8
+                                      · =                                                  1. Multiply the fractions first:
+                                     5 7  7
+                                                                                                                 1 8  1·8    8
+        (Calculation Hallucination: ignored 51 )                                                                  · =     =
+                                                                                                                 5 7  5·7   35
+        Next, simplify the division of the fractions. Recall that di-
+        viding by a fraction is equivalent to multiplying by its reciprocal:
+                                                                                           2. Divide the fractions:
+                                8   12  8 20
+                                  ÷    = ·                                                             8   12   8 20    8 · 20    160
+                                7   20  7 12                                                             ÷    =   ·   =         =
+                                                                                                      35   20   35 12   35 · 12   420
+        Now, multiply the numerators and the denominators:
+                                   8 · 20   160                                            3. Simplify the fraction:
+                                          =
+                                   7 · 12    84                                                                          160    8
+                                                                                                                             =
+                                                                                                                         420   21
+        Simplify the fraction by finding the greatest common divisor (GCD)
+        of 160 and 84. The GCD of 160 and 84 is 40:
+                                  160 ÷ 40   4                                             Therefore, the simplified form of the expression is:
+                                           =
+                                   84 ÷ 40   7                                                                8
+                                                                                           Final Answer:          ✓
+                                                                                                             21
+
+                          4
+        Final Answer:       ✗
+                          7
+
+
+
+
+                                             Figure 6. More qualitative comparison of arithmetic reasoning.
+
+
+
+
+                                                                                  13
+                         Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models
+
+
+
+
+Qualitative Comparison: Distance Calculation
+
+Problem: At 50 miles per hour, how far would a car travel in 2 34 hours? Express your answer as a mixed number.
+Reference Answer: 137 12
+
+    Greedy Decoding (τ = 0)                                                    w/ SR-SMC (τ = 1, N = 4)
+
+    To determine how far a car would travel in 2 43 hours at a speed of        To determine how far a car would travel in 2 34 hours at a speed of
+    50 miles per hour, we can use the formula for distance:                    50 miles per hour, we use the formula:
+
+                        Distance = Speed × Time                                                    Distance = Speed × Time
+
+
+    First, convert the mixed number 2 34 to an improper fraction:              First, convert the time from a mixed number to an improper fraction:
+                                     3   1                                                               3  8 3  11
+                                 2     =                                                             2     = + =
+                                     4   4                                                               4  4 4  4
+    (Severe Conversion Error)
+
+    Next, multiply the speed by the time:                                      Now, multiply the speed by the time:
+
+                                       1                                                                       11   550
+                   Distance = 50 ×       = 12.5 miles                                      Distance = 50 ×        =     = 137.5
+                                       4                                                                       4     4
+
+
+    Finally, convert 12.5 miles to a mixed number:                             Convert 137.5 to a mixed number:
+
+                                             1                                                                         1
+                                12.5 = 12                                                                137.5 = 137
+                                             2                                                                         2
+
+
+
+                        1                                                                            1
+    Final Answer: 12      ✗                                                    Final Answer: 137       ✓
+                        2                                                                            2
+
+
+
+
+                                         Figure 7. More qualitative comparison of physical reasoning.
+
+
+
+
+                                                                          14
+

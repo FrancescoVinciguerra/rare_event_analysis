@@ -1,0 +1,152 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+
+\title{SMC per un masked diffusion language model\\
+\large Nota matematica minimale}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Modello base}
+
+La generazione del masked diffusion model e' una catena di Markov
+\[
+X_0=[\mathrm{MASK}]^L,\qquad X_t\sim K_t(\,\cdot\mid X_{t-1}),
+\quad t=1,\ldots,T.
+\]
+La probabilita' congiunta di una traiettoria e'
+\[
+P_0(x_{0:T})
+=\prod_{t=1}^{T}K_t(x_t\mid x_{t-1}).
+\]
+In un singolo passo, i token ancora mascherati possono essere campionati
+condizionatamente in parallelo. Questo non rende indipendenti i token della
+completion: ogni distribuzione dipende dall'intero stato precedente. La
+probabilita' terminale e'
+\[
+p_0(x_T)=\sum_{x_1,\ldots,x_{T-1}}P_0(x_{0:T}),
+\]
+ma l'algoritmo non deve calcolare esplicitamente questa somma.
+
+\section{Distribuzione tilted}
+
+Sia $R(x_T)$ il reward terminale e sia $\lambda\geq 0$. Vogliamo campionare
+dalla distribuzione
+\[
+\pi_\lambda(x_T)
+=\frac{p_0(x_T)e^{\lambda R(x_T)}}{Z_\lambda},
+\qquad
+Z_\lambda=\mathbb E_{p_0}[e^{\lambda R(X_T)}].
+\]
+
+Scegliamo checkpoint $0=t_0<t_1<\cdots<t_m=T$. Per $k<m$, completiamo
+deterministicamente lo stato parziale $X_{t_k}$ tramite argmax e calcoliamo
+un reward provvisorio $R_k(X_{t_k})$. Al terminale usiamo la completion
+realmente campionata:
+\[
+R_m(X_T)=R(X_T).
+\]
+Definiamo il log-potenziale
+\[
+\Phi_k(X_{t_k})=\beta_k R_k(X_{t_k}),
+\qquad \beta_0=0,\quad \beta_m=\lambda.
+\]
+
+\section{Peso SMC e resampling}
+
+Ogni particella viene propagata con lo stesso kernel $K_t$ del modello base.
+Al checkpoint $k$, il suo peso viene moltiplicato per
+\[
+G_k
+=\exp\!\left(
+\Phi_k(X_{t_k})-\Phi_{k-1}(X_{t_{k-1}})
+\right).
+\]
+Equivalentemente,
+\[
+\log w_k
+=\log w_{k-1}
++\Phi_k(X_{t_k})-\Phi_{k-1}(X_{t_{k-1}}),
+\]
+seguito dalla normalizzazione dei pesi.
+
+Se l'ESS
+\[
+\operatorname{ESS}=\frac{1}{\sum_i (W_k^{(i)})^2}
+\]
+scende sotto la soglia, si estraggono i genitori con probabilita'
+$W_k^{(i)}$ e si riportano i pesi a $1/N$. L'informazione dei pesi precedenti
+rimane nella molteplicita' dei discendenti.
+
+Il prodotto dei potenziali lungo ogni genealogia telescopa:
+\[
+\prod_{k=1}^{m}G_k
+=\exp\!\left(\Phi_m(X_T)-\Phi_0(X_0)\right)
+=e^{\lambda R(X_T)}.
+\]
+Di conseguenza, i reward provvisori influenzano il resampling e quindi
+l'efficienza, ma non modificano il target terminale.
+
+\section{Perche' non serve la joint probability della completion}
+
+In generale, un peso di importance sampling contiene il rapporto tra il
+kernel del target $K_t$ e il kernel di proposta $Q_t$. Qui la propagazione
+non viene modificata:
+\[
+Q_t=K_t
+\qquad\Longrightarrow\qquad
+\frac{K_t}{Q_t}=1.
+\]
+Le probabilita' del masked diffusion model sono quindi gia' incluse nel
+campionamento della traiettoria e si cancellano nel rapporto. Rimane soltanto
+il rapporto tra i potenziali $G_k$.
+
+Questa giustificazione richiede che la propagazione resti esattamente quella
+del modello base. Se si modificassero logits, temperatura o kernel di
+demasking, sarebbe necessario includere il corrispondente rapporto
+$K_t/Q_t$ nei pesi.
+
+\section{Stima dell'evento raro}
+
+Sia $E$ l'evento raro. Dalla distribuzione tilted vale l'identita'
+\[
+p_0(E)
+=\frac{
+\mathbb E_{\pi_\lambda}
+\left[e^{-\lambda R(X)}\mathbf 1_E(X)\right]
+}{
+\mathbb E_{\pi_\lambda}
+\left[e^{-\lambda R(X)}\right]
+}.
+\]
+Se $(X_i,W_i)$ e' la popolazione SMC terminale, definiamo
+\[
+\widetilde W_i
+=\frac{W_i e^{-\lambda R(X_i)}}
+{\sum_{r=1}^{N}W_r e^{-\lambda R(X_r)}}
+\]
+e stimiamo
+\[
+\widehat p_\lambda(E)
+=\sum_{i=1}^{N}\widetilde W_i\mathbf 1_E(X_i).
+\]
+Con $J$ popolazioni indipendenti e pesi uniformi,
+\[
+\widehat p(E)=\frac{1}{J}\sum_{j=1}^{J}\widehat p_{\lambda_j}(E).
+\]
+
+\section*{Conclusione}
+
+L'SMC e' corretto perche' opera sulla probabilita' congiunta della
+\emph{traiettoria}, usa il kernel originale come proposta e applica
+potenziali che telescopano fino a $e^{\lambda R(X_T)}$. Non calcola la
+probabilita' puntuale $p_0(x_T)$ di una completion, e non ne ha bisogno.
+Per un numero finito di particelle, lo stimatore self-normalized non e'
+esattamente unbiased; e' consistente e la sua affidabilita' dipende dalla
+non degenerazione dei pesi corretti.
+
+\end{document}

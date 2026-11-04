@@ -1,0 +1,11 @@
+# Keep executable source portable and scientific data byte-for-byte intact.
+*.sh text eol=lf
+*.py text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.csv -text
+*.json -text
+*.jsonl -text
+*.ipynb -text

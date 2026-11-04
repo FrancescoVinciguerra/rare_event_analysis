@@ -1,0 +1,27 @@
+extends: mdlm_owt_unconditional_common.yaml
+
+decoder:
+  denoising_steps: 32
+
+smc:
+  experiment_phase: estimation
+  # Provisional only: replace after reviewing the lambda-calibration table.
+  tilted_lambdas: [0.5, 1.0, 2.0]
+  tilted_component_weights_a:
+    - 0.333333333333
+    - 0.333333333333
+    - 0.333333333334
+  component_weight_policy: uniform
+  optimize_component_weights: false
+  diagnostic_lambdas: [0.0]
+  num_particles: 256
+  independent_runs: 1
+  num_independent_runs: 1
+  reward_frequency: 4
+  reward_interval: 4
+  resampling_method: systematic
+  ess_threshold: 0.5
+  microbatch_size: 16
+  base_seed: 47000
+  beta_start_fraction: 0.0
+  final_resampling: false

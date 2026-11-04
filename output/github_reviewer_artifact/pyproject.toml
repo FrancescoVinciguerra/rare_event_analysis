@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mdlm-rare-event-estimation"
+version = "0.1.0"
+description = "Reviewer artifact for rare-event probability estimation in masked diffusion language models."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "PyYAML>=6.0",
+    "torch>=2.6",
+    "transformers==4.57.6",
+    "tqdm>=4.66",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+analysis = ["matplotlib>=3.8"]
+test = ["pytest>=8.0", "setuptools>=69"]
+
+[tool.setuptools.packages.find]
+where = [".", "experiments/mdlm_toxicity_rare_event/src"]
+include = ["rea_llms", "diffusion_toxicity_smc_experiment"]
+exclude = ["data*", "analysis*", "configs*", "docs*", "tests*", "outputs*"]
+namespaces = false
+
+[tool.pytest.ini_options]
+pythonpath = [".", "experiments/mdlm_toxicity_rare_event/src"]
+testpaths = ["experiments/mdlm_toxicity_rare_event/tests"]
+markers = [
+    "slow: optional slow integration tests",
+    "gpu: tests requiring CUDA and locally available model artifacts",
+]

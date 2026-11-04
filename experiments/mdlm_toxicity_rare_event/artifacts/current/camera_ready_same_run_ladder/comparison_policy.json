@@ -1,0 +1,1234 @@
+{
+  "policy": "saved_independent_MC_prefixes_at_calibrated_wall_clock_budget",
+  "new_MC_samples_generated": 0,
+  "MC_pool_root": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_gradual_budget",
+  "MC_pool_samples": 354420,
+  "MC_sources": [
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L30_seed1900060000.json",
+      "sha256": "cf748bba0a317bebb87c002874454e4e11d66d4706b270c37002c92e9485595b",
+      "seed": 405070916009702560,
+      "samples": 1831
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L30_seed1903060000.json",
+      "sha256": "3ea54a04d264586a35fa1bc0245a270cf7d548b17350b6eb0e80c9b0a4dcd640",
+      "seed": 1971374938334802436,
+      "samples": 1759
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L30_seed1906060000.json",
+      "sha256": "e8aa698901130d21bf7fa6f5870b3ee6f5f8ab29591787cb99b29baf3112df09",
+      "seed": 7528800486189603712,
+      "samples": 1827
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L30_seed1909060000.json",
+      "sha256": "b28fcebcf2817e3861ee8759d2b446d8bbcbd3e7aad3be377713c8ad57a2186c",
+      "seed": 7020669418277510753,
+      "samples": 1813
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L40_seed1900070000.json",
+      "sha256": "370a7a132265bd9482a49171746b2b401c4dff28ab4552a5fc81e5107a4711d8",
+      "seed": 557600109530922273,
+      "samples": 1958
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L40_seed1903070000.json",
+      "sha256": "2e44a593a25b48a53cf4da6eb6f0411550d5b48fc0e5911b55e80484e317d248",
+      "seed": 1902937518278779924,
+      "samples": 1945
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L40_seed1906070000.json",
+      "sha256": "4ae6e4d1f9fa1768e8fb898feae0d28eeac109450e7ecc764451989efeb21667",
+      "seed": 3594362600307288760,
+      "samples": 1939
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L40_seed1909070000.json",
+      "sha256": "d440088aaaddbfafccc8202b906f646368931014a82f0810810c7f21fb36f400",
+      "seed": 2650281533295686133,
+      "samples": 1928
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L50_seed1900080000.json",
+      "sha256": "a96898921d7eb44710fdfd51db2227865f2fa8d158bead1d4d34a25d61e02cfe",
+      "seed": 2295466477102474529,
+      "samples": 1853
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L50_seed1903080000.json",
+      "sha256": "ded4a96ce09b03596e8c90f60f8441a12de01abf1da3979d1d3f9ceeee9fafc3",
+      "seed": 340015357174334191,
+      "samples": 1856
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L50_seed1906080000.json",
+      "sha256": "63118ec30f8b637b7009d745ea92e92b5f416f52f419908df146a02c5e8d6a7e",
+      "seed": 5423934110427791780,
+      "samples": 1872
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L50_seed1909080000.json",
+      "sha256": "ae27ce065503ab175194ce0963c302f6461505cb660d204c1ae10247122c3573",
+      "seed": 1764669410802207705,
+      "samples": 1838
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L60_seed1900090000.json",
+      "sha256": "706fc773265bf7e9d8460738d0e52a4b52c8f32cfea8245b23c838548e70004c",
+      "seed": 6441247956524601771,
+      "samples": 1981
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L60_seed1903090000.json",
+      "sha256": "c3fb8a4212163a5a0098f955c1628d87d7ea7df74f5be20b56a3c256dff9b243",
+      "seed": 1714006667260946129,
+      "samples": 1975
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L60_seed1906090000.json",
+      "sha256": "23ba7082c864da885111a98a8713acf2cc3ea1e1938f367741eb9a1c9f6e6c99",
+      "seed": 7105246604842889231,
+      "samples": 1957
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L60_seed1909090000.json",
+      "sha256": "d1a6d8711359fbde596b39d940fc77c94d721be8d90c37923705e4ba50c1b66e",
+      "seed": 649848657436292097,
+      "samples": 2012
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L80_seed1900100000.json",
+      "sha256": "22c3b0cf70a82a61f887f8b7453e937efbb225f96c9a8d18408f260789470b6a",
+      "seed": 587268472619501607,
+      "samples": 2032
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L80_seed1903100000.json",
+      "sha256": "d2fd22b8878294f4230f445b01c3b0a640edf122bc1540d1d4bc24def5fdf1dd",
+      "seed": 3844072038360493606,
+      "samples": 2044
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L80_seed1906100000.json",
+      "sha256": "d234a15093ea818f4dda9bdc4fab15f6dfc6af90325e72f3007b884fc24b890b",
+      "seed": 3110852658012582838,
+      "samples": 2020
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B25_L80_seed1909100000.json",
+      "sha256": "1cd4339a9b3e41bfb5c3a72298fbedf6a6b2ee901fca88b6f43a968bde442963",
+      "seed": 5692879303425300316,
+      "samples": 2007
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L30_seed1900110000.json",
+      "sha256": "02ce69530f8e5cbcd2e2b7d5a01108d6e49415fc00aaa0ad8b1e5c42d97a1119",
+      "seed": 3778302504875967432,
+      "samples": 3823
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L30_seed1903110000.json",
+      "sha256": "038f767fe8b56d8b586de525b7f024fe5ac5ec41a4d7f47c2dc714143fe388a1",
+      "seed": 7326446511009336532,
+      "samples": 3804
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L30_seed1906110000.json",
+      "sha256": "ecb8137af77619858e3e09dc964e8ac3f68a7a02c776181aa543f9c07cf4ae0b",
+      "seed": 157350269472383441,
+      "samples": 3810
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L30_seed1909110000.json",
+      "sha256": "e8f84b1c0543a8264419cefcbd1942e50f555c34181f18c697f0fcc9418f5263",
+      "seed": 7670350701522742371,
+      "samples": 3806
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L40_seed1900120000.json",
+      "sha256": "b9dacd6565371b92ef558ed21d06bdab69f21aaa2b95836fe86621eeed4280eb",
+      "seed": 4329236455997953908,
+      "samples": 3822
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L40_seed1903120000.json",
+      "sha256": "f609ffe75625af62e64d43c8416e9aa31d3962bf4fe69a64fc064d111ed2bd72",
+      "seed": 6591277415519127979,
+      "samples": 3826
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L40_seed1906120000.json",
+      "sha256": "5a21a40c29f56e5755ac912cff37ceccf0fee9ce160faf7c12918fd42609e7c5",
+      "seed": 673724810164575659,
+      "samples": 3821
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L40_seed1909120000.json",
+      "sha256": "29965d08e365159ab5362f5c9115c1b6d64d55e79c85f09d2576d5af0bd8959f",
+      "seed": 5254329550093751606,
+      "samples": 3858
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L50_seed1900130000.json",
+      "sha256": "68144fafdc0cf1825c157c1af6b6c0c475fcc3e4341bda8836ea2d0d8c9cbd15",
+      "seed": 1455518605309830391,
+      "samples": 3689
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L50_seed1903130000.json",
+      "sha256": "662d7652083ba903c2e0d87d9546644768f8255e0dec40d66d08d40e011e2e20",
+      "seed": 4200712418551013433,
+      "samples": 3699
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L50_seed1906130000.json",
+      "sha256": "12da9c111627d389e5371156bfa49ec7850c8c7feb0e8777b0aa2cfea46a76b1",
+      "seed": 5355345670203516063,
+      "samples": 3653
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L50_seed1909130000.json",
+      "sha256": "4a6d96450f8a128cfdf6a0fc9ae6623eb4b5a598f5079c31caaea1c92f2ef5b7",
+      "seed": 5009900501416462594,
+      "samples": 3649
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L60_seed1900140000.json",
+      "sha256": "8c0e6a4c69aa9ee41d44d06045135c70d246d00fd87814de7547bce50a730c67",
+      "seed": 7788890962346039954,
+      "samples": 3928
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L60_seed1903140000.json",
+      "sha256": "76600a8e13eec24bd78cc9d8bdc909176da0a3ba33297e41aea12a264f0a7a2c",
+      "seed": 6433719119089581344,
+      "samples": 3900
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L60_seed1906140000.json",
+      "sha256": "94f0ee9f959c796ead78d23cfbbafd362e2101b354bf3811cbaa8731ddd64e31",
+      "seed": 1272900575953659579,
+      "samples": 3922
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L60_seed1909140000.json",
+      "sha256": "981f01c8ed84362fb6496be5eaf6f35f1d38e3cdf4bc627e95beb2794d9c2762",
+      "seed": 1263024009352405740,
+      "samples": 3894
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L80_seed1900150000.json",
+      "sha256": "7ddd67b7af96dcb36658eb1f05c4f801b27893f2ad389b79c3e83c14b29f2c61",
+      "seed": 7134016083020964692,
+      "samples": 3763
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L80_seed1903150000.json",
+      "sha256": "52a506cf1945dcf94ac852d99a6586f48b3ff7c0bc4e01bcf20f82130c57840b",
+      "seed": 8329243441534878660,
+      "samples": 3786
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L80_seed1906150000.json",
+      "sha256": "5a10e066c765c1afd3bb8f4c777849193d767f257892ca9f8858114132226cfa",
+      "seed": 7153859560374559725,
+      "samples": 3804
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p999_B50_L80_seed1909150000.json",
+      "sha256": "828bdb3f6b1521be14d5168e3920477079ca6eabdf2519c2ad0ada5675687c2a",
+      "seed": 7903305116160276120,
+      "samples": 3779
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L10_seed1900000000.json",
+      "sha256": "95474cec8545b249c0ad6e74dfc8fe932751a43d3484c5fbc90bc1bf0728aa3b",
+      "seed": 670507937986744972,
+      "samples": 101
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L10_seed1903000000.json",
+      "sha256": "28362130a1258b3c180e8a25644e213b55508e3a4fb98981cac7097bff53181a",
+      "seed": 4850381116325825998,
+      "samples": 105
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L10_seed1906000000.json",
+      "sha256": "5f4531a7f11d50d8939106a1985af9fd844de49634d6b8b851e8c5885079dc4a",
+      "seed": 8801537935847852713,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L10_seed1909000000.json",
+      "sha256": "2e11bc48639bd9f667b2ac3e789b888311fe9ebfea941a6bdf6d2228bdca66a4",
+      "seed": 9027363155172339715,
+      "samples": 104
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L20_seed1900010000.json",
+      "sha256": "daa30790124693fe712c237376935fdadb1bcff285a5177001b081ce8fff582d",
+      "seed": 8939044185133151229,
+      "samples": 99
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L20_seed1903010000.json",
+      "sha256": "4eab086a45726d51ec1d470d5047c70714983215b422905596b3c86d0d552a61",
+      "seed": 3470110736901597614,
+      "samples": 105
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L20_seed1906010000.json",
+      "sha256": "114ef6fcf32212aadf11867d581b39ace07f8ff286145c9d2d00b2b9ac7f8c4d",
+      "seed": 2427937341069563702,
+      "samples": 102
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L20_seed1909010000.json",
+      "sha256": "4636b4c1ecbf4bdb496df2da6fb7f6550a8246545cd1791379f4f4fb2946103c",
+      "seed": 8498080060198992593,
+      "samples": 105
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L40_seed1900020000.json",
+      "sha256": "a65eae68834afa15f8e504cd3b4519afc4f7a556ca3901ada88cce03be1cafd6",
+      "seed": 2186761385513636939,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L40_seed1903020000.json",
+      "sha256": "c906a22a2143d3f3bc5ba2d1c82cd368001d22220ed59f060aa2a0c2fea28a7a",
+      "seed": 6491674269147880219,
+      "samples": 97
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L40_seed1906020000.json",
+      "sha256": "11b9cad0c9ae2caa3d70b9f9cd6ff1f9645711e0c80d6d4e233e8cc28d50fa79",
+      "seed": 159934508423960868,
+      "samples": 104
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B25_L40_seed1909020000.json",
+      "sha256": "9d82d13b59c7f3bba42f92e56182d5242417db931d27427471f01fee170f1631",
+      "seed": 6018492471570430663,
+      "samples": 101
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L25_seed1900030000.json",
+      "sha256": "d58bf84ca73a6a85b4159e9ca38ffea5d4eb988c813cf5d5c0ae23cef3bd2d19",
+      "seed": 9121163998864647115,
+      "samples": 226
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L25_seed1903030000.json",
+      "sha256": "8108c7e09204b19a6ef0ef81259b172e76d56153cf67c32159dd8785b0e90439",
+      "seed": 6153939583477617990,
+      "samples": 229
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L25_seed1906030000.json",
+      "sha256": "62591157e88c7a9e67b5ed0367f21793b430949bcfa0f999a2e2946cad45c511",
+      "seed": 4850751109126030324,
+      "samples": 220
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L25_seed1909030000.json",
+      "sha256": "c555ce38d8f1419d71e379f5313300836767067fa87a7744e92c5c46fd59bdb0",
+      "seed": 858091174107374833,
+      "samples": 232
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L50_seed1900040000.json",
+      "sha256": "f8a2f9273e78e90cae0dda3a3df4b50d2d4461f9eea1c62c87710a8887565f7b",
+      "seed": 5828769244534238222,
+      "samples": 237
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L50_seed1903040000.json",
+      "sha256": "54dc7b73fb77beacec624bf7ff138ec9fe35e98089e14ba2ad45f5ac3e07a90a",
+      "seed": 386853129294181716,
+      "samples": 233
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L50_seed1906040000.json",
+      "sha256": "aa922818250d1b40903ac33b2f48c5468134aa4788fd75b424f6cfcfe3a99f92",
+      "seed": 1939702141114185182,
+      "samples": 223
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L50_seed1909040000.json",
+      "sha256": "dacdbe0175799b5ffd1e9eafa1677c34c290597309e236aec91112e499b8985d",
+      "seed": 3531715585642813642,
+      "samples": 230
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L80_seed1900050000.json",
+      "sha256": "237c0ef9107640247737261fea82026c5811c82caa592b4c5fe1b1ae7104d6da",
+      "seed": 356000919330763526,
+      "samples": 186
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L80_seed1903050000.json",
+      "sha256": "650856ba434bb11b4101269e1c02089aa81d5297330c4f07b8999f6d7faba7d9",
+      "seed": 4973506491220569346,
+      "samples": 183
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L80_seed1906050000.json",
+      "sha256": "d20a3ab4deb7dc62b969749bac7a9d04bb20b186c1d2b97db4d04e82ac8653f3",
+      "seed": 1656623072442459729,
+      "samples": 185
+    },
+    {
+      "file": "workers/worker_0/baselines/A0p99_B50_L80_seed1909050000.json",
+      "sha256": "73c368c65c90c99f855e8f0214f1ed2e3c8431dde8b923f77affbb7085f2efcd",
+      "seed": 1660627461524503038,
+      "samples": 184
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L30_seed1901060000.json",
+      "sha256": "7466f621e7fb068cfdc42642e2d70c40423146c86b224e79bbc97917d60aec05",
+      "seed": 4899740348572004127,
+      "samples": 1913
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L30_seed1904060000.json",
+      "sha256": "f62df4815982d35211a512b1d362119fb12ec8771c8e9fc4fc0d6fc3db3f414b",
+      "seed": 2894037255881912379,
+      "samples": 1934
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L30_seed1907060000.json",
+      "sha256": "e00f44a6ff72beb2861184c77a8994b1ca82ca39fff3b2b831254c450f8c17b0",
+      "seed": 3139924659251738717,
+      "samples": 1918
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L30_seed1910060000.json",
+      "sha256": "db26ac7ffca222a5226082ce963c9305b4746c5c1138d54a67ef6fae43e7d059",
+      "seed": 5175905601791515244,
+      "samples": 1941
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L40_seed1901070000.json",
+      "sha256": "0e1e85ec206046f2f8980b240bd0249fa4e1108af54ab2822f8640331918a5cc",
+      "seed": 4765501665527633710,
+      "samples": 1914
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L40_seed1904070000.json",
+      "sha256": "5ee040b726f006fcef7bdadef28c320998c7f9877c8c34433fa789ab62a401b5",
+      "seed": 2997894873448690985,
+      "samples": 1942
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L40_seed1907070000.json",
+      "sha256": "451f56794bc6bdb8f9cae0212c8e59348af78c8499795f2e3b552a46bf9773c6",
+      "seed": 1071734877661318531,
+      "samples": 1930
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L40_seed1910070000.json",
+      "sha256": "a52d049c4f5cdd22d44b91fdc063cae2abb93e58b483f27f7f5efc9be704660a",
+      "seed": 3767079644450045439,
+      "samples": 1939
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L50_seed1901080000.json",
+      "sha256": "cbc4b287ec2402e392b77de1cf0a1c0365fbbb8295642680f55a21e4eb6f220b",
+      "seed": 4822375588314273160,
+      "samples": 1831
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L50_seed1904080000.json",
+      "sha256": "b3397f6166a8869dcba202166284fffde89566a178161de411aa4e89211a5f4a",
+      "seed": 4087311501276638840,
+      "samples": 1866
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L50_seed1907080000.json",
+      "sha256": "1b66f52f233f19f16c02bafaff2f3c5c5de5429bcf75819dd60b75e3e97df991",
+      "seed": 8830509394433868173,
+      "samples": 1844
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L50_seed1910080000.json",
+      "sha256": "8569e5548e765fae1708be314bf45ad5a4b5c70024067f3a45a83414b215f3db",
+      "seed": 4855374734311523393,
+      "samples": 1841
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L60_seed1901090000.json",
+      "sha256": "60942f77e81f6bd03c20eab63b5e9bf8579fa563f1387f2eb80f932d5b4143cc",
+      "seed": 4554879623360603349,
+      "samples": 1981
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L60_seed1904090000.json",
+      "sha256": "4928636f1bababe2fd41bc8c966ec14b0f89efcd9fbb0ef3cf878c3b5574a331",
+      "seed": 740128469186727850,
+      "samples": 2002
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L60_seed1907090000.json",
+      "sha256": "77360d58b06ed3bbb4c3ca82b18a9316723988694c48c072caf2112d6834d18c",
+      "seed": 7145316015189909849,
+      "samples": 2000
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L60_seed1910090000.json",
+      "sha256": "bcb097ba11e9fec83d429fedbc588957ec2bb6bd810387f85bac9d27d0f21ac4",
+      "seed": 2096642916079259790,
+      "samples": 2004
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L80_seed1901100000.json",
+      "sha256": "db7b43db683443d08bea2dff65f1f08e7f0904101300c3123957331ed8c58322",
+      "seed": 5253357065210083628,
+      "samples": 2004
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L80_seed1904100000.json",
+      "sha256": "c5b39467e18561b1be38a98a13025cc4c51431881dcf3f9194a3b0aec6ef8778",
+      "seed": 8299707254846429274,
+      "samples": 2048
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L80_seed1907100000.json",
+      "sha256": "db0b95005ffd34733e0be067f4bcb76687d919e6d2d54b13c0c2b4487ce37d68",
+      "seed": 8589606496249136489,
+      "samples": 2057
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B25_L80_seed1910100000.json",
+      "sha256": "e14bfeeb4e8bad79f1c1dbe1fc1599db62849995578795954db196670d4ebc88",
+      "seed": 8639663556147599536,
+      "samples": 2000
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L30_seed1901110000.json",
+      "sha256": "769ee55e74d8cbc252f78cbf0c0b23a838b9a973f78e5d9c4828311bf85e3874",
+      "seed": 3482282586114876858,
+      "samples": 3864
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L30_seed1904110000.json",
+      "sha256": "55e95f656b073c6971f6863793c08ce647d2763940b682137d21ea93593865c6",
+      "seed": 3041647662653293870,
+      "samples": 3798
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L30_seed1907110000.json",
+      "sha256": "62d7d17d636c921b02df7877586d22da053d4951aa42cdfe33a9ca1d562a2392",
+      "seed": 4541614660741542428,
+      "samples": 3819
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L30_seed1910110000.json",
+      "sha256": "919457fbe53e36920bdd27037b5fdc2a3fd3e9be061a1b03e6a637490a0cca2c",
+      "seed": 9071813775621374123,
+      "samples": 3854
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L40_seed1901120000.json",
+      "sha256": "26296d7939641efc266c5c404c2a6ac950c484f8bc9bb9f12d064716d94124ec",
+      "seed": 5814747027348867309,
+      "samples": 3824
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L40_seed1904120000.json",
+      "sha256": "f018a70fbb90845abc91787f47c01fa23274536ef7dc0cc86b38d65b9d7e9cad",
+      "seed": 9098631772347860021,
+      "samples": 3847
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L40_seed1907120000.json",
+      "sha256": "15e292a13eb289a848af6c2fca387ee65cbe7968fec6bec4afba9d66525d28fa",
+      "seed": 6662155379401123533,
+      "samples": 3813
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L40_seed1910120000.json",
+      "sha256": "12897aece6f5f94bc16a71fce90bed91efae603663e8e395920c62429614d255",
+      "seed": 1910555258765857690,
+      "samples": 3801
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L50_seed1901130000.json",
+      "sha256": "c3a7ce31733a67432cbbd98d671947100df82155dd28d25300bf586b196f0b16",
+      "seed": 3189954192516320860,
+      "samples": 3652
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L50_seed1904130000.json",
+      "sha256": "19b1a61a3b1f7cc5d2eeac4efbfd3bc5f31a034e876fd27e83395c49cbd21e0f",
+      "seed": 8957221460227864983,
+      "samples": 3676
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L50_seed1907130000.json",
+      "sha256": "48416dc92dac26ab2387013819e625fadd75a569d4cf0150f76745b3387b6774",
+      "seed": 384166458802151783,
+      "samples": 3661
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L50_seed1910130000.json",
+      "sha256": "22eab8445735add5f4823d373c43585d1a7cb4f6ee0004249b9eef115e00cded",
+      "seed": 7993013921411633884,
+      "samples": 3628
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L60_seed1901140000.json",
+      "sha256": "5113d827a664e57184a7e660bc29758ca8329059b1607b3e25771a1d662a5939",
+      "seed": 6915725843154299442,
+      "samples": 3972
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L60_seed1904140000.json",
+      "sha256": "87736960541d593d2a7222b43eb7d016908e574ce95370c48f46e6e53b34c510",
+      "seed": 6515875990502686977,
+      "samples": 3902
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L60_seed1907140000.json",
+      "sha256": "ecacada38f51fb3fcbdbd1101b6df479f88ed8542e67d87fb294858dd57a6883",
+      "seed": 6365341705021254704,
+      "samples": 3930
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L60_seed1910140000.json",
+      "sha256": "b9bcb464c7965deb8e3dd9be80523a4baea6e911044a2dbd6052847aea70eacc",
+      "seed": 4751835116110334510,
+      "samples": 3971
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L80_seed1901150000.json",
+      "sha256": "bbcde434181f29cb6aa0fed3810d24dbe5c5c16f05cfb5365de997373de65d00",
+      "seed": 8689587629222871800,
+      "samples": 3755
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L80_seed1904150000.json",
+      "sha256": "5b0fa8c2666699e780c7481408824c24bd02b9d1c7aa792fc0effe549225cdd7",
+      "seed": 5548455419964708458,
+      "samples": 3753
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L80_seed1907150000.json",
+      "sha256": "02d6b76e7924454a1e7706614f9dcc0e2402f415e3fdb8b01d988e7c6c03348a",
+      "seed": 1815315636953630561,
+      "samples": 3766
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p999_B50_L80_seed1910150000.json",
+      "sha256": "4ed08bec8bd9b60af4fb156b99d7695d2e9aeff26f4dd7a80a3d7d79515ba2f1",
+      "seed": 7265734797624266202,
+      "samples": 3769
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L10_seed1901000000.json",
+      "sha256": "557e8df20391af9525509843bbc8e7a2a279444fb49ee3d00fbd602628fd3c8b",
+      "seed": 6524321206102228556,
+      "samples": 103
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L10_seed1904000000.json",
+      "sha256": "0f013c24cb432b6b4d18e2725bbaff192c0546fcd3fda6ec7d6026d5682a123c",
+      "seed": 7363031675226509580,
+      "samples": 99
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L10_seed1907000000.json",
+      "sha256": "bc2d96c9a913f3a4a1b6196dd7257b2b2ea130f9ac004f5c2888a207123c5ad8",
+      "seed": 7458651385083268155,
+      "samples": 97
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L10_seed1910000000.json",
+      "sha256": "eab1aa2e94fcb9102320b1bc40e847350c5126b79fae23cb4e516a298259f16b",
+      "seed": 8204048484696438392,
+      "samples": 97
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L20_seed1901010000.json",
+      "sha256": "e97fd725ea20d98047d88ed5883df5e436f7ff124e4057e6f15ef8b7596357ef",
+      "seed": 692311208953892347,
+      "samples": 102
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L20_seed1904010000.json",
+      "sha256": "6fb532edecb09ebbb919bccea94add993487b1602a1b88351b9413161b94b109",
+      "seed": 4943318877158383576,
+      "samples": 98
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L20_seed1907010000.json",
+      "sha256": "e0c5877d5fc1226a9dbb83d5962fc7ee2b2b46c26980621af31d707b14a6a440",
+      "seed": 6947212618404270235,
+      "samples": 101
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L20_seed1910010000.json",
+      "sha256": "448c5c2d47bd0556d33efe813bd22900091e943ea17fce1e1c8f177bb4ea0443",
+      "seed": 5929820469208857027,
+      "samples": 102
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L40_seed1901020000.json",
+      "sha256": "cc8c9d949adba4ac807ae25127bb2240ffe5653e90c0a9aa1fb48bbae55b3702",
+      "seed": 7248272640692604841,
+      "samples": 97
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L40_seed1904020000.json",
+      "sha256": "6e783f3913c20ac3b54d340945cbf017a02d125b619d03d392f71fed7882d99b",
+      "seed": 3503754967054891522,
+      "samples": 98
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L40_seed1907020000.json",
+      "sha256": "dfafa6a498e0d601bda3330f3a188f6ee1a66cb35ad04a8ccc0cac6eeb888f29",
+      "seed": 735159411886414377,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B25_L40_seed1910020000.json",
+      "sha256": "9a9dcd7bcd596efe1a16487d08d24775e827d8f2bc6d9650460f58e22938db4f",
+      "seed": 4755051137143499416,
+      "samples": 98
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L25_seed1901030000.json",
+      "sha256": "922b9a090f096395e5cba42b2c49f07ef0beb61e5f7dfc34a0a349b481413610",
+      "seed": 8119749634186811336,
+      "samples": 221
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L25_seed1904030000.json",
+      "sha256": "96778feee7362080ac6bf8a948dabb6cf3da5ac9062ff6278c5c1c498b646abd",
+      "seed": 4586604739665488876,
+      "samples": 224
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L25_seed1907030000.json",
+      "sha256": "f2bb456b576771e3538f68be201f39bd4258dfcc00b5a4d339b68c065de1db7e",
+      "seed": 5229527311033317384,
+      "samples": 225
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L25_seed1910030000.json",
+      "sha256": "a4a399dbe3adf9f71ac68dcde55b4e3512715321bb79d6e5f6e0d169e9ea1856",
+      "seed": 4638833681465998308,
+      "samples": 231
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L50_seed1901040000.json",
+      "sha256": "e41b8a24c70ef8cc8a5426dc8f4a10862f39768f34da693f5f58f6cfc396b362",
+      "seed": 8324600149805647496,
+      "samples": 230
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L50_seed1904040000.json",
+      "sha256": "aea71e2daf3e163aa62a01b240bfc95b87ef2be42e80c5ec8a0662e5efbaadaf",
+      "seed": 2769532628989021881,
+      "samples": 223
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L50_seed1907040000.json",
+      "sha256": "ceb7b594d81573ad636bfe7b67f6fff510013a23c8da3dedb52120c4b2ba96bd",
+      "seed": 4248226247354370940,
+      "samples": 228
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L50_seed1910040000.json",
+      "sha256": "06e6980d7854ab41e5ff7330b68174eea9510883aa164efaa19bbdaf05e9e880",
+      "seed": 9196783144247442390,
+      "samples": 226
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L80_seed1901050000.json",
+      "sha256": "fb7c6a819d61a9635d6a2080ab1c0c4a51aa95eb50c3936d5547e70af4b1d419",
+      "seed": 3196870091229451377,
+      "samples": 183
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L80_seed1904050000.json",
+      "sha256": "acba7130914176db0073c10586fe42acfe59a092532472b2a3d77fdcc6dd398b",
+      "seed": 3178611128088984008,
+      "samples": 188
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L80_seed1907050000.json",
+      "sha256": "08c978aee9a0e70a3e199fe5b68283c5774364e1bd231423c21f43bdb46c0b5c",
+      "seed": 1798869352527995620,
+      "samples": 192
+    },
+    {
+      "file": "workers/worker_1/baselines/A0p99_B50_L80_seed1910050000.json",
+      "sha256": "97e09dbb7adb58d22c0a555f43fdbab42dc5a99c0aa89a792c259f438fd00ad8",
+      "seed": 6096440784006961554,
+      "samples": 186
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L30_seed1902060000.json",
+      "sha256": "85233a8dceac372b21532cadd948ce289c6409caee249ceec47fc6cde6cb2c81",
+      "seed": 1044735844534467140,
+      "samples": 1928
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L30_seed1905060000.json",
+      "sha256": "2afc09c14ab3f03d6b1018a5e905d33ca906b807fff46fd589b2da10ced1cbed",
+      "seed": 1513248231019044025,
+      "samples": 1912
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L30_seed1908060000.json",
+      "sha256": "9858a5f0f4d69eb72ccd7d4b4520b9671a046af562fb9230459345a0dc434758",
+      "seed": 8617126806458458828,
+      "samples": 1906
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L30_seed1911060000.json",
+      "sha256": "ca59ab2f5efed0914eb39e37374e59f4472d07c363c6ff320a4ea9bc89bc0ceb",
+      "seed": 7185414235787065787,
+      "samples": 1936
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L40_seed1902070000.json",
+      "sha256": "693ae22e28ba4ec0d03f4b276d141cc71aa45dc421d1a71e38bafdbcd8489501",
+      "seed": 4960220119586603244,
+      "samples": 1787
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L40_seed1905070000.json",
+      "sha256": "94bc53bfb4ce698be8c62e89d45f565321a57a25e5978671433eeceddeb7e60d",
+      "seed": 4005798742629985941,
+      "samples": 1762
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L40_seed1908070000.json",
+      "sha256": "0e0121b81971bdf85ed1eb03c384db474592ac0cd77b941920ebc4e7f542036b",
+      "seed": 3049356202998175267,
+      "samples": 1782
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L40_seed1911070000.json",
+      "sha256": "39d6aa66e5b161bac57384701f4ce1d397eec326755de92a781b233304d51d3d",
+      "seed": 2379179310038193435,
+      "samples": 1786
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L50_seed1902080000.json",
+      "sha256": "09feb89a0eaee54f3bee9bcaf93bb1b3f3101265d460ac7bb6338e404eeacb2b",
+      "seed": 8537094238872846698,
+      "samples": 1895
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L50_seed1905080000.json",
+      "sha256": "7ac540ca4811df4c4089b04676edd5b12fc106e5f1fefa4b6eff812253f3f6d2",
+      "seed": 3199532392348829696,
+      "samples": 1859
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L50_seed1908080000.json",
+      "sha256": "44e3455bbd085f98552af3bcbb05c242cee576eab3539972766ec8458753486f",
+      "seed": 1565809341770928029,
+      "samples": 1869
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L50_seed1911080000.json",
+      "sha256": "b572165cfe21f1aeb5f12c30188f55f8cf9e43c21d44636a029feb2e41d7f00b",
+      "seed": 1494946681417667597,
+      "samples": 1843
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L60_seed1902090000.json",
+      "sha256": "b0bfaa05c680e13fc347ba584d8efc6f427917526e9362dd1ede1b14c5a73f57",
+      "seed": 5561262121631998210,
+      "samples": 2007
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L60_seed1905090000.json",
+      "sha256": "12bb34802d56750b666c209a612e33c7b497529965ac23a1ee6a8047128eb83e",
+      "seed": 8485800222580548323,
+      "samples": 2007
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L60_seed1908090000.json",
+      "sha256": "76c861ddd3da51ad8591328ee8c4cfc79b8a829687e67f62f40fa51bcc447722",
+      "seed": 8100185666435813145,
+      "samples": 1995
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L60_seed1911090000.json",
+      "sha256": "45c57e3b0a855b8805b5f5cd3fae3e5a1dab6b4161347848f0fe971a61d51fbc",
+      "seed": 546509606510022998,
+      "samples": 1980
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L80_seed1902100000.json",
+      "sha256": "352240d5cbcaabaa8fa562f6702744dab825c4716af805bb3fa005d1fb55aff5",
+      "seed": 1308350648934006891,
+      "samples": 2008
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L80_seed1905100000.json",
+      "sha256": "dd6e5022da30acf8f6586da7032945810e93ffe5ff703b1cbe01f81f3b32eb8e",
+      "seed": 8512861988659344953,
+      "samples": 2060
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L80_seed1908100000.json",
+      "sha256": "6ddd59110ed8f6eb5af0ee80a7f711ce6372754b6617feb686fddcf5f788fa94",
+      "seed": 8668999555136912451,
+      "samples": 2039
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B25_L80_seed1911100000.json",
+      "sha256": "b63a72a99504a48ffac02e47502a7b0a970bab57ccc4d4fe75c611696c75482f",
+      "seed": 7298989842545098079,
+      "samples": 2012
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L30_seed1902110000.json",
+      "sha256": "f295842c9614abb3fdf7fcef69bb179783e4206989c87a4d37f0fc11f6614be3",
+      "seed": 4282810442305322767,
+      "samples": 3595
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L30_seed1905110000.json",
+      "sha256": "4d02d070fb417abcf9e78ae1f3b013dc2e98c97fc4885882a3cb6ce2e14acd33",
+      "seed": 3256777243947153794,
+      "samples": 3611
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L30_seed1908110000.json",
+      "sha256": "b39b1cdf6a2c6960387aa4d21f2e9b9a41076026a6994fc849ab813305e44202",
+      "seed": 962377833268491799,
+      "samples": 3627
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L30_seed1911110000.json",
+      "sha256": "b4af9d94e59f53429f2239b27bfb711730f20fc89b7447331d9997d394ebc0a4",
+      "seed": 8323965925884748321,
+      "samples": 3589
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L40_seed1902120000.json",
+      "sha256": "b9a6b0b37f35e7cb88b16cf2b60261f2a33ceb6fd22127d807f72a5c94c59456",
+      "seed": 1845621275271307455,
+      "samples": 3842
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L40_seed1905120000.json",
+      "sha256": "14dc9d4fb848434eeee317d8b7667fb894fdf03017b393ecc4c9fd61898965cb",
+      "seed": 7608440420159927939,
+      "samples": 3840
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L40_seed1908120000.json",
+      "sha256": "0e63bb1d2613548d1328c24a0be1ded7664e4d270826a504573b754b7bde9de8",
+      "seed": 1692154343430255041,
+      "samples": 3859
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L40_seed1911120000.json",
+      "sha256": "979268da887d6d48f13a6e4cd80eba4ba610f8c772aab7e63db29776012705b0",
+      "seed": 2200589412657609080,
+      "samples": 3855
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L50_seed1902130000.json",
+      "sha256": "40864144f0a9d160b564d6905647afb81f0020e6d8d55b81ff5ba3b2558702ee",
+      "seed": 1494836790701593841,
+      "samples": 3650
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L50_seed1905130000.json",
+      "sha256": "efc7457fb97f8b30b296059eea02ace030d972318767ced0945a80f1aa80c5ac",
+      "seed": 7705766920831685876,
+      "samples": 3695
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L50_seed1908130000.json",
+      "sha256": "1759e414a6ac6b2fe9d25b96597d216f2811536898c6929e387fa8c4f926d9e0",
+      "seed": 6902651611215466445,
+      "samples": 3668
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L50_seed1911130000.json",
+      "sha256": "abc288d38118f2bd44e5b2df30c8f77c159a06c0e8088df91d2079f0d57e496d",
+      "seed": 7227030131720808039,
+      "samples": 3717
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L60_seed1902140000.json",
+      "sha256": "3b60aff4e5cea881fc7583a2971eab780d06b2dbb8bef790156df54ef2cefb60",
+      "seed": 4175996047642932708,
+      "samples": 3918
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L60_seed1905140000.json",
+      "sha256": "37f59dc9a04dd3523fcb9dcbbd149a0f69864dac52e5f24c877c230f40bac9eb",
+      "seed": 4815067122584249390,
+      "samples": 3932
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L60_seed1908140000.json",
+      "sha256": "8b131ba6056bc2ed535caee2c77eaf28a13a2949b5e6e14033fb662aff6b3d80",
+      "seed": 6609229049906674497,
+      "samples": 3936
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L60_seed1911140000.json",
+      "sha256": "0b39c46d4006e34245fa29e98bda5e505b57c5544ec340f5ec7c871908082530",
+      "seed": 2444091188063214919,
+      "samples": 3881
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L80_seed1902150000.json",
+      "sha256": "75156d03ff3da10b24d75244e417b473f083f1d6b02b1341cd63b668a352d110",
+      "seed": 4113330544015227331,
+      "samples": 3781
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L80_seed1905150000.json",
+      "sha256": "fb12d7869d381f158b5de091f56ba96137defc1e62ad5bba6327e45f314b03fd",
+      "seed": 5444947997017215741,
+      "samples": 3753
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L80_seed1908150000.json",
+      "sha256": "b995e088f15cd81fa81b5383cd3b27888d6a21ab5d815a60e9fc7e114b765b55",
+      "seed": 1481994211929820400,
+      "samples": 3798
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p999_B50_L80_seed1911150000.json",
+      "sha256": "f255249cd73cbdd6ed8dea96978f07c6ba594989f680540ea9251ff48cfe4290",
+      "seed": 5281471776326520092,
+      "samples": 3740
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L10_seed1902000000.json",
+      "sha256": "b9b73ca1a6ad8b821782797d18c3d896bcd826c8b263f9c1e2bee896984bb113",
+      "seed": 3773507097879811439,
+      "samples": 99
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L10_seed1905000000.json",
+      "sha256": "00364b99f226982ad3e63c72044ced133053906cf6bbd0a66117ae53ec2d19e1",
+      "seed": 4829942089625042163,
+      "samples": 104
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L10_seed1908000000.json",
+      "sha256": "d48322c55635934b45029a8203205e280b2011b1fdc23ac4e549ce8e987452b0",
+      "seed": 641330842051699526,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L10_seed1911000000.json",
+      "sha256": "b850787469388cf8c2857b7d0d46cd8acb543ea157ae4d7f6647303f60265857",
+      "seed": 2752232028116495601,
+      "samples": 98
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L20_seed1902010000.json",
+      "sha256": "696fb316262f0a1b95e250990c35cda28a0d061c25c48b2feb7edbba720b1a3e",
+      "seed": 2880230994222233304,
+      "samples": 98
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L20_seed1905010000.json",
+      "sha256": "c3d47edf3ebe925035f6b3542647bc647e830f481d2a9ebeff4b2e57ce112563",
+      "seed": 408613115122414536,
+      "samples": 103
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L20_seed1908010000.json",
+      "sha256": "e680536fc68b81a5312133479e5bddf5092cccaec02cf961a6f5266074c3c187",
+      "seed": 7999046585765697021,
+      "samples": 103
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L20_seed1911010000.json",
+      "sha256": "62858ffd7fe4d61f69c53df1757380ab9dfda32e23c77cf492bb2a4bde2a9c30",
+      "seed": 7312114858748697494,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L40_seed1902020000.json",
+      "sha256": "b4c25f40a0768fe26e713d269fe8de0626c7dd81d38a9407ccd938749b6b56e8",
+      "seed": 2961861696518215082,
+      "samples": 103
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L40_seed1905020000.json",
+      "sha256": "bd8e5dea392e2ad9920737994fc2d03458ca0609094907ac7bc0dfe20305c025",
+      "seed": 8197740733013645039,
+      "samples": 107
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L40_seed1908020000.json",
+      "sha256": "817e1f6fa3039870bb14f60786c79eeb70542d6bfe54370641289ddb40a483bd",
+      "seed": 1095477020506520847,
+      "samples": 100
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B25_L40_seed1911020000.json",
+      "sha256": "21734c62bb86701c851c2a808bd26dcc4af0029b4abc6642f446afeb72cb5946",
+      "seed": 2797196218613136580,
+      "samples": 97
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L25_seed1902030000.json",
+      "sha256": "3d43e601fb89a22453cb68c648203385ebf686d30fa65ea326b22254bf5663d2",
+      "seed": 8769850301509986672,
+      "samples": 228
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L25_seed1905030000.json",
+      "sha256": "593488a0b55793716cc543dd1216b7eb50b1740d1ffd6c24d7fcab9c9943e568",
+      "seed": 1699479142761841338,
+      "samples": 222
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L25_seed1908030000.json",
+      "sha256": "5277c5b5903e85d6d1b4f366fb142532362c67bec8d2a14456ed0c9210790305",
+      "seed": 7877774198478825373,
+      "samples": 222
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L25_seed1911030000.json",
+      "sha256": "65702baaee8cf75827261741c539116c9a0cf4483239c2f161a5ac2a4775648f",
+      "seed": 6918266033519202048,
+      "samples": 224
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L50_seed1902040000.json",
+      "sha256": "f59afad6059a2af864563fbede2a3cb9a0fb626999ba6283dabf57771cc1c053",
+      "seed": 8652809949715103447,
+      "samples": 232
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L50_seed1905040000.json",
+      "sha256": "93f3a0952e1dacd969ff5c369d1c15b289cb0b0275dc775b2e489d8ed5db97b5",
+      "seed": 2616002322948694560,
+      "samples": 230
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L50_seed1908040000.json",
+      "sha256": "5c75174288f92b3732a8b58b2657117aa93f510fe979992be92d461a5bc465b9",
+      "seed": 550110637632937145,
+      "samples": 227
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L50_seed1911040000.json",
+      "sha256": "0d66b48205b3929eef81416d0bc40c3fee160844d478ff643ad73d18e46a92bd",
+      "seed": 4387326454569852788,
+      "samples": 227
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L80_seed1902050000.json",
+      "sha256": "c15203206a3cb777c49553a5173126ba132076c0d33f8b13d8241bbd0e288cd3",
+      "seed": 3132669020817797270,
+      "samples": 185
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L80_seed1905050000.json",
+      "sha256": "28365413e4df57bce247c8631af3cdb573cfa1ab0020de6bcddd8a379999e445",
+      "seed": 3323180086016640462,
+      "samples": 189
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L80_seed1908050000.json",
+      "sha256": "5c5d6f74d27cfb398bdb458c9febccdeda224c83d1d9cc52b47236f23050c301",
+      "seed": 434820749528587497,
+      "samples": 187
+    },
+    {
+      "file": "workers/worker_2/baselines/A0p99_B50_L80_seed1911050000.json",
+      "sha256": "5c9d0810cf29e5c7a8152b546c699e6a6c5423a807c8c54df55471059cd1f09b",
+      "seed": 6803099542980691166,
+      "samples": 188
+    }
+  ],
+  "selection": "All baseline files in deterministic path order; fixed disjoint block per PLANNED seed rank; no outcome-based selection",
+  "reference_data_reused_as_MC": false,
+  "MC_timing_newly_measured": false,
+  "levels_within_seed_are_correlated": true,
+  "independent_seed_blocks": true,
+  "fixed_block_size": 29535,
+  "SMC_sources": [
+    {
+      "file": "workers/worker_0/populations/L128_seed2000000000.json",
+      "sha256": "9262a2a5b9b4ba4acca27093c0f7c824dda2aa2a4d4ee94da77685b2c3364a69",
+      "seed": 2000000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2003000000.json",
+      "sha256": "b9f917f7ccac086f00761fe64d9911470fce83a049f5da5498b798a611b0232d",
+      "seed": 2003000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2006000000.json",
+      "sha256": "b6f6ce9e6653fd4da9e38cdb0e84765c01df0c3d2478ac2bda045dd6559f0071",
+      "seed": 2006000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2009000000.json",
+      "sha256": "d115493b158d4e3a06ef9053b315fe643433d594655828c7256b1c247743ed84",
+      "seed": 2009000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2001000000.json",
+      "sha256": "1f17fa868e1891a6c9bc0ad10a9f095719580c821efa21314addbfa617fbe9ab",
+      "seed": 2001000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2004000000.json",
+      "sha256": "ae86645b6d6f5e8c906bd85907c7c810f2ee1da3d0a2f8ddad805a501461d1e3",
+      "seed": 2004000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2007000000.json",
+      "sha256": "93b43ac685a241021cb8383c5dadac7de9e65e47aae19ab77eb79318a81ce059",
+      "seed": 2007000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2010000000.json",
+      "sha256": "dbb095d577a1928bb1e66129870c31767f332750f82f23423a4aa21bae54f0ff",
+      "seed": 2010000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2002000000.json",
+      "sha256": "a5adb13e062dbdd72df0cbd6eb858c39bf6cb175abc0e55b945ef30bc3110c08",
+      "seed": 2002000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2005000000.json",
+      "sha256": "0867023702dca8b5aa75f4b946afd2f733bcced075e32ab0fb340cea6dddf485",
+      "seed": 2005000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2008000000.json",
+      "sha256": "56c237cfb7858177d8decc607bb8c63b8417e61d336c0c64e7ccab63b40f1fff",
+      "seed": 2008000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2011000000.json",
+      "sha256": "cf518a7b4aa43bb43d0ef223f0e57a4f7bf55a26a852a809c79a380f8f425652",
+      "seed": 2011000000
+    }
+  ],
+  "resources": {
+    "GPUs_per_estimate": 1,
+    "CPUs_per_estimate": 4,
+    "parallel_seeds": 3
+  },
+  "scientific_SMC_parameters_unchanged": true
+}

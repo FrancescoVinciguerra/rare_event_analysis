@@ -1,0 +1,18 @@
+{
+  "seconds_per_path": 0.17078865529038012,
+  "calibration_seconds": [
+    21.758852049708366,
+    21.860947877168655,
+    21.931883186101913
+  ],
+  "calibration_seeds": [
+    9847112,
+    9847113,
+    9847114
+  ],
+  "paths_per_calibration": 128,
+  "warmup_seed": 9847111,
+  "excluded_from_final_estimates": true,
+  "CUDA_VISIBLE_DEVICES": "0",
+  "SLURM_STEP_GPUS": "1"
+}

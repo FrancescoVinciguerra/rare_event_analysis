@@ -1,0 +1,962 @@
+[
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 0,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 0,
+    "plotted_count": 12,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 3,
+    "plotted_count": 9,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 4,
+    "plotted_count": 8,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 4,
+    "plotted_count": 8,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 7,
+    "plotted_count": 5,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 4,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 6,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 7,
+    "plotted_count": 5,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 3,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "positive_log_error",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 2,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L10",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L20",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B25_L40",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 0,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 0,
+    "plotted_count": 12,
+    "outside_zoom": 7
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L25",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L50",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 3,
+    "plotted_count": 12,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 4,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 4,
+    "plotted_count": 12,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p99_B50_L80",
+    "threshold": 0.99,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L30",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L40",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L50",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 7,
+    "plotted_count": 12,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L60",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B25_L80",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L30",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L40",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 8,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L50",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 6,
+    "plotted_count": 12,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L60",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 7,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "smc",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "snis",
+    "runs": 12,
+    "zero_count": 9,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "configuration": "A0p999_B50_L80",
+    "threshold": 0.999,
+    "method": "crude",
+    "runs": 12,
+    "zero_count": 10,
+    "plotted_count": 12,
+    "outside_zoom": 2
+  }
+]

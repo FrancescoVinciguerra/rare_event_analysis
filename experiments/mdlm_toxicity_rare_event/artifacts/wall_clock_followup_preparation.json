@@ -1,0 +1,25 @@
+{
+  "status": "submitted",
+  "files": {
+    "experiments/mdlm_toxicity_rare_event/configs/mdlm_owt_wall_clock_followup.yaml": "d1d5e1dcc7e593348e64361958d276124f5933757deabbfa914b9e7190463eb2",
+    "experiments/mdlm_toxicity_rare_event/src/diffusion_toxicity_smc_experiment/wall_clock_followup.py": "60ea2f5750e0e3545244162034222bfffd268e5ad80d6d608f1227fac3268527",
+    "experiments/mdlm_toxicity_rare_event/scripts/submit_avon_wall_clock.sh": "39da4874ab3f67d44498fd0e0ea5148c5e8caef84ae3113a837f609fa845f7ce",
+    "experiments/mdlm_toxicity_rare_event/scripts/slurm_avon_wall_clock.sh": "17bc0907d28bce56443e2c92778ce23759639963b4c3c9a3aad02a3bedec42e8",
+    "experiments/mdlm_toxicity_rare_event/tests/test_wall_clock_followup.py": "92c6a80eab60d776adffe3b4529402ed05ee53a544ab1308f3692e7852a4d9ac",
+    "experiments/mdlm_toxicity_rare_event/analysis/plot_wall_clock_followup.py": "75603a7a07d0d5c384ab991aa67a0381bc7962c13532f8c3b6657503c03b5105",
+    "experiments/mdlm_toxicity_rare_event/docs/WALL_CLOCK_FOLLOWUP.md": "15dc530f89f97d1b4a66108e06673f43bab34eb000021f7c063c88fafb7f212b"
+  },
+  "bundle_sha256": "49114d97a37cd9cf867fdbd65bc6dc8e7329f01e505486b7c7e0bb6b18726405",
+  "SMC_repeated": false,
+  "MC_baselines": 24,
+  "local_tests_passed": 2,
+  "resources": {
+    "GPUs": 3,
+    "CPU": 12,
+    "RAM_GB": 60,
+    "max_hours": 1,
+    "node": "gpu007"
+  },
+  "job_id": "2076362",
+  "user_authorization": "Avvia le baseline a pari tempo"
+}

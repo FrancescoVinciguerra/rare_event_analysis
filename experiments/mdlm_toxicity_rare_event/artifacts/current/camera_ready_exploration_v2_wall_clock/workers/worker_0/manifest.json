@@ -1,0 +1,40 @@
+{
+  "followup_id": "58563e42e6f5b81a1a3fd6e5ba97f7f203da815c93fd41cb770d98954f0725cd",
+  "source_study_id": "826dcd55388b62d137b8fad23f7c12114b158861a6663665194c1aef7ce8a8c2",
+  "followup": {
+    "source_study": "mdlm_owt_exploration_v2.yaml",
+    "source_subdirectory": "camera_ready_exploration_v2",
+    "output_subdirectory": "camera_ready_exploration_v2_wall_clock",
+    "workers": 3,
+    "source_node": "gpu007",
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 9847011,
+    "crude_stream": 925082,
+    "timing_tolerance_fraction": 0.05
+  },
+  "source_worker": 0,
+  "SMC_repeated": false,
+  "source_run_sha256": {
+    "A_N64_seed1400000000.json": "80cdf7100bf00c2d08752ba30738df9a4355362bedddc4ff7fd97df1485f17ba",
+    "A_N64_seed1403000000.json": "efb2bd409e9db385ab12fc02bb9f4116c4f0d3a6750ff758ff5ae5711746d9fd",
+    "A_N64_seed1406000000.json": "44e1e628765061af3caff5f7fa1f9088293dee999918649b7c75ad187b3b63bd",
+    "B_N64_seed1400010000.json": "a45d2e21f121c17512a98b03f0dbb61c3d32953429dac87b20a10b3d0f6119fe",
+    "B_N64_seed1403010000.json": "91bb9b2fa8889f6d9ddddee177470d931030d3e42e05a23bf3d1d860011708db",
+    "B_N64_seed1406010000.json": "21b843a90e88f1811d519bbe15b1d343681f70e9809b557a3cca01b3020e37f9",
+    "C_N128_seed1400020000.json": "b49d5539179a9742d200b78d5592f7bac754b61fd805d3f7722951adfee19489",
+    "C_N128_seed1403020000.json": "bb36692edc28d6b14f4292cb64a724ff0a155b5d6651f587fe5f22e2c21fa7c2",
+    "C_N128_seed1406020000.json": "f4a4ecf06e66ae5213e241b11ba263ec06772403fcd673fa4eed8e0ff8d3bd08"
+  },
+  "runtime_source_sha256": {
+    "wall_clock_followup.py": "60ea2f5750e0e3545244162034222bfffd268e5ad80d6d608f1227fac3268527",
+    "camera_ready_gpu.py": "6799c1bec5e882dd2413e3a84270f34cd981dc563b073c0b84c0c1ab13e67783",
+    "low_budget.py": "050aa8f3e6ce29ef0a0de2729365a6c8188d4321121c4b7c6b29f8bfbd901ef6",
+    "smc.py": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+    "ancestral.py": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+    "evaluation.py": "3d2f00f68bbfc2180d0fc7dd0389635838f2af9f57979f2bf10621c971c5bbb5",
+    "run_smc.py": "4c9d6e9ff0452d2a6b2ca72267e787dc37d361662cdd7627942888139ccbc086",
+    "runtime.py": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb"
+  }
+}

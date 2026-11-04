@@ -1,0 +1,50 @@
+{
+  "smc_id": "980f62e99532a20d48bb6053e6a84d55f6de3bcb5ffde7f6f28a413c9ca51165",
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "ae3f157a1521ef7f986ba734d14c0277c96a4754fd6b74693c6d92ebc7b9a60c",
+  "conditioning_mode": "unconditional",
+  "experiment_phase": "calibration",
+  "smc": {
+    "num_particles": 256,
+    "independent_runs": 1,
+    "tilted_lambdas": [],
+    "tilted_component_weights_a": [],
+    "component_weight_policy": "uniform",
+    "optimize_component_weights": false,
+    "diagnostic_lambdas": [
+      0.0
+    ],
+    "base_seed": 37000,
+    "ess_threshold": 0.5,
+    "resampling_method": "systematic",
+    "reward_frequency": 4,
+    "beta_start_fraction": 0.0,
+    "final_resampling": false,
+    "experiment_phase": "calibration",
+    "calibration_lambdas": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "num_independent_runs": 1,
+    "reward_interval": 4,
+    "microbatch_size": 16
+  },
+  "diagnostic_components": {
+    "lambdas": [
+      0.0
+    ],
+    "included_in_tilted_component_aggregation": false
+  },
+  "calibration_components": {
+    "lambdas": [
+      0.5,
+      1.0,
+      2.0,
+      4.0
+    ],
+    "aggregation_performed": false,
+    "purpose": "terminal-lambda selection only"
+  }
+}

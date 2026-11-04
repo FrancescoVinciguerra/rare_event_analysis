@@ -1,0 +1,27 @@
+{
+  "job_id": "2077217",
+  "status": "COMPLETED",
+  "expected_runs": 192,
+  "GPUs": 3,
+  "time_limit": "17:00:00",
+  "downloaded": true,
+  "monitor_pid": 15820,
+  "monitor_mode": "read_only_existing_SSH_no_new_jobs",
+  "checked_utc": "2026-11-04T09:33:17.377896+00:00",
+  "elapsed": "13:50:44",
+  "exit_code": "0:0",
+  "completed_runs": 192,
+  "monitor_error": null,
+  "report_remains_on_avon": true,
+  "local_report": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\REPORT.html",
+  "local_csv": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\runs.csv",
+  "report_status": "PILOT_COMPLETE",
+  "result_archive_SHA256": "9624b7574cf1417819300b9e292e52d915b9e9a3a5647a6905a962c93e03af7d",
+  "files_downloaded": 635,
+  "figures_rendered": true,
+  "local_figures": [
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\gradual_budget_log_error_positive_and_all.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\gradual_budget_ratio_positive_and_all.png"
+  ],
+  "plot_data_selection": "positive estimates and all runs including zero, side by side; each shown with zoom and full tails"
+}

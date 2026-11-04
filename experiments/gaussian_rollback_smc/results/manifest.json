@@ -1,0 +1,92 @@
+{
+  "particles": 2048,
+  "replicates": 2000,
+  "pilot_blocks": 128,
+  "pilot_size": 16384,
+  "seed": 20260929,
+  "output": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\gaussian_rollback_smc\\results",
+  "threshold": 3.090232306167813,
+  "true_probability": 0.001,
+  "schedule": "linear",
+  "depth_law": "uniform integers 1,...,max_depth",
+  "resampling": false,
+  "configs": [
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 0,
+      "max_depth": 16,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 1,
+      "max_depth": 1,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 2,
+      "max_depth": 1,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 3,
+      "max_depth": 1,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 1,
+      "max_depth": 4,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 2,
+      "max_depth": 4,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 3,
+      "max_depth": 4,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 1,
+      "max_depth": 16,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 2,
+      "max_depth": 16,
+      "sweeps": 1
+    },
+    {
+      "steps": 16,
+      "levels": 8,
+      "tilt": 3,
+      "max_depth": 16,
+      "sweeps": 1
+    }
+  ],
+  "python": "3.14.2",
+  "numpy": "2.5.1",
+  "scipy": "1.18.0",
+  "matplotlib": "3.11.1",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "seed_convention": "SeedSequence([root, stream, config_id, replicate]); stream=0 crude,1 SMC,2 pilot",
+  "total_seconds": 104.6445773000014
+}

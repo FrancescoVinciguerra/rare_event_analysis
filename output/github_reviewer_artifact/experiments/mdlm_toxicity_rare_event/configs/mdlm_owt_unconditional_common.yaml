@@ -1,0 +1,107 @@
+decoder:
+  checkpoint:
+    id: kuleshov-group/mdlm-owt
+    revision: d0958fa851335ece6c15260ce0025f030673c0fb
+    weights_sha256: 47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4
+  model_implementation:
+    id: TheQweaker/mdlm-owt-noflash
+    revision: 8871c28982b8b256e1ccb45a94bf68caaf7c270f
+    reason: byte-identical official weights with mathematical SDPA and no flash-attn import
+    attention_backend: torch_sdpa_math
+  tokenizer:
+    id: openai-community/gpt2
+    revision: 607a30d783dfa663caf39e06633721c8d4cfcd7e
+  generation_mode: unconditional
+  initial_state: all_positions_masked
+  fixed_prefix_token_ids: []
+  prompt: null
+  upstream_prior_definition: mask_index_times_ones_for_full_model_length
+  sequence_length: 128
+  evaluated_completion_tokens: 50
+  denoising_steps: 1000
+  predictor: ddpm
+  ancestral_kernel: mdlm_subs_ddpm_exponential_race
+  ancestral_kernel_implementation_version: native_mdlm_ddpm_v1
+  noise_schedule:
+    type: loglinear
+    epsilon: 0.001
+  sampling_epsilon: 0.00001
+  temperature: 1.0
+  top_k: null
+  top_p: null
+  final_noise_removal: true
+  final_noise_removal_method: stochastic_categorical
+  mask_token_id: 50257
+  precision: float32
+  runtime_stack:
+    python: 3.11.5
+    torch: 2.6.0+cu118
+    transformers: 4.57.6
+
+evaluation:
+  conditioning_mode: unconditional_generated_text_only
+  numerical_batching:
+    # Make phi(x) independent of the other particles in the classifier batch.
+    padding: max_length
+    pad_final_batch_to_batch_size: true
+  completion_trimming_tokenizer:
+    id: roberta-large
+    revision: 722cf37b1afa9454edce342e7895e588b6ff1d59
+  classifier:
+    id: SkolkovoInstitute/roberta_toxicity_classifier
+    revision: 048c25bb1e199b98802784f96325f4840f22145d
+    weights_sha256: 896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c
+    positive_label_index: 1
+  reward:
+    definition: log_softmax_probability_of_positive_toxicity_class
+    text_scope: first_generated_mdlm_tokens_only
+    completion_tokens: 100
+    classifier_max_length: 50
+  event:
+    definition: classifier_argmax_equals_positive_label_index
+    text_scope: generated_text_retokenized_and_trimmed_with_roberta_large
+    completion_tokens: 50
+    classifier_max_length: 512
+  batch_size: 8
+
+source_provenance:
+  benchmark_relationship_to_fk: toxicity_classifier_and_conversion_only_not_prompt_conditioning
+  fk_steering_repository: https://github.com/zacharyhorvitz/Fk-Diffusion-Steering
+  fk_steering_commit: 9413005dee1e79f80fb4561a4a7ac8eec704281b
+  fk_reward_code: discrete_diffusion/reward_functions.py
+  fk_event_code: discrete_diffusion/evaluation/evaluate.py
+  fk_completion_trimming_code: discrete_diffusion/evaluation/mdlm_to_eval_format.py
+  mdlm_repository: https://github.com/kuleshov-group/mdlm
+  mdlm_commit: c112c526d193436838c98d81455ee51f90309470
+  mdlm_unconditional_prior_code: diffusion.py:_sample_prior_and_sample
+  mdlm_unconditional_prior_verified: true
+  mdlm_diffusion_sampler_adds_bos_or_eos: false
+
+direct:
+  target_samples: null
+  base_seed: 8128
+  shard_size: 32
+  generation_microbatch_size: 4
+
+smc:
+  tilted_sampler:
+    type: fk_bootstrap
+  num_particles: 8
+  independent_runs: 3
+  tilted_lambdas: [5.0, 10.0]
+  tilted_component_weights_a: [0.5, 0.5]
+  component_weight_policy: uniform
+  optimize_component_weights: false
+  diagnostic_lambdas: []
+  base_seed: 17000
+  ess_threshold: 0.5
+  resampling_method: multinomial
+  reward_frequency: 20
+  beta_start_fraction: 0.0
+  final_resampling: false
+
+runtime:
+  device: cuda
+
+outputs:
+  root: experiments/mdlm_toxicity_rare_event/artifacts/current

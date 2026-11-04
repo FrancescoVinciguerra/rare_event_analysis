@@ -1,0 +1,11 @@
+{
+  "completed_runs": 6,
+  "expected_runs": 24,
+  "completed_by_configuration": {
+    "A": 2,
+    "B": 2,
+    "C": 2
+  },
+  "status": "PARTIAL",
+  "reference_is_exact": false
+}

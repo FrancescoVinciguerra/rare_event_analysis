@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "code_cells_executed": 12,
+  "all_code_cells_executed": true,
+  "empty_working_directory": true,
+  "errors": 0,
+  "embedded_png_figures": 3,
+  "first_cell_started": "2026-09-29T11:40:35.408740Z",
+  "last_cell_finished": "2026-09-29T11:44:44.644235Z",
+  "kernel_execution_seconds": 249.235495,
+  "verification_source": "executed notebook cell timestamps and outputs, plus complete result audit",
+  "execution_note": "All notebook cells completed successfully. The initial local harness reported a Windows temporary-directory cleanup error after saving notebook and results; explicit external-kernel shutdown was subsequently added to the harness."
+}

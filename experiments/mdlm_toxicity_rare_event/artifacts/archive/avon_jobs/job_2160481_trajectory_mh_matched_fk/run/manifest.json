@@ -1,0 +1,75 @@
+{
+  "smc_id": "ebbee60e165b350fb67233e65c10dd526e0cfb3d50db1785850a84fe7a42da6e",
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "9112984202c8cd896ac056c0cd732b3e32b060409e814ac7682b9ecda29bd388",
+  "conditioning_mode": "unconditional",
+  "experiment_phase": "estimation",
+  "smc": {
+    "tilted_sampler": {
+      "type": "trajectory_resample_move",
+      "num_tempering_levels": 8,
+      "mcmc_steps_per_level": 1,
+      "mutation_policy": "after_resampling",
+      "rollback_steps": [
+        4,
+        8
+      ],
+      "rollback_probabilities": [
+        0.5,
+        0.5
+      ]
+    },
+    "num_particles": 512,
+    "independent_runs": 1,
+    "tilted_lambdas": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "tilted_component_weights_a": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "component_weight_policy": "uniform",
+    "optimize_component_weights": false,
+    "diagnostic_lambdas": [],
+    "base_seed": 67000,
+    "ess_threshold": 0.5,
+    "resampling_method": "systematic",
+    "reward_frequency": 4,
+    "beta_start_fraction": 0.0,
+    "final_resampling": false,
+    "experiment_phase": "estimation",
+    "num_independent_runs": 1,
+    "reward_interval": 4,
+    "microbatch_size": 16,
+    "component_rng_policy": "independent_seed_per_run_and_component"
+  },
+  "diagnostic_components": {
+    "lambdas": [],
+    "included_in_tilted_component_aggregation": false
+  },
+  "tilted_component_aggregation": {
+    "symbol": "a_j",
+    "count": 4,
+    "tilted_lambdas": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "weights_a": [
+      0.25,
+      0.25,
+      0.25,
+      0.25
+    ],
+    "component_weight_policy": "uniform",
+    "aggregation": "p_hat = sum_j a_j * p_hat_j",
+    "separate_reverse_snis_normalization": true,
+    "optimize_component_weights": false
+  }
+}

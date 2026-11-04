@@ -1,0 +1,3049 @@
+{
+  "study": {
+    "schema_version": 1,
+    "study_name": "camera_ready_gradual_budget",
+    "base_config": "mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+    "output_subdirectory": "camera_ready_gradual_budget",
+    "thresholds": [
+      0.9,
+      0.99,
+      0.999
+    ],
+    "plot_thresholds": [
+      0.99,
+      0.999
+    ],
+    "control_threshold": 0.9,
+    "independent_runs": 12,
+    "base_seed": 1900000000,
+    "comparison": "measured_matched_wall_clock",
+    "workers": 3,
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 19747011,
+    "crude_stream": 946081,
+    "timing_tolerance_fraction": 0.05,
+    "performance_summary": "positive_counts_and_conditional_log_error",
+    "reference": {
+      "samples": 200000,
+      "discoveries": [
+        1516,
+        444,
+        26
+      ],
+      "source": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+      "source_sha256": "b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535",
+      "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+      "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d"
+    },
+    "configurations": [
+      {
+        "id": "A0p99_B25_L10",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113
+      },
+      {
+        "id": "A0p99_B25_L20",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0
+        ],
+        "moves_per_level": 2,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113
+      },
+      {
+        "id": "A0p99_B25_L40",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 1,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113
+      },
+      {
+        "id": "A0p99_B50_L25",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225
+      },
+      {
+        "id": "A0p99_B50_L50",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 2,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225
+      },
+      {
+        "id": "A0p99_B50_L80",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 1,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225
+      },
+      {
+        "id": "A0p999_B25_L30",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923
+      },
+      {
+        "id": "A0p999_B25_L40",
+        "N": 96,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923
+      },
+      {
+        "id": "A0p999_B25_L50",
+        "N": 80,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923
+      },
+      {
+        "id": "A0p999_B25_L60",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923
+      },
+      {
+        "id": "A0p999_B25_L80",
+        "N": 48,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923
+      },
+      {
+        "id": "A0p999_B50_L30",
+        "N": 256,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846
+      },
+      {
+        "id": "A0p999_B50_L40",
+        "N": 192,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846
+      },
+      {
+        "id": "A0p999_B50_L50",
+        "N": 160,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846
+      },
+      {
+        "id": "A0p999_B50_L60",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846
+      },
+      {
+        "id": "A0p999_B50_L80",
+        "N": 96,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846
+      }
+    ],
+    "gradual_budget_screen": true
+  },
+  "study_id": "bd5d2f23bbc71ea49a5a0ddd807aad82ebf8d3e8bb5fcf0d85d5d276849eaac6",
+  "worker_id": 1,
+  "workers": 3,
+  "resolved_configs": [
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 2,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          1.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900000000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B25_L10",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113,
+        "label": "A0p99_B25_L10, tilt=1, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 4,
+          "mcmc_steps_per_level": 2,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          2.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900010000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B25_L20",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0
+        ],
+        "moves_per_level": 2,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113,
+        "label": "A0p99_B25_L20, tilt=2, MH=2"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 8,
+          "mcmc_steps_per_level": 1,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          4.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900020000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B25_L40",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 1,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 113,
+        "label": "A0p99_B25_L40, tilt=4, MH=1"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 5,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          2.5
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900030000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B50_L25",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225,
+        "label": "A0p99_B50_L25, tilt=2.5, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 10,
+          "mcmc_steps_per_level": 2,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          5.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900040000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B50_L50",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 2,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225,
+        "label": "A0p99_B50_L50, tilt=5, MH=2"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 16,
+          "mcmc_steps_per_level": 1,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 16,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          8.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900050000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p99_B50_L80",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 1,
+        "target_threshold": 0.99,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 225,
+        "label": "A0p99_B50_L80, tilt=8, MH=1"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 6,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 128,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          3.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900060000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B25_L30",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923,
+        "label": "A0p999_B25_L30, tilt=3, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 8,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 96,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          4.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900070000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B25_L40",
+        "N": 96,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923,
+        "label": "A0p999_B25_L40, tilt=4, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 10,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 80,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          5.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900080000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B25_L50",
+        "N": 80,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923,
+        "label": "A0p999_B25_L50, tilt=5, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 12,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 64,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          6.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900090000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B25_L60",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923,
+        "label": "A0p999_B25_L60, tilt=6, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 16,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 48,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          8.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900100000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B25_L80",
+        "N": 48,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.25,
+        "target_MC_paths": 1923,
+        "label": "A0p999_B25_L80, tilt=8, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 6,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 256,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          3.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900110000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B50_L30",
+        "N": 256,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846,
+        "label": "A0p999_B50_L30, tilt=3, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 8,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 192,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          4.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900120000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B50_L40",
+        "N": 192,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846,
+        "label": "A0p999_B50_L40, tilt=4, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 10,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 160,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          5.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900130000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B50_L50",
+        "N": 160,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846,
+        "label": "A0p999_B50_L50, tilt=5, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 12,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 128,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          6.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900140000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B50_L60",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846,
+        "label": "A0p999_B50_L60, tilt=6, MH=4"
+      }
+    },
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 16,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 96,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          8.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 1900150000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "A0p999_B50_L80",
+        "N": 96,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4,
+        "target_threshold": 0.999,
+        "budget_fraction": 0.5,
+        "target_MC_paths": 3846,
+        "label": "A0p999_B50_L80, tilt=8, MH=4"
+      }
+    }
+  ],
+  "source_SHA256": {
+    "accuracy_budget.py": "6c0f17af64f4804e22873ea12ba360ec238d9033487453c87068f60d0db04757",
+    "exploratory_population.py": "cf80f2fa2f1a54325b776301e5c9beaf7a1a629c75e83b8280d4df45b2d66a5b",
+    "exploratory_kernel.py": "f776d04faf113022c62cb4f845320ad0cf0449a4e9728254502f7d94c0e0abde",
+    "exploratory.py": "290fa8e66947f958b9c2d1e1c2a1a4efc83be8d4384a54b3faa1de0f86306367",
+    "camera_ready_gpu.py": "6799c1bec5e882dd2413e3a84270f34cd981dc563b073c0b84c0c1ab13e67783",
+    "low_budget.py": "050aa8f3e6ce29ef0a0de2729365a6c8188d4321121c4b7c6b29f8bfbd901ef6",
+    "smc.py": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+    "ancestral.py": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+    "evaluation.py": "3d2f00f68bbfc2180d0fc7dd0389635838f2af9f57979f2bf10621c971c5bbb5",
+    "run_smc.py": "4c9d6e9ff0452d2a6b2ca72267e787dc37d361662cdd7627942888139ccbc086",
+    "runtime.py": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+    "configuration.py": "2a95ec0071fc7c79adc4876a292623b383e1f5f34078b4ab045225a2ada24f38"
+  }
+}

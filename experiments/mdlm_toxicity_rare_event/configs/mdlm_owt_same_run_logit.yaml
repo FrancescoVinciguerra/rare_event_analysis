@@ -1,0 +1,11 @@
+extends: mdlm_owt_same_run_ladder.yaml
+study_name: camera_ready_same_run_logit
+output_subdirectory: camera_ready_same_run_logit
+phi: logit
+reuse_only_MC: true
+previous_job: '2079904'
+# Same 12 seed values as the completed log-probability study. Every seed is
+# distinct within this study. Pairing preserves the initial native population.
+comparison: measured_matched_wall_clock
+resources:
+  SLURM_walltime: '02:00:00'

@@ -1,0 +1,23 @@
+{
+  "seconds_per_path": 0.17004600483051036,
+  "calibration_seconds": [
+    21.741535007953644,
+    21.76623361185193,
+    21.765888618305326
+  ],
+  "calibration_paths": 128,
+  "seeds": [
+    17747011,
+    17747012,
+    17747013,
+    17747014,
+    17747015
+  ],
+  "warmup_and_calibration_seconds": 117.33195337746292,
+  "excluded_from_estimates_and_measured_run_times": true,
+  "timing_device": {
+    "hostname": "gpu002.avon.hpc",
+    "SLURM_STEP_GPUS": "1",
+    "CUDA_VISIBLE_DEVICES": "0"
+  }
+}

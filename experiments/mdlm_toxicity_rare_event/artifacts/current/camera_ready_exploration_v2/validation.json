@@ -1,0 +1,8 @@
+{
+  "completed_runs_checked": 24,
+  "all_normalizer_increments_reconstructed": true,
+  "terminal_estimators_recomputed": true,
+  "matched_native_transition_budgets_verified": true,
+  "no_final_resampling_verified": true,
+  "no_new_simulations": true
+}

@@ -1,0 +1,7 @@
+{
+  "status": "PILOT_COMPLETE",
+  "completed_runs": 12,
+  "expected_runs": 12,
+  "new_MC_generation": false,
+  "comparison": "calibrated equivalent budget using existing MC samples"
+}

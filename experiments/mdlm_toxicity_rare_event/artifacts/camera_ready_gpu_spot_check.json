@@ -1,0 +1,7 @@
+{
+  "checked_populations": 2,
+  "rows": 8,
+  "same_smc_population_across_comparisons": true,
+  "exact_native_transition_budget_check": "passed",
+  "snis_crude_in_unit_interval": true
+}

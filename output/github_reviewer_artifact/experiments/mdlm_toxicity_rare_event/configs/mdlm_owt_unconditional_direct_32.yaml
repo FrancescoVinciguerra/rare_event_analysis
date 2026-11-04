@@ -1,0 +1,13 @@
+extends: mdlm_owt_unconditional_common.yaml
+
+decoder:
+  denoising_steps: 32
+
+direct:
+  # The production target is supplied explicitly by the experiment launcher.
+  target_samples: null
+  base_seed: 8128
+  # Larger append-only shards keep the 200k reference practical on GPFS.
+  # Resume remains sample-index based and never overwrites the existing shards.
+  shard_size: 512
+  generation_microbatch_size: 16

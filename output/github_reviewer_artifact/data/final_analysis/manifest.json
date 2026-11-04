@@ -1,0 +1,23 @@
+{
+  "kind": "mdlm_final_cost_matched_analysis_v2",
+  "schema_version": 1,
+  "study_name": "mdlm_owt_unconditional_final_analysis_v2",
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d",
+  "base_suite_id": "c9b31cb498f0b538a96921bf6400a62b70cb3588e3360d9a701de0211ee86b42",
+  "matched_runtime_suite_id": "5425558272d1cf675d727e5ca9e9043188c5f7f7527c066185de98e778de77b4",
+  "confirmatory_suite_id": "d8fbdb72db7d69f0b4a1d48b7575753c07d95c07f1448a449791f882b09c2a7f",
+  "component_weight_policy": "uniform",
+  "rare_event_thresholds": [
+    0.5,
+    0.9,
+    0.99,
+    0.999
+  ],
+  "primary_threshold": 0.99,
+  "exploratory_threshold": 0.999,
+  "bootstrap": {
+    "replicates": 20000,
+    "seed": 20260820
+  }
+}

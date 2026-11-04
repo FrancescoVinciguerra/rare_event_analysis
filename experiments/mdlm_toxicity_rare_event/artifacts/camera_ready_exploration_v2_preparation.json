@@ -1,0 +1,112 @@
+{
+  "status": "submitted",
+  "remote_writes_performed": true,
+  "bundle_sha256": "47d7c897ff1145d34a1dc5fc3175fce0b9494926fbb765dff66e39d25cae153b",
+  "files": {
+    "experiments/mdlm_toxicity_rare_event/configs/mdlm_owt_exploration_v2.yaml": "f1f07dabccd8dcd54b736d030987a1ea6f32be106e7d5853d517544fe394d673",
+    "experiments/mdlm_toxicity_rare_event/src/diffusion_toxicity_smc_experiment/exploratory.py": "290fa8e66947f958b9c2d1e1c2a1a4efc83be8d4384a54b3faa1de0f86306367",
+    "experiments/mdlm_toxicity_rare_event/src/diffusion_toxicity_smc_experiment/exploratory_kernel.py": "f776d04faf113022c62cb4f845320ad0cf0449a4e9728254502f7d94c0e0abde",
+    "experiments/mdlm_toxicity_rare_event/src/diffusion_toxicity_smc_experiment/exploratory_population.py": "cf80f2fa2f1a54325b776301e5c9beaf7a1a629c75e83b8280d4df45b2d66a5b",
+    "experiments/mdlm_toxicity_rare_event/src/diffusion_toxicity_smc_experiment/exploration_figures.py": "f40dc69396695e58768c4cf6fc6767e01b03313929b14fce89fde8fa6edea63f",
+    "experiments/mdlm_toxicity_rare_event/scripts/submit_avon_exploration_v2.sh": "3eeac1a1b4146e97e420d24ce389145b33b246f5664d62d3b42ecce31821316c",
+    "experiments/mdlm_toxicity_rare_event/scripts/slurm_avon_exploration_v2.sh": "71a51f2860272b31cb90564afc17ef09dbeb19624239d7da3a9667fbcd874c03",
+    "experiments/mdlm_toxicity_rare_event/tests/test_exploratory.py": "b445c15c5c9b786647b4853128f6d8fc9dd4cbff5a0882501be9e524225c2943",
+    "experiments/mdlm_toxicity_rare_event/analysis/plot_camera_ready_exploration.py": "640fb77391a8e3b16e0dc62f2506483f83e3f050d6fe6ba0446e777ec0c73f94",
+    "experiments/mdlm_toxicity_rare_event/docs/EXPLORATION_V2.md": "d5d518a3a3f328533d061f74b62e631633d6361169a36bf5649a25df7f0b716a"
+  },
+  "reviewed_runtime_exceptions": {
+    "compatibility_test": "passed",
+    "scores_events_identical_for_test_inputs": true,
+    "local_calls": 1,
+    "remote_calls": 2,
+    "remote_files_preserved": true,
+    "reviewed_remote_sha256": {
+      "evaluation.py": "3d2f00f68bbfc2180d0fc7dd0389635838f2af9f57979f2bf10621c971c5bbb5",
+      "run_smc.py": "4c9d6e9ff0452d2a6b2ca72267e787dc37d361662cdd7627942888139ccbc086"
+    }
+  },
+  "case_ids": [
+    "A",
+    "B",
+    "C"
+  ],
+  "planned_runs": 24,
+  "resources": {
+    "GPUs": 3,
+    "CPU": 12,
+    "RAM_GB": 60,
+    "max_hours": 2
+  },
+  "old_iid_diagnostic": {
+    "samples": 5746,
+    "seeds": [
+      5683571292516897654,
+      4197703811741970981,
+      484192483059223308,
+      8105267529861555655,
+      629081454576156225,
+      9098779900263921498
+    ],
+    "schedules": {
+      "old": [
+        {
+          "from": 0,
+          "to": 1.0,
+          "ideal_incremental_ess_fraction_proxy": 0.014066113378482044
+        },
+        {
+          "from": 1.0,
+          "to": 2.0,
+          "ideal_incremental_ess_fraction_proxy": 0.8997712632831152
+        },
+        {
+          "from": 2.0,
+          "to": 3.0,
+          "ideal_incremental_ess_fraction_proxy": 0.9826594997340887
+        }
+      ],
+      "uniform_6": [
+        {
+          "from": 0,
+          "to": 0.5,
+          "ideal_incremental_ess_fraction_proxy": 0.052956871052819994
+        },
+        {
+          "from": 0.5,
+          "to": 1.0,
+          "ideal_incremental_ess_fraction_proxy": 0.5324403227995301
+        },
+        {
+          "from": 1.0,
+          "to": 1.5,
+          "ideal_incremental_ess_fraction_proxy": 0.9369359878308906
+        },
+        {
+          "from": 1.5,
+          "to": 2.0,
+          "ideal_incremental_ess_fraction_proxy": 0.9834197984673242
+        },
+        {
+          "from": 2.0,
+          "to": 2.5,
+          "ideal_incremental_ess_fraction_proxy": 0.9929886930749605
+        },
+        {
+          "from": 2.5,
+          "to": 3.0,
+          "ideal_incremental_ess_fraction_proxy": 0.9960720240938927
+        }
+      ]
+    },
+    "warning": "Estimated ideal-target overlap from old IID P samples, not actual finite-population SMC ESS, no new simulations."
+  },
+  "local_verification": {
+    "exploration_tests_passed": 16,
+    "shell_syntax_validated": true,
+    "submit_dry_run_completed": true,
+    "three_worker_disjoint_seeds_and_resume_tested": true,
+    "shared_run_output_writes_avoided": true
+  },
+  "job_id": "2076203",
+  "user_authorization": "vai"
+}

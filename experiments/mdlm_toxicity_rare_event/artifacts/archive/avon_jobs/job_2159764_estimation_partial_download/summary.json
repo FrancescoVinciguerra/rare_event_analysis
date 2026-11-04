@@ -1,0 +1,269 @@
+{
+  "conditioning_mode": "unconditional",
+  "experiment_phase": "estimation",
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "9112984202c8cd896ac056c0cd732b3e32b060409e814ac7682b9ecda29bd388",
+  "smc_id": "8f51510acf67ae37478587fa53f94624120526cb358d97328c01befa134e01e8",
+  "diagnostic_components": [],
+  "tilted_components": [
+    {
+      "conditioning_mode": "unconditional",
+      "run_index": 0,
+      "lambda": 0.25,
+      "component_role": "tilted",
+      "included_in_final_aggregation": true,
+      "seed": 67000,
+      "num_particles": 512,
+      "reverse_snis_estimate": 0.009765625000000009,
+      "reverse_weight_ess": 511.99999999999994,
+      "reverse_weight_ess_over_n": 0.9999999999999999,
+      "tilted_event_discoveries": 5,
+      "tilted_event_fraction_not_p0_estimate": 0.009765625,
+      "final_smc_ess": 262.3584055024258,
+      "pre_final_resampling_ess": 262.3584055024258,
+      "post_final_resampling_ess": 262.3584055024258,
+      "pre_final_resampling_max_normalized_weight": 0.017089954995086552,
+      "post_final_resampling_max_normalized_weight": 0.017089954995086552,
+      "reverse_max_normalized_weight": 0.0019531250000000017,
+      "resampling_count": 0,
+      "ess_before_each_resampling": [],
+      "distinct_root_ancestors": 512,
+      "distinct_root_ancestor_fraction": 1.0,
+      "log_normalizer_estimate": -2.171551891611661,
+      "nfe": 1280,
+      "classifier_score_calls": 9,
+      "classifier_model_forward_calls": 576,
+      "classifier_texts_scored": 4608,
+      "runtime_seconds": 108.05097150430083,
+      "reward_min": -10.343782424926758,
+      "reward_mean": -9.305056909612176,
+      "reward_max": -0.00996672734618187,
+      "reward_quantiles": {
+        "q00": -10.343782424926758,
+        "q10": -10.27737808227539,
+        "q25": -10.219762802124023,
+        "q50": -10.019576072692871,
+        "q75": -9.362390518188477,
+        "q90": -7.274130916595459,
+        "q100": -0.00996672734618187
+      },
+      "nonfinite_detected": false,
+      "final_resampling": false,
+      "lambda_zero_base_sampler_check": "not_applicable",
+      "peak_cuda_memory_allocated_bytes": 3022393856
+    },
+    {
+      "conditioning_mode": "unconditional",
+      "run_index": 0,
+      "lambda": 0.5,
+      "component_role": "tilted",
+      "included_in_final_aggregation": true,
+      "seed": 67001,
+      "num_particles": 512,
+      "reverse_snis_estimate": 0.015530755615095447,
+      "reverse_weight_ess": 269.16350457563124,
+      "reverse_weight_ess_over_n": 0.5257099698742798,
+      "tilted_event_discoveries": 121,
+      "tilted_event_fraction_not_p0_estimate": 0.236328125,
+      "final_smc_ess": 214.59005258211167,
+      "pre_final_resampling_ess": 214.59005258211167,
+      "post_final_resampling_ess": 214.59005258211167,
+      "pre_final_resampling_max_normalized_weight": 0.03441768537253035,
+      "post_final_resampling_max_normalized_weight": 0.03441768537253035,
+      "reverse_max_normalized_weight": 0.004835156866232575,
+      "resampling_count": 2,
+      "ess_before_each_resampling": [
+        {
+          "level": 16,
+          "ess": 251.08391633441715
+        },
+        {
+          "level": 24,
+          "ess": 232.26160502975523
+        }
+      ],
+      "distinct_root_ancestors": 279,
+      "distinct_root_ancestor_fraction": 0.544921875,
+      "log_normalizer_estimate": -3.5149041452177476,
+      "nfe": 1280,
+      "classifier_score_calls": 9,
+      "classifier_model_forward_calls": 576,
+      "classifier_texts_scored": 4608,
+      "runtime_seconds": 106.02044186368585,
+      "reward_min": -10.347688674926758,
+      "reward_mean": -5.813429120972614,
+      "reward_max": -0.006995471194386482,
+      "reward_quantiles": {
+        "q00": -10.347688674926758,
+        "q10": -10.246129035949707,
+        "q25": -9.922900915145874,
+        "q50": -6.560010671615601,
+        "q75": -1.7277230024337769,
+        "q90": -0.027658432163298073,
+        "q100": -0.006995471194386482
+      },
+      "nonfinite_detected": false,
+      "final_resampling": false,
+      "lambda_zero_base_sampler_check": "not_applicable",
+      "peak_cuda_memory_allocated_bytes": 3022947328
+    },
+    {
+      "conditioning_mode": "unconditional",
+      "run_index": 0,
+      "lambda": 0.75,
+      "component_role": "tilted",
+      "included_in_final_aggregation": true,
+      "seed": 67002,
+      "num_particles": 512,
+      "reverse_snis_estimate": 0.011464889594574963,
+      "reverse_weight_ess": 176.43814531676162,
+      "reverse_weight_ess_over_n": 0.34460575257180004,
+      "tilted_event_discoveries": 181,
+      "tilted_event_fraction_not_p0_estimate": 0.353515625,
+      "final_smc_ess": 237.31372946483526,
+      "pre_final_resampling_ess": 237.31372946483526,
+      "post_final_resampling_ess": 237.31372946483526,
+      "pre_final_resampling_max_normalized_weight": 0.017008324451015983,
+      "post_final_resampling_max_normalized_weight": 0.017008324451015983,
+      "reverse_max_normalized_weight": 0.007159592157750751,
+      "resampling_count": 3,
+      "ess_before_each_resampling": [
+        {
+          "level": 12,
+          "ess": 220.92471034855862
+        },
+        {
+          "level": 16,
+          "ess": 166.95027405459857
+        },
+        {
+          "level": 20,
+          "ess": 228.13429641493454
+        }
+      ],
+      "distinct_root_ancestors": 205,
+      "distinct_root_ancestor_fraction": 0.400390625,
+      "log_normalizer_estimate": -4.219466969029024,
+      "nfe": 1280,
+      "classifier_score_calls": 9,
+      "classifier_model_forward_calls": 576,
+      "classifier_texts_scored": 4608,
+      "runtime_seconds": 106.3871163353324,
+      "reward_min": -10.355500221252441,
+      "reward_mean": -4.49407836408318,
+      "reward_max": -0.0026610223576426506,
+      "reward_quantiles": {
+        "q00": -10.355500221252441,
+        "q10": -10.19495906829834,
+        "q25": -9.461992025375366,
+        "q50": -3.415728807449341,
+        "q75": -0.07308703102171421,
+        "q90": -0.017659766972064964,
+        "q100": -0.0026610223576426506
+      },
+      "nonfinite_detected": false,
+      "final_resampling": false,
+      "lambda_zero_base_sampler_check": "not_applicable",
+      "peak_cuda_memory_allocated_bytes": 3022947328
+    },
+    {
+      "conditioning_mode": "unconditional",
+      "run_index": 0,
+      "lambda": 1.0,
+      "component_role": "tilted",
+      "included_in_final_aggregation": true,
+      "seed": 67003,
+      "num_particles": 512,
+      "reverse_snis_estimate": 0.010680629299481034,
+      "reverse_weight_ess": 6.0626278136220275,
+      "reverse_weight_ess_over_n": 0.011841069948480522,
+      "tilted_event_discoveries": 398,
+      "tilted_event_fraction_not_p0_estimate": 0.77734375,
+      "final_smc_ess": 410.61073129028085,
+      "pre_final_resampling_ess": 410.61073129028085,
+      "post_final_resampling_ess": 410.61073129028085,
+      "pre_final_resampling_max_normalized_weight": 0.01391751344724177,
+      "post_final_resampling_max_normalized_weight": 0.01391751344724177,
+      "reverse_max_normalized_weight": 0.2083336935838431,
+      "resampling_count": 4,
+      "ess_before_each_resampling": [
+        {
+          "level": 12,
+          "ess": 91.81770649400647
+        },
+        {
+          "level": 16,
+          "ess": 228.47890137692033
+        },
+        {
+          "level": 24,
+          "ess": 72.9951111802831
+        },
+        {
+          "level": 28,
+          "ess": 90.07294708266313
+        }
+      ],
+      "distinct_root_ancestors": 31,
+      "distinct_root_ancestor_fraction": 0.060546875,
+      "log_normalizer_estimate": -4.610214214232781,
+      "nfe": 1280,
+      "classifier_score_calls": 9,
+      "classifier_model_forward_calls": 576,
+      "classifier_texts_scored": 4608,
+      "runtime_seconds": 106.50129452720284,
+      "reward_min": -10.308627128601074,
+      "reward_mean": -0.8881717449153257,
+      "reward_max": -0.001675750594586134,
+      "reward_quantiles": {
+        "q00": -10.308627128601074,
+        "q10": -3.7510207891464233,
+        "q25": -0.2141592800617218,
+        "q50": -0.02588519174605608,
+        "q75": -0.014795105205848813,
+        "q90": -0.008961374592036006,
+        "q100": -0.001675750594586134
+      },
+      "nonfinite_detected": false,
+      "final_resampling": false,
+      "lambda_zero_base_sampler_check": "not_applicable",
+      "peak_cuda_memory_allocated_bytes": 3022947328
+    }
+  ],
+  "aggregate": {
+    "conditioning_mode": "unconditional",
+    "definition": "p_hat = sum_j a_j * p_hat_j",
+    "run_estimates": [
+      0.011860474877287863
+    ],
+    "component_estimates_by_run": [
+      [
+        0.009765625000000009,
+        0.015530755615095447,
+        0.011464889594574963,
+        0.010680629299481034
+      ]
+    ],
+    "mean_reverse_snis_estimate": 0.011860474877287863,
+    "empirical_standard_error_across_runs": null,
+    "tilted_component_aggregation": {
+      "symbol": "a_j",
+      "definition": "sum_j a_j * p_hat_j; each reverse-SNIS ratio normalized separately",
+      "tilted_lambdas": [
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "weights_a": [
+        0.25,
+        0.25,
+        0.25,
+        0.25
+      ],
+      "weight_policy": "uniform",
+      "optimize_component_weights": false
+    },
+    "finite_sample_note": "Reverse self-normalized importance sampling is consistent under standard conditions and generally biased at finite particle count."
+  }
+}

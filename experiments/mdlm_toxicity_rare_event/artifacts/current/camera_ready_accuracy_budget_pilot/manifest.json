@@ -1,0 +1,247 @@
+{
+  "study": {
+    "schema_version": 1,
+    "study_name": "camera_ready_accuracy_budget_pilot",
+    "base_config": "mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+    "output_subdirectory": "camera_ready_accuracy_budget_pilot",
+    "thresholds": [
+      0.9,
+      0.99,
+      0.999
+    ],
+    "plot_thresholds": [
+      0.99,
+      0.999
+    ],
+    "control_threshold": 0.9,
+    "independent_runs": 20,
+    "base_seed": 1800000000,
+    "comparison": "measured_matched_wall_clock",
+    "workers": 3,
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 17747011,
+    "crude_stream": 926081,
+    "timing_tolerance_fraction": 0.05,
+    "performance_summary": "mean_and_median_across_independent_runs_no_accuracy_cutoffs",
+    "reference": {
+      "samples": 200000,
+      "discoveries": [
+        1516,
+        444,
+        26
+      ],
+      "source": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+      "source_sha256": "b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535",
+      "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+      "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d"
+    },
+    "configurations": [
+      {
+        "id": "N16_L05",
+        "N": 16,
+        "schedule": [
+          0.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L05",
+        "N": 32,
+        "schedule": [
+          0.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L05",
+        "N": 64,
+        "schedule": [
+          0.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N16_L10",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L10",
+        "N": 32,
+        "schedule": [
+          0.5,
+          1.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L10",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N16_L15",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L15",
+        "N": 32,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L15",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N16_L20",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L20",
+        "N": 32,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L20",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N16_L25",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L25",
+        "N": 32,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L25",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N16_L30",
+        "N": 16,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N32_L30",
+        "N": 32,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4
+      },
+      {
+        "id": "N64_L30",
+        "N": 64,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0
+        ],
+        "moves_per_level": 4
+      }
+    ]
+  },
+  "study_id": "038ee06c3f511a03dfdf8f0abe5da3e3e6132610148269be5fd53f74af78a106",
+  "source_SHA256": {
+    "accuracy_budget.py": "2034cbca836eff945eb70c1671e28c3f19aaec77728bd8140d73b125bf29a388",
+    "exploratory_population.py": "cf80f2fa2f1a54325b776301e5c9beaf7a1a629c75e83b8280d4df45b2d66a5b",
+    "exploratory_kernel.py": "f776d04faf113022c62cb4f845320ad0cf0449a4e9728254502f7d94c0e0abde",
+    "exploratory.py": "290fa8e66947f958b9c2d1e1c2a1a4efc83be8d4384a54b3faa1de0f86306367",
+    "camera_ready_gpu.py": "6799c1bec5e882dd2413e3a84270f34cd981dc563b073c0b84c0c1ab13e67783",
+    "low_budget.py": "050aa8f3e6ce29ef0a0de2729365a6c8188d4321121c4b7c6b29f8bfbd901ef6",
+    "smc.py": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+    "ancestral.py": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+    "evaluation.py": "3d2f00f68bbfc2180d0fc7dd0389635838f2af9f57979f2bf10621c971c5bbb5",
+    "run_smc.py": "4c9d6e9ff0452d2a6b2ca72267e787dc37d361662cdd7627942888139ccbc086",
+    "runtime.py": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+    "configuration.py": "2a95ec0071fc7c79adc4876a292623b383e1f5f34078b4ab045225a2ada24f38"
+  }
+}

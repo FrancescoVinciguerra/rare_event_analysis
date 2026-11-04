@@ -1,0 +1,1442 @@
+[
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 0
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "log_error",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 3,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 1,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "A",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "B",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 1
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.9,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 0.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 2,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 1.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 3
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 4
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 2.5,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 5
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "smc",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 2
+  },
+  {
+    "kind": "ratio",
+    "case": "C",
+    "threshold": 0.99,
+    "lambda": 3.0,
+    "method": "snis",
+    "runs": 8,
+    "zeros": 0,
+    "outside_zoom": 6
+  }
+]

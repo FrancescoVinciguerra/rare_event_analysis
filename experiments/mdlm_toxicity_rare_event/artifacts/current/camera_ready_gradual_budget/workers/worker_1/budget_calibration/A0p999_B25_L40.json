@@ -1,0 +1,21 @@
+{
+  "N": 104,
+  "target_seconds": 330.92046172518167,
+  "trials": [
+    {
+      "N": 96,
+      "seconds": 308.8369374172762,
+      "seed": 19749181
+    },
+    {
+      "N": 104,
+      "seconds": 338.463320331648,
+      "seed": 19749182
+    }
+  ],
+  "timing_device": {
+    "hostname": "gpu008.avon.hpc",
+    "SLURM_STEP_GPUS": "1",
+    "CUDA_VISIBLE_DEVICES": "0"
+  }
+}

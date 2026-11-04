@@ -1,0 +1,66 @@
+{
+  "job_id": "2076203",
+  "status": "COMPLETED",
+  "submitted_utc": "2026-11-02T17:18:31.751914+00:00",
+  "deployment_request": "request_88d3a0644864489a90828e3d230e682b",
+  "planned_runs": 24,
+  "independent_runs_per_configuration": 8,
+  "schedule": [
+    0,
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3
+  ],
+  "configurations": [
+    {
+      "id": "A",
+      "N": 64,
+      "MH_per_level": 4
+    },
+    {
+      "id": "B",
+      "N": 64,
+      "MH_per_level": 8
+    },
+    {
+      "id": "C",
+      "N": 128,
+      "MH_per_level": 4
+    }
+  ],
+  "thresholds": [
+    0.9,
+    0.99
+  ],
+  "comparison": "matched_transitions",
+  "resources": {
+    "GPUs": 3,
+    "CPU": 12,
+    "RAM_GB": 60,
+    "max_hours": 2
+  },
+  "remote_output": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_exploration_v2",
+  "automatic_resubmission": false,
+  "elapsed": "01:18:52",
+  "exit_code": "0:0",
+  "completed_runs": 24,
+  "completed_by_configuration": {
+    "A": 8,
+    "B": 8,
+    "C": 8
+  },
+  "monitor_error": null,
+  "checked_utc": "2026-11-02T18:37:14.799229+00:00",
+  "downloaded": true,
+  "local_report": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_exploration_v2\\REPORT.html",
+  "local_csv": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_exploration_v2\\runs.csv",
+  "local_figures": [
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_exploration_v2\\exploration_log_error_boxplots.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_exploration_v2\\exploration_ratio_boxplots.png"
+  ],
+  "report_status": "COMPLETE",
+  "files_verified": 99
+}

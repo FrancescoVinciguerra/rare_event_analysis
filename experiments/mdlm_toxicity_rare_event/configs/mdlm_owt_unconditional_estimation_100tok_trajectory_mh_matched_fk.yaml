@@ -1,0 +1,15 @@
+extends: mdlm_owt_unconditional_estimation_100tok.yaml
+
+# Compute-matched comparison against job 2159764 / fk_bootstrap.  The outer
+# estimator, 512-particle components, lambdas, independent seeds, reward,
+# event and decoder are unchanged.  Rejuvenation is paid only when resampling
+# creates duplicate lineages.
+smc:
+  tilted_sampler:
+    type: trajectory_resample_move
+    implementation_version: exact_trajectory_rollback_mh_v1
+    num_tempering_levels: 8
+    mcmc_steps_per_level: 1
+    mutation_policy: after_resampling
+    rollback_steps: [4, 8]
+    rollback_probabilities: [0.50, 0.50]

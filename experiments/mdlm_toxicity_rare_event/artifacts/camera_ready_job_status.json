@@ -1,0 +1,56 @@
+{
+  "job_id": "2075174",
+  "status": "TIMEOUT",
+  "submitted_utc": "2026-11-02T12:27:33.696580+00:00",
+  "remote_host": "avon.scrtp.warwick.ac.uk",
+  "N": [
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "tilts": [
+    1,
+    2,
+    3
+  ],
+  "moves_per_level": 4,
+  "independent_pilot_runs_per_N": 8,
+  "thresholds": [
+    0.9,
+    0.99
+  ],
+  "report_generated_automatically": true,
+  "remote_output": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_budget_v1",
+  "report_files": [
+    "REPORT.html",
+    "REPORT.md",
+    "runs.csv",
+    "summary.csv"
+  ],
+  "elapsed": "02:00:06",
+  "exit_code": "0:0",
+  "completed_populations": 30,
+  "monitor_error": null,
+  "report_remains_on_avon": true,
+  "downloaded": true,
+  "download_error": null,
+  "local_report": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_low_budget_v1\\REPORT.html",
+  "local_csv": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_low_budget_v1\\runs.csv",
+  "expected_populations": 40,
+  "report_status": "PILOT PARZIALE",
+  "completed_by_N": {
+    "N128": 6,
+    "N16": 8,
+    "N32": 8,
+    "N64": 8
+  },
+  "result_archive_sha256": "a8ff89689ca34577aae299e1c5aea44fe72209d23fd6e96395c250146bc192c7",
+  "checked_utc": "2026-11-02T15:44:04.885335+00:00",
+  "active_jobs_observed": 0,
+  "current_remote_runs_csv_matches_download": true,
+  "current_remote_summary_unchanged": true,
+  "local_summary_numerically_verified": true,
+  "latest_scheduler_state": "TIMEOUT"
+}

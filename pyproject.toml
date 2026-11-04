@@ -10,11 +10,12 @@ dependencies = [
     "pandas>=2.0",
     "pytest>=8.0",
     "textstat>=0.7.3",
-    "torch>=2.3",
+    "torch>=2.6",
     "tqdm>=4.66",
     "transformers>=4.55,<5",
     "psutil>=5.9",
     "pymbar>=4.0.3",
+    "PyYAML>=6.0",
 ]
 
 [[tool.uv.index]]
@@ -27,6 +28,59 @@ torch = [
     { index = "pytorch-cu130", marker = "sys_platform == 'win32'" },
 ]
 
+[tool.setuptools.packages.find]
+where = [
+    ".",
+    "experiments/mdlm_toxicity_rare_event/src",
+]
+include = [
+    "rea_llms",
+    "rea_llms.*",
+    "suffix_direct_mh_smc_experiment",
+    "suffix_direct_mh_smc_experiment.*",
+    "official_annealed_tps_experiment",
+    "official_annealed_tps_experiment.*",
+    "diffusion_toxicity_smc_experiment",
+    "diffusion_toxicity_smc_experiment.*",
+]
+exclude = [
+    "configs*",
+    "cache*",
+    ".cache*",
+    "__pycache__*",
+    "log*",
+    "logs*",
+    "output*",
+    "outputs*",
+    "temp*",
+    "tmp*",
+    "external*",
+    "notebook*",
+    "notebooks*",
+    "model*",
+    "models*",
+    "checkpoint*",
+    "checkpoints*",
+    "hf-cache*",
+    "venvs*",
+    ".venv*",
+    "results*",
+    "tests*",
+    "docs*",
+    "scripts*",
+]
+namespaces = false
+
 [tool.pytest.ini_options]
-pythonpath = ["."]
-testpaths = ["tests"]
+pythonpath = [
+    ".",
+    "experiments/mdlm_toxicity_rare_event/src",
+]
+testpaths = [
+    "tests",
+    "experiments/mdlm_toxicity_rare_event/tests",
+]
+markers = [
+    "slow: optional slow integration tests",
+    "gpu: tests requiring a CUDA GPU and local model artifacts",
+]

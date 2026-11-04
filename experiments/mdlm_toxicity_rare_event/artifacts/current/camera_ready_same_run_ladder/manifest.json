@@ -1,0 +1,148 @@
+{
+  "study": {
+    "schema_version": 1,
+    "study_name": "camera_ready_same_run_ladder",
+    "base_config": "mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+    "output_subdirectory": "camera_ready_same_run_ladder",
+    "thresholds": [
+      0.99,
+      0.999
+    ],
+    "plot_thresholds": [
+      0.99,
+      0.999
+    ],
+    "independent_runs": 12,
+    "base_seed": 2000000000,
+    "comparison": "measured_matched_wall_clock",
+    "workers": 3,
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 19847011,
+    "crude_stream": 947081,
+    "timing_tolerance_fraction": 0.05,
+    "reference": {
+      "samples": 200000,
+      "discoveries": [
+        444,
+        26
+      ],
+      "source": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+      "source_sha256": "b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535",
+      "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+      "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d"
+    },
+    "configurations": [
+      {
+        "id": "L128",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4
+      }
+    ],
+    "same_run_ladder": true,
+    "record_population_checkpoints": true,
+    "minimum_event_particles": 1,
+    "checkpoint_baseline_policy": "level_end_and_first_event",
+    "report_max_lambda": {
+      "0.99": 8.0,
+      "0.999": 8.0
+    },
+    "resources": {
+      "GPUs_per_run": 1,
+      "CPUs_per_run": 4,
+      "parallel_workers": 3,
+      "GPUs_total": 3,
+      "CPUs_total": 12,
+      "RAM_GB_total": 60,
+      "SLURM_walltime": "12:00:00"
+    }
+  },
+  "comparison_policy": "saved independent MC prefixes; calibrated equivalent cost",
+  "original_job": "2079596",
+  "continuation_job": "2079904",
+  "analysis_source_sha256": "b97a072282b40e504215e6eadac0efba26eabe5486b453f23f4c88d4a4449b0d",
+  "SMC_sources": [
+    {
+      "file": "workers/worker_0/populations/L128_seed2000000000.json",
+      "sha256": "9262a2a5b9b4ba4acca27093c0f7c824dda2aa2a4d4ee94da77685b2c3364a69",
+      "seed": 2000000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2003000000.json",
+      "sha256": "b9f917f7ccac086f00761fe64d9911470fce83a049f5da5498b798a611b0232d",
+      "seed": 2003000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2006000000.json",
+      "sha256": "b6f6ce9e6653fd4da9e38cdb0e84765c01df0c3d2478ac2bda045dd6559f0071",
+      "seed": 2006000000
+    },
+    {
+      "file": "workers/worker_0/populations/L128_seed2009000000.json",
+      "sha256": "d115493b158d4e3a06ef9053b315fe643433d594655828c7256b1c247743ed84",
+      "seed": 2009000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2001000000.json",
+      "sha256": "1f17fa868e1891a6c9bc0ad10a9f095719580c821efa21314addbfa617fbe9ab",
+      "seed": 2001000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2004000000.json",
+      "sha256": "ae86645b6d6f5e8c906bd85907c7c810f2ee1da3d0a2f8ddad805a501461d1e3",
+      "seed": 2004000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2007000000.json",
+      "sha256": "93b43ac685a241021cb8383c5dadac7de9e65e47aae19ab77eb79318a81ce059",
+      "seed": 2007000000
+    },
+    {
+      "file": "workers/worker_1/populations/L128_seed2010000000.json",
+      "sha256": "dbb095d577a1928bb1e66129870c31767f332750f82f23423a4aa21bae54f0ff",
+      "seed": 2010000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2002000000.json",
+      "sha256": "a5adb13e062dbdd72df0cbd6eb858c39bf6cb175abc0e55b945ef30bc3110c08",
+      "seed": 2002000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2005000000.json",
+      "sha256": "0867023702dca8b5aa75f4b946afd2f733bcced075e32ab0fb340cea6dddf485",
+      "seed": 2005000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2008000000.json",
+      "sha256": "56c237cfb7858177d8decc607bb8c63b8417e61d336c0c64e7ccab63b40f1fff",
+      "seed": 2008000000
+    },
+    {
+      "file": "workers/worker_2/populations/L128_seed2011000000.json",
+      "sha256": "cf518a7b4aa43bb43d0ef223f0e57a4f7bf55a26a852a809c79a380f8f425652",
+      "seed": 2011000000
+    }
+  ],
+  "MC_source_files": 192,
+  "MC_pool_samples": 354420,
+  "new_MC_generation": false
+}

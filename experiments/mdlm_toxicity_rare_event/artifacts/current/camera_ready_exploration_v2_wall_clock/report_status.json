@@ -1,0 +1,15 @@
+{
+  "completed_runs": 24,
+  "expected_runs": 24,
+  "completed_by_configuration": {
+    "A": 8,
+    "B": 8,
+    "C": 8
+  },
+  "status": "COMPLETE",
+  "comparison": "matched_wall_clock",
+  "clock_ratio_median": 1.0069328614173672,
+  "clock_ratio_min": 1.0038084686266815,
+  "clock_ratio_max": 1.0114419312989615,
+  "SMC_repeated": false
+}

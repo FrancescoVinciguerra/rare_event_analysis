@@ -1,0 +1,32 @@
+{
+  "completed_populations": 30,
+  "csv_rows": 120,
+  "budget_floor_verified": true,
+  "same_smc_population_across_matching_policies": true,
+  "files": {
+    "REPORT.html": {
+      "exists": true,
+      "bytes": 193057
+    },
+    "REPORT.md": {
+      "exists": true,
+      "bytes": 5339
+    },
+    "runs.csv": {
+      "exists": true,
+      "bytes": 41250
+    },
+    "summary.csv": {
+      "exists": true,
+      "bytes": 9070
+    },
+    "camera_ready_log_error_boxplots.png": {
+      "exists": true,
+      "bytes": 1190179
+    },
+    "camera_ready_ratio_boxplots.png": {
+      "exists": true,
+      "bytes": 1107047
+    }
+  }
+}

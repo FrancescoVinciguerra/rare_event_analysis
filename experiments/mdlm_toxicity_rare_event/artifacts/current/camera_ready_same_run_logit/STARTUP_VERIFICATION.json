@@ -1,0 +1,87 @@
+{
+  "job_id": "2081350",
+  "remote_CPU_tests_passed": 18,
+  "workers": [
+    {
+      "worker": 0,
+      "seeds": [
+        2000000000,
+        2003000000,
+        2006000000,
+        2009000000
+      ],
+      "device": {
+        "hostname": "gpu007.avon.hpc",
+        "SLURM_STEP_GPUS": "1",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "SLURM_CPUS_PER_TASK": "4",
+        "OMP_NUM_THREADS": "4",
+        "GPUs_per_run": 1,
+        "workers_in_allocation": 3
+      },
+      "calibration_sha256": "e2bacf03c69d2f673a400ab3277b6f05d12a99b3fa4d6975442cd38297c3161d",
+      "phi": {
+        "name": "logit",
+        "definition": "log(q/(1-q))",
+        "source": "positive classifier logit minus logsumexp(other logits)",
+        "probability_clipping": null
+      },
+      "source_hashes_verified": true
+    },
+    {
+      "worker": 1,
+      "seeds": [
+        2001000000,
+        2004000000,
+        2007000000,
+        2010000000
+      ],
+      "device": {
+        "hostname": "gpu007.avon.hpc",
+        "SLURM_STEP_GPUS": "0",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "SLURM_CPUS_PER_TASK": "4",
+        "OMP_NUM_THREADS": "4",
+        "GPUs_per_run": 1,
+        "workers_in_allocation": 3
+      },
+      "calibration_sha256": "703170c7bdb364d6e3200dbc92c9aafa4be84a4c91811d37b0c9238037a26f34",
+      "phi": {
+        "name": "logit",
+        "definition": "log(q/(1-q))",
+        "source": "positive classifier logit minus logsumexp(other logits)",
+        "probability_clipping": null
+      },
+      "source_hashes_verified": true
+    },
+    {
+      "worker": 2,
+      "seeds": [
+        2002000000,
+        2005000000,
+        2008000000,
+        2011000000
+      ],
+      "device": {
+        "hostname": "gpu007.avon.hpc",
+        "SLURM_STEP_GPUS": "2",
+        "CUDA_VISIBLE_DEVICES": "0",
+        "SLURM_CPUS_PER_TASK": "4",
+        "OMP_NUM_THREADS": "4",
+        "GPUs_per_run": 1,
+        "workers_in_allocation": 3
+      },
+      "calibration_sha256": "771fd2ab8a7016a794d2e1bb8390ed8c3028ebc616838d97f6969dc9c6cbc158",
+      "phi": {
+        "name": "logit",
+        "definition": "log(q/(1-q))",
+        "source": "positive classifier logit minus logsumexp(other logits)",
+        "probability_clipping": null
+      },
+      "source_hashes_verified": true
+    }
+  ],
+  "old_results_preserved": true,
+  "new_MC_samples_generated": 0,
+  "scientific_runs_complete": false
+}

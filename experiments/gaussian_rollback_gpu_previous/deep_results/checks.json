@@ -1,0 +1,46 @@
+{
+  "device": "cuda:0",
+  "gpu": "NVIDIA GeForce MX570 A",
+  "torch": "2.13.0+cu130",
+  "cuda_runtime": "13.0",
+  "T": 16,
+  "N": 128,
+  "R": 20,
+  "lambda": 5.0,
+  "p_A": [
+    0.0001,
+    1e-05
+  ],
+  "thresholds_theoretical": [
+    3.7190164854556804,
+    4.264890793922825
+  ],
+  "dtype": "torch.float32",
+  "uniform_depth_min": 7955,
+  "uniform_depth_max": 8401,
+  "resampled_test_levels": [
+    4,
+    9,
+    15
+  ],
+  "no_resampling_test_levels": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11,
+    12,
+    13,
+    14,
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "no_final_resampling": true
+}

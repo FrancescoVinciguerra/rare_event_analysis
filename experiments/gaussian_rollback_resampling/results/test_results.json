@@ -1,0 +1,17 @@
+{
+  "passed": [
+    "original terminal law N(0,1)",
+    "uniform depth and complete conserved prefix",
+    "MH invariance of path moments and covariance",
+    "disabled branch exactly reproduces independent path-weight baseline",
+    "ESS policy genuinely skips resampling at zero tilt",
+    "active ESS branch copies full paths and resets only particle weights",
+    "Z_hat includes non-resampling levels and is never reset",
+    "final resampling excluded even when final ESS is below threshold",
+    "weight-before-move order, final mutation and exact Gaussian cost",
+    "both requested estimators use normalized terminal weights and Z_hat",
+    "systematic offspring unbiasedness and correct conditional covariance",
+    "whole-population identities E[p_ord]=p, E[reverse_mass]=1, E[Z_hat]=Z with active resampling"
+  ],
+  "count": 12
+}

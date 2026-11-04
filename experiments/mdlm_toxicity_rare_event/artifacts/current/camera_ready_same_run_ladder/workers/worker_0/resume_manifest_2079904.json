@@ -1,0 +1,37 @@
+{
+  "original_job": "2079596",
+  "continuation_job": "2079904",
+  "pending_seeds": [
+    2003000000,
+    2006000000,
+    2009000000
+  ],
+  "source_sha256": "b97a072282b40e504215e6eadac0efba26eabe5486b453f23f4c88d4a4449b0d",
+  "original_SMC_source_unchanged": true,
+  "new_MC_generation": false,
+  "timing_device": {
+    "hostname": "gpu007.avon.hpc",
+    "SLURM_STEP_GPUS": "1",
+    "CUDA_VISIBLE_DEVICES": "0",
+    "SLURM_CPUS_PER_TASK": "4",
+    "OMP_NUM_THREADS": "4",
+    "GPUs_per_run": 1,
+    "workers_in_allocation": 3
+  },
+  "warmup_summary": {
+    "num_particles": 16,
+    "seed": 19847011,
+    "lambda": 8.0,
+    "log_normalizer_estimate": -9.206492351522746,
+    "total_decoder_particle_steps": 17948,
+    "mcmc_proposals": 1024,
+    "mcmc_acceptance_rate": 0.251953125,
+    "distinct_root_ancestors": 1,
+    "distinct_terminal_sequences": 16,
+    "final_smc_ess": 11.024416488124979,
+    "runtime_seconds": 120.17661783099174,
+    "nfe": 5456,
+    "resampling_count": 3
+  },
+  "warmup_excluded_from_estimates_and_timing": true
+}

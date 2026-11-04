@@ -1,0 +1,11 @@
+{
+  "status": "passed",
+  "notebook_code_cells_executed": 12,
+  "no_local_imports_or_machine_paths_in_notebook_sources": true,
+  "population_runs_checked": 40000,
+  "active_resampling_runs": 13621,
+  "all_ess_decisions_and_final_exclusion_verified": true,
+  "all_normalizers_and_costs_verified": true,
+  "historical_baseline_runs_matched": 20000,
+  "maximum_baseline_absolute_error": 1.0061396160665481e-16
+}

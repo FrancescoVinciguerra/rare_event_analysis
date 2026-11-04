@@ -1,0 +1,11 @@
+{
+  "seeds": [
+    9834911,
+    9834912
+  ],
+  "seconds": 51.648320496082306,
+  "excluded_from_results_and_per_run_times": true,
+  "worker_id": 1,
+  "CUDA_VISIBLE_DEVICES": "0",
+  "SLURM_STEP_GPUS": "1"
+}

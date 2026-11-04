@@ -1,0 +1,62 @@
+{
+  "job_id": "2076623",
+  "status": "COMPLETED",
+  "node": "gpu002",
+  "GPUs": 3,
+  "CPUs": 12,
+  "memory_GB": 60,
+  "time_limit": "06:00:00",
+  "requeue": false,
+  "N": [
+    16,
+    32,
+    64
+  ],
+  "terminal_tilts": [
+    0.5,
+    1,
+    1.5,
+    2,
+    2.5,
+    3
+  ],
+  "moves_per_level": 4,
+  "runs_per_configuration": 20,
+  "expected_runs": 360,
+  "thresholds": [
+    0.9,
+    0.99,
+    0.999
+  ],
+  "plot_thresholds": [
+    0.99,
+    0.999
+  ],
+  "comparison": "measured_same_GPU_wall_clock",
+  "downloaded": true,
+  "figures_rendered": true,
+  "source_profile": "original Avon runtime from job 2076203",
+  "compatibility_tests_passed": 14,
+  "submitted_utc": "2026-11-03T11:19:58+00:00",
+  "remote_output": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_accuracy_budget_pilot",
+  "monitor_pid": 21360,
+  "monitor_mode": "read_only_existing_SSH_no_new_jobs",
+  "checked_utc": "2026-11-03T15:56:10.323268+00:00",
+  "elapsed": "04:07:23",
+  "exit_code": "0:0",
+  "completed_runs": 360,
+  "monitor_error": null,
+  "recorded_utc": "2026-11-03T11:25:37.399947+00:00",
+  "started_utc": "2026-11-03T11:19:58+00:00",
+  "scheduler_time_verified_against_elapsed": true,
+  "report_remains_on_avon": true,
+  "local_report": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\REPORT.html",
+  "local_csv": "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\runs.csv",
+  "report_status": "PILOT_COMPLETE",
+  "result_archive_SHA256": "e37c4e6d8c996bc7d964233c0b3a846295504f7ffb150228d61bb1c6fcb2b3d1",
+  "files_downloaded": 1091,
+  "local_figures": [
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\accuracy_budget_log_error_boxplots.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\accuracy_budget_ratio_boxplots.png"
+  ]
+}

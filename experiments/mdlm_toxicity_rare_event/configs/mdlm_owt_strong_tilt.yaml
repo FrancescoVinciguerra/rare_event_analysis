@@ -1,0 +1,111 @@
+schema_version: 1
+study_name: camera_ready_strong_tilt
+base_config: mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml
+output_subdirectory: camera_ready_strong_tilt
+thresholds:
+- 0.9
+- 0.99
+- 0.999
+plot_thresholds:
+- 0.99
+- 0.999
+control_threshold: 0.9
+independent_runs: 12
+base_seed: 2100000000
+comparison: measured_matched_wall_clock
+workers: 3
+calibration_repetitions: 3
+calibration_paths: 128
+warmup_paths: 16
+warmup_base_seed: 19747011
+crude_stream: 936081
+timing_tolerance_fraction: 0.05
+performance_summary: positive_counts_and_conditional_log_error
+reference:
+  samples: 200000
+  discoveries:
+  - 1516
+  - 444
+  - 26
+  source: output/github_reviewer_artifact/data/final_analysis/direct_reference.csv
+  source_sha256: b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535
+  decoder_id: cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609
+  evaluator_id: 91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d
+configurations:
+- id: N16_L30
+  N: 16
+  schedule:
+  - 0.6
+  - 1.2
+  - 1.8
+  - 2.4
+  - 3.0
+  moves_per_level: 4
+- id: N16_L45
+  N: 16
+  schedule:
+  - 0.9
+  - 1.8
+  - 2.7
+  - 3.6
+  - 4.5
+  moves_per_level: 4
+- id: N16_L60
+  N: 16
+  schedule:
+  - 1.2
+  - 2.4
+  - 3.6
+  - 4.8
+  - 6.0
+  moves_per_level: 4
+- id: N16_L80
+  N: 16
+  schedule:
+  - 1.6
+  - 3.2
+  - 4.8
+  - 6.4
+  - 8.0
+  moves_per_level: 4
+- id: N256_L30
+  N: 256
+  schedule:
+  - 0.5
+  - 1.0
+  - 1.5
+  - 2.0
+  - 2.5
+  - 3.0
+  moves_per_level: 4
+- id: N256_L45
+  N: 256
+  schedule:
+  - 0.75
+  - 1.5
+  - 2.25
+  - 3.0
+  - 3.75
+  - 4.5
+  moves_per_level: 4
+- id: N256_L60
+  N: 256
+  schedule:
+  - 1.0
+  - 2.0
+  - 3.0
+  - 4.0
+  - 5.0
+  - 6.0
+  moves_per_level: 4
+- id: N256_L80
+  N: 256
+  schedule:
+  - 1.3333333333333333
+  - 2.6666666666666665
+  - 4.0
+  - 5.333333333333333
+  - 6.666666666666667
+  - 8.0
+  moves_per_level: 4
+strong_tilt_screen: true

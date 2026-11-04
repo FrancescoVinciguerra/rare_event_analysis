@@ -1,0 +1,27 @@
+{
+  "T": 16,
+  "N": 128,
+  "levels": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "p_A": [
+    0.001,
+    0.0001,
+    1e-05
+  ],
+  "thresholds": [
+    3.090232306167813,
+    3.7190164854556804,
+    4.264890793922825
+  ],
+  "distinct_run_seeds": 5000,
+  "first_seed": 2026100100,
+  "last_seed": 2026105099,
+  "device": "cpu",
+  "seconds_total": 45.73628599999938,
+  "budget_rule": "floor(actual native suffix plus initial transitions / 16) crude trajectories"
+}

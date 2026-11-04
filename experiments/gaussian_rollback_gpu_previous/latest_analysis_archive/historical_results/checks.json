@@ -1,0 +1,10 @@
+{
+  "device": "cpu",
+  "torch": "2.11.0+cpu",
+  "native_marginal_and_tilted_kernel_checked": true,
+  "uniform_depth_min_count": 6072,
+  "uniform_depth_max_count": 6414,
+  "weight_normalizer_estimators_and_cost_checked": true,
+  "both_resampling_branches_checked": true,
+  "no_final_resampling_checked": true
+}

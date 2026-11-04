@@ -1,0 +1,49 @@
+{
+  "device": "cuda:0",
+  "gpu": "NVIDIA GeForce MX570 A",
+  "torch": "2.13.0+cu130",
+  "cuda_runtime": "13.0",
+  "dtype": "torch.float32",
+  "T": 16,
+  "D": 16,
+  "threshold": 3.090232306167813,
+  "p_A": 0.001,
+  "x0_mean_test": -0.0006044200854375958,
+  "x0_var_test": 1.0018234252929688,
+  "tilted_kernel_mean_test": 1.5028207302093506,
+  "tilted_kernel_var_test": 0.9958091378211975,
+  "depth_min_count": 8021,
+  "depth_max_count": 8286,
+  "branch_tests": {
+    "none": {
+      "ess": [
+        128.0,
+        128.0,
+        128.0,
+        128.0
+      ],
+      "resampled_levels": [],
+      "z_hat": 1.0,
+      "used_transitions": 6448
+    },
+    "selected": {
+      "ess": [
+        7.970203876495361,
+        62.06678771972656
+      ],
+      "resampled_levels": [
+        1
+      ],
+      "z_hat": 614.2195434570312,
+      "used_transitions": 4214
+    },
+    "final": {
+      "ess": [
+        3.2830822467803955
+      ],
+      "resampled_levels": [],
+      "z_hat": 275.015380859375,
+      "used_transitions": 3139
+    }
+  }
+}

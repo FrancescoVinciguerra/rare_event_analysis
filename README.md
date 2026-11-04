@@ -1,8 +1,28 @@
 # Rare-event estimation for language models
 
-This repository contains two probability-estimation pipelines for rare
-language-model completions and one short learned-observable demonstration.
-The principal experiment uses Automated Readability Index (ARI).
+This repository contains rare-event probability-estimation experiments for
+language models. The original experiments use Automated Readability Index
+(ARI); the masked-diffusion toxicity experiment is isolated in its own
+directory.
+
+## Experiments
+
+- **[Results index, Gaussian toy notebooks, and individual runs](experiments/RESULTS_INDEX.md)**:
+  saved experiment outputs, plots, reproducible code, and completion status.
+- [`experiments/gaussian_rollback_smc/`](experiments/gaussian_rollback_smc/README.md):
+  Gaussian full-trajectory RollBack SMC without resampling, theory and results.
+- [`experiments/gaussian_rollback_resampling/`](experiments/gaussian_rollback_resampling/README.md):
+  Gaussian ESS/systematic SMC, independent-run results, and a self-contained Colab notebook.
+- [`experiments/gaussian_rollback_gpu_previous/`](experiments/gaussian_rollback_gpu_previous/):
+  saved Gaussian GPU and deep-tilt experiments with their notebooks and run data.
+- [`experiments/mdlm_toxicity_rare_event/`](experiments/mdlm_toxicity_rare_event/README.md):
+  unconditional MDLM-OWT generation, FK-style SMC steering, toxicity scoring,
+  and reverse-SNIS rare-event estimation. Its code, configurations, Avon
+  scripts, documentation, tests, and local artifact layout are self-contained.
+- [`suffix_direct_mh_smc_experiment/`](suffix_direct_mh_smc_experiment/):
+  suffix direct-MH SMC for the ARI experiment.
+- [`official_annealed_tps_experiment/`](official_annealed_tps_experiment/):
+  adapter for the official annealed TPS implementation.
 
 ## Notebooks
 
@@ -28,9 +48,9 @@ The principal experiment uses Automated Readability Index (ARI).
    labels. This notebook demonstrates the mechanism; it is not a calibrated
    harmful-output probability estimate.
 
-The repository is private. Colab notebooks read a token from the
-`GITHUB_TOKEN` secret and clone the pinned official public submodule
-automatically.
+The repository is public. Some historical language-model notebooks include
+GitHub authentication through the `GITHUB_TOKEN` Colab secret. The Gaussian
+Colab notebooks are self-contained and do not require repository authentication.
 
 ## Estimator
 
@@ -68,6 +88,7 @@ The mathematical derivation and current empirical results are in
 external/rea_of_llms_official/          pinned official supplementary code
 official_annealed_tps_experiment/       TPS adapter and MBAR analysis
 suffix_direct_mh_smc_experiment/        SMC and multi-component F_j runners
+experiments/mdlm_toxicity_rare_event/   isolated MDLM toxicity experiment
 rea_llms/                               generation, observables, and estimators
 notebooks/                              the three executable experiments
 tests/                                  numerical and notebook checks

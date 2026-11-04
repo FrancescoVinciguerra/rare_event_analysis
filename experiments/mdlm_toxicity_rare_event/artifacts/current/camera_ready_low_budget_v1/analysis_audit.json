@@ -1,0 +1,164 @@
+{
+  "populations": 30,
+  "terminal_estimators_recomputed": true,
+  "inverse_mass_identity_verified": true,
+  "ess_resampling_decisions_verified": true,
+  "no_final_resampling_verified": true,
+  "four_mutations_per_level_verified": true,
+  "native_transitions_reconstructed": true,
+  "maximum_estimator_relative_difference": 1.559154181441128e-15,
+  "maximum_abs_reward_minus_log_event_score": 3.0741778989096247e-07,
+  "intermediate_normalizer_increments": "not saved: inspected source recursion but cannot independently reconstruct the entire product from terminal data",
+  "runs": [
+    {
+      "N": 128,
+      "seed": 1200030000,
+      "reverse_mass": 0.05288533715567591
+    },
+    {
+      "N": 128,
+      "seed": 1201030000,
+      "reverse_mass": 0.00822198937672594
+    },
+    {
+      "N": 128,
+      "seed": 1202030000,
+      "reverse_mass": 2.39859018978719
+    },
+    {
+      "N": 128,
+      "seed": 1203030000,
+      "reverse_mass": 0.03346228092137755
+    },
+    {
+      "N": 128,
+      "seed": 1204030000,
+      "reverse_mass": 0.042422086243605585
+    },
+    {
+      "N": 128,
+      "seed": 1205030000,
+      "reverse_mass": 0.0895564990107709
+    },
+    {
+      "N": 16,
+      "seed": 1200000000,
+      "reverse_mass": 0.08695463610344493
+    },
+    {
+      "N": 16,
+      "seed": 1201000000,
+      "reverse_mass": 0.0022126496493415915
+    },
+    {
+      "N": 16,
+      "seed": 1202000000,
+      "reverse_mass": 0.002845615675638715
+    },
+    {
+      "N": 16,
+      "seed": 1203000000,
+      "reverse_mass": 0.007932125241891864
+    },
+    {
+      "N": 16,
+      "seed": 1204000000,
+      "reverse_mass": 0.07004134983226182
+    },
+    {
+      "N": 16,
+      "seed": 1205000000,
+      "reverse_mass": 0.18411810810388932
+    },
+    {
+      "N": 16,
+      "seed": 1206000000,
+      "reverse_mass": 0.02798032703912186
+    },
+    {
+      "N": 16,
+      "seed": 1207000000,
+      "reverse_mass": 0.015945858475425345
+    },
+    {
+      "N": 32,
+      "seed": 1200010000,
+      "reverse_mass": 5.695362854331441
+    },
+    {
+      "N": 32,
+      "seed": 1201010000,
+      "reverse_mass": 6.707228567792363e-06
+    },
+    {
+      "N": 32,
+      "seed": 1202010000,
+      "reverse_mass": 0.027801800211375353
+    },
+    {
+      "N": 32,
+      "seed": 1203010000,
+      "reverse_mass": 0.005389756236832919
+    },
+    {
+      "N": 32,
+      "seed": 1204010000,
+      "reverse_mass": 0.020552185336829502
+    },
+    {
+      "N": 32,
+      "seed": 1205010000,
+      "reverse_mass": 0.04820557152534526
+    },
+    {
+      "N": 32,
+      "seed": 1206010000,
+      "reverse_mass": 8.530304419096159e-06
+    },
+    {
+      "N": 32,
+      "seed": 1207010000,
+      "reverse_mass": 0.0004420557269527417
+    },
+    {
+      "N": 64,
+      "seed": 1200020000,
+      "reverse_mass": 0.0032447472980365283
+    },
+    {
+      "N": 64,
+      "seed": 1201020000,
+      "reverse_mass": 9.109973405226014e-06
+    },
+    {
+      "N": 64,
+      "seed": 1202020000,
+      "reverse_mass": 0.05007349457015888
+    },
+    {
+      "N": 64,
+      "seed": 1203020000,
+      "reverse_mass": 0.019922198656714313
+    },
+    {
+      "N": 64,
+      "seed": 1204020000,
+      "reverse_mass": 0.04118433791953026
+    },
+    {
+      "N": 64,
+      "seed": 1205020000,
+      "reverse_mass": 0.0012389108949259686
+    },
+    {
+      "N": 64,
+      "seed": 1206020000,
+      "reverse_mass": 0.0322028545171836
+    },
+    {
+      "N": 64,
+      "seed": 1207020000,
+      "reverse_mass": 0.011225950136785104
+    }
+  ]
+}

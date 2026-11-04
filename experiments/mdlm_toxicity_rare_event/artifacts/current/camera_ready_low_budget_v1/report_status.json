@@ -1,0 +1,8 @@
+{
+  "completed_populations": 30,
+  "expected_populations": 40,
+  "status": "PILOT PARZIALE",
+  "independent_replicates_are_populations": true,
+  "reference_is_exact": false,
+  "all_zero_estimates_included": true
+}
