@@ -1,0 +1,25 @@
+{
+  "summary": {
+    "num_particles": 16,
+    "seed": 19847111,
+    "lambda": 8.0,
+    "log_normalizer_estimate": 32.26923922390476,
+    "total_decoder_particle_steps": 18512,
+    "mcmc_proposals": 1024,
+    "mcmc_acceptance_rate": 0.158203125,
+    "distinct_root_ancestors": 1,
+    "distinct_terminal_sequences": 12,
+    "final_smc_ess": 15.667808085587398,
+    "runtime_seconds": 123.66166178882122,
+    "nfe": 5609,
+    "resampling_count": 5
+  },
+  "phi": {
+    "name": "logit",
+    "definition": "log(q/(1-q))",
+    "source": "positive classifier logit minus logsumexp(other logits)",
+    "probability_clipping": null
+  },
+  "excluded_from_estimates_and_measured_run_times": true,
+  "new_MC_generation": false
+}

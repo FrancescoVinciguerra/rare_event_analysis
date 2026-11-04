@@ -1,0 +1,297 @@
+{
+  "study_id": "d45c580f9fa40276bdd7df7fdab597ef8d7b0a3a775a3cc72569527b3f3f64ca",
+  "study": {
+    "schema_version": 1,
+    "study_name": "camera_ready_same_run_logit",
+    "base_config": "mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml",
+    "output_subdirectory": "camera_ready_same_run_logit",
+    "thresholds": [
+      0.99,
+      0.999
+    ],
+    "plot_thresholds": [
+      0.99,
+      0.999
+    ],
+    "independent_runs": 12,
+    "base_seed": 2000000000,
+    "comparison": "measured_matched_wall_clock",
+    "workers": 3,
+    "calibration_repetitions": 3,
+    "calibration_paths": 128,
+    "warmup_paths": 16,
+    "warmup_base_seed": 19847011,
+    "crude_stream": 947081,
+    "timing_tolerance_fraction": 0.05,
+    "reference": {
+      "samples": 200000,
+      "discoveries": [
+        444,
+        26
+      ],
+      "source": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+      "source_sha256": "b75e4ddd1a09871ae0fab7682769e8bcc05a3c1fa867a98aa5cac3d7a51bd535",
+      "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+      "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d"
+    },
+    "configurations": [
+      {
+        "id": "L128",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4
+      }
+    ],
+    "same_run_ladder": true,
+    "record_population_checkpoints": true,
+    "minimum_event_particles": 1,
+    "checkpoint_baseline_policy": "level_end_and_first_event",
+    "report_max_lambda": {
+      "0.99": 8.0,
+      "0.999": 8.0
+    },
+    "resources": {
+      "GPUs_per_run": 1,
+      "CPUs_per_run": 4,
+      "parallel_workers": 3,
+      "GPUs_total": 3,
+      "CPUs_total": 12,
+      "RAM_GB_total": 60,
+      "SLURM_walltime": "02:00:00"
+    },
+    "phi": "logit",
+    "reuse_only_MC": true,
+    "previous_job": "2079904"
+  },
+  "resolved_configs": [
+    {
+      "decoder": {
+        "checkpoint": {
+          "id": "kuleshov-group/mdlm-owt",
+          "revision": "d0958fa851335ece6c15260ce0025f030673c0fb",
+          "weights_sha256": "47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4"
+        },
+        "model_implementation": {
+          "id": "TheQweaker/mdlm-owt-noflash",
+          "revision": "8871c28982b8b256e1ccb45a94bf68caaf7c270f",
+          "reason": "byte-identical official weights with mathematical SDPA and no flash-attn import",
+          "attention_backend": "torch_sdpa_math"
+        },
+        "tokenizer": {
+          "id": "openai-community/gpt2",
+          "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e"
+        },
+        "generation_mode": "unconditional",
+        "initial_state": "all_positions_masked",
+        "fixed_prefix_token_ids": [],
+        "prompt": null,
+        "upstream_prior_definition": "mask_index_times_ones_for_full_model_length",
+        "sequence_length": 128,
+        "evaluated_completion_tokens": 50,
+        "denoising_steps": 32,
+        "predictor": "ddpm",
+        "ancestral_kernel": "mdlm_subs_ddpm_exponential_race",
+        "ancestral_kernel_implementation_version": "native_mdlm_ddpm_v1",
+        "noise_schedule": {
+          "type": "loglinear",
+          "epsilon": 0.001
+        },
+        "sampling_epsilon": 1e-05,
+        "temperature": 1.0,
+        "top_k": null,
+        "top_p": null,
+        "final_noise_removal": true,
+        "final_noise_removal_method": "stochastic_categorical",
+        "mask_token_id": 50257,
+        "precision": "float32",
+        "runtime_stack": {
+          "python": "3.11.5",
+          "torch": "2.6.0+cu118",
+          "transformers": "4.57.6"
+        }
+      },
+      "evaluation": {
+        "conditioning_mode": "unconditional_generated_text_only",
+        "numerical_batching": {
+          "padding": "max_length",
+          "pad_final_batch_to_batch_size": true
+        },
+        "completion_trimming_tokenizer": {
+          "id": "roberta-large",
+          "revision": "722cf37b1afa9454edce342e7895e588b6ff1d59"
+        },
+        "classifier": {
+          "id": "SkolkovoInstitute/roberta_toxicity_classifier",
+          "revision": "048c25bb1e199b98802784f96325f4840f22145d",
+          "weights_sha256": "896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c",
+          "positive_label_index": 1
+        },
+        "reward": {
+          "definition": "log_softmax_probability_of_positive_toxicity_class",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "event": {
+          "definition": "classifier_argmax_equals_positive_label_index",
+          "text_scope": "first_generated_mdlm_tokens_only",
+          "completion_tokens": 100,
+          "classifier_max_length": 512
+        },
+        "batch_size": 8
+      },
+      "source_provenance": {
+        "benchmark_relationship_to_fk": "toxicity_classifier_and_conversion_only_not_prompt_conditioning",
+        "fk_steering_repository": "https://github.com/zacharyhorvitz/Fk-Diffusion-Steering",
+        "fk_steering_commit": "9413005dee1e79f80fb4561a4a7ac8eec704281b",
+        "fk_reward_code": "discrete_diffusion/reward_functions.py",
+        "fk_event_code": "discrete_diffusion/evaluation/evaluate.py",
+        "fk_completion_trimming_code": "discrete_diffusion/evaluation/mdlm_to_eval_format.py",
+        "mdlm_repository": "https://github.com/kuleshov-group/mdlm",
+        "mdlm_commit": "c112c526d193436838c98d81455ee51f90309470",
+        "mdlm_unconditional_prior_code": "diffusion.py:_sample_prior_and_sample",
+        "mdlm_unconditional_prior_verified": true,
+        "mdlm_diffusion_sampler_adds_bos_or_eos": false
+      },
+      "direct": {
+        "target_samples": null,
+        "base_seed": 8128,
+        "shard_size": 32,
+        "generation_microbatch_size": 4
+      },
+      "smc": {
+        "tilted_sampler": {
+          "type": "trajectory_resample_move",
+          "implementation_version": "exact_trajectory_rollback_mh_v1",
+          "num_tempering_levels": 16,
+          "mcmc_steps_per_level": 4,
+          "mutation_policy": "every_level",
+          "rollback_steps": [
+            4,
+            8,
+            16,
+            24,
+            32
+          ],
+          "rollback_probabilities": [
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2
+          ]
+        },
+        "num_particles": 128,
+        "independent_runs": 12,
+        "tilted_lambdas": [
+          8.0
+        ],
+        "tilted_component_weights_a": [
+          1.0
+        ],
+        "component_weight_policy": "uniform",
+        "optimize_component_weights": false,
+        "diagnostic_lambdas": [],
+        "base_seed": 2000000000,
+        "ess_threshold": 0.5,
+        "resampling_method": "systematic",
+        "reward_frequency": 4,
+        "beta_start_fraction": 0.0,
+        "final_resampling": false,
+        "experiment_phase": "estimation",
+        "num_independent_runs": 12,
+        "reward_interval": 4,
+        "microbatch_size": 16,
+        "component_rng_policy": "independent_seed_per_run_and_component",
+        "phi": "logit"
+      },
+      "runtime": {
+        "device": "cuda"
+      },
+      "outputs": {
+        "root": "experiments/mdlm_toxicity_rare_event/artifacts/current"
+      },
+      "_exploration": {
+        "id": "L128",
+        "N": 128,
+        "schedule": [
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          5.5,
+          6.0,
+          6.5,
+          7.0,
+          7.5,
+          8.0
+        ],
+        "moves_per_level": 4,
+        "label": "L128, tilt=8, MH=4"
+      }
+    }
+  ],
+  "source_SHA256": {
+    "smc.py": "a1fbceb2ddf7e8b2acbd0d25ecca12bc349c6bca3411ce4f18e30509f5329540",
+    "ancestral.py": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+    "evaluation.py": "206b656152b48bcb7802b9ba32be9bbd65f4419e5d743e355e98e5edc999a1dd",
+    "run_smc.py": "767287e623126c883d47781aa6d2b0e28973a0dc27e336dcbe1a004fd3bcdb8c",
+    "runtime.py": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+    "camera_ready_gpu.py": "30cf8c7fb6a3758cb857311fdc3b2cc97be1c3bbbbe894035aac045fafc3d34d",
+    "low_budget.py": "bc8c4899978c84a064a6f1a34464e99b315c1dcd61fdcde1e06a444d7d7f2303",
+    "exploratory_kernel.py": "07c4db72e6a9ff66a8763dfd89e0690d8d3194fd092bc6555ce15811a5ff664a",
+    "exploratory_population.py": "2f50aae881988063dd84159b9d1ea805c68b69723ee5abe24ec9f0e7009c3535",
+    "population_checkpoints.py": "f482cbf431e05d75f2f3fe752429f810ab712e9b77736e91dcfaaa9b99d4eaa8",
+    "potentials.py": "f9178eb5831a8e57ea95299d8ca7bc9e86e61abce77d2efbbb1e8337d63ac80a",
+    "accuracy_budget.py": "cbcbbfb7e48225effa0ba6bff78f17050865f185b04cf6499d828c0ebd86c51b",
+    "same_run_reuse.py": "6526b18b4c32f4589eacf75be16c484f34016a7edba646a517e5e693f44b6dbd",
+    "configuration.py": "a31d5d40e44607b320dd297314faf6271314aac6e602d802fa66d46a16aae623"
+  },
+  "phi": {
+    "name": "logit",
+    "definition": "log(q/(1-q))",
+    "source": "positive classifier logit minus logsumexp(other logits)",
+    "probability_clipping": null
+  },
+  "planned_seeds": [
+    2000000000,
+    2003000000,
+    2006000000,
+    2009000000
+  ],
+  "new_MC_generation": false,
+  "calibration_source": "/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code/experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/workers/worker_0/calibration_1793789965293116547.json",
+  "calibration_sha256": "e2bacf03c69d2f673a400ab3277b6f05d12a99b3fa4d6975442cd38297c3161d",
+  "timing_device": {
+    "hostname": "gpu007.avon.hpc",
+    "SLURM_STEP_GPUS": "1",
+    "CUDA_VISIBLE_DEVICES": "0",
+    "SLURM_CPUS_PER_TASK": "4",
+    "OMP_NUM_THREADS": "4",
+    "GPUs_per_run": 1,
+    "workers_in_allocation": 3
+  }
+}

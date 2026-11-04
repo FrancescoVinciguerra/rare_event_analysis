@@ -1,0 +1,20 @@
+{
+  "job_id": "2081350",
+  "status": "PARTIAL",
+  "completed_runs": 3,
+  "expected_runs": 12,
+  "seeds": [
+    2000000000,
+    2001000000,
+    2002000000
+  ],
+  "downloaded_utc": "2026-11-04T17:14:25.838438+00:00",
+  "transfer_SHA256": "6d08fcfa59d92d90031448b71353355e4ce74606377bf8c06089f1222321d498",
+  "files_downloaded": 12,
+  "validated_checkpoint_event_estimates": 390,
+  "recomputation_relative_tolerance": 1e-12,
+  "max_relative_recomputation_difference": 1.8417944171319513e-15,
+  "new_MC_samples_generated": 0,
+  "new_SMC_runs_started_by_retrieval": 0,
+  "note": "Raw completed populations only. The remaining scheduled seeds continue on Avon; no full-study results are claimed."
+}

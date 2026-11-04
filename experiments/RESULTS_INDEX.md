@@ -43,6 +43,11 @@ above and these estimated probabilities must not be conflated.
 | Historical Avon outputs | [Archive](mdlm_toxicity_rare_event/artifacts/archive/), [completeness notes](mdlm_toxicity_rare_event/artifacts/README.md) |
 
 **Logit job 2081350 was still running when this publication was prepared.**
+The [partial snapshot](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json)
+contains the first **3 completed ladders out of 12 planned**, with their raw
+65-checkpoint populations in `workers/worker_*/populations/`. All 390
+checkpoint/event estimator pairs were independently recomputed from saved
+weights, Phi, and normalizers; remaining differences were below 2e-15 relative.
 Launch metadata and code do not constitute completed experimental results.
 Available run files and the status JSON distinguish partial from completed
 studies; no unavailable results are inferred or regenerated for publication.

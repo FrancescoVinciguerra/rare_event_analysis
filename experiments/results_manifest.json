@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "published_snapshot_utc": "2026-11-04T17:06:47.294659+00:00",
+  "published_snapshot_utc": "2026-11-04T17:15:20.256849+00:00",
   "repository": "https://github.com/FrancescoVinciguerra/rare_event_analysis",
   "scope": "Available scientific experiment code, notebooks, raw runs, plots, and historical results; no simulations rerun for publication",
-  "files": 2533,
-  "bytes": 301416305,
+  "files": 2546,
+  "bytes": 304869495,
   "groups": {
     "experiments/RESULTS_INDEX.md": 1,
     "experiments/gaussian_rollback_gpu_previous": 54,
     "experiments/gaussian_rollback_resampling": 22,
     "experiments/gaussian_rollback_smc": 27,
-    "experiments/mdlm_toxicity_rare_event": 2362,
+    "experiments/mdlm_toxicity_rare_event": 2375,
     "output/github_reviewer_artifact": 63,
     "results/tail_probability_validation": 4
   },
@@ -20,9 +20,9 @@
     "completion": "See separately recorded job status; launch metadata is not a completed result"
   },
   "audit": {
-    "index_files_checked": 2583,
+    "index_files_checked": 2596,
     "archives_inspected": 16,
-    "unpublished_commits_checked": 6,
+    "unpublished_commits_checked": 0,
     "notebooks": [
       {
         "path": "experiments/gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb",
@@ -90,9 +90,9 @@
   "entries": [
     {
       "path": "experiments/RESULTS_INDEX.md",
-      "bytes": 6187,
-      "SHA256": "b1e1e260e10d20775ed984fd82ea8fb31b6e542a9941be910475f90e486f2c60",
-      "git_blob": "b63156e7c67374d29bef3a943b6349846281e0d4"
+      "bytes": 6603,
+      "SHA256": "a3992c6ed88228d3e456b950776afedf47a5d90d76963353527349c366eea6e1",
+      "git_blob": "e5b2a567c24e90c0720e81cb943125231b319a2e"
     },
     {
       "path": "experiments/gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb",
@@ -14063,10 +14063,88 @@
       "git_blob": "01749779376395709d4d8c5bd3d4ba141da35f80"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json",
+      "bytes": 713,
+      "SHA256": "09752b7ba8da890b976cd756f6d5dbe292353b2351b6cd17ba169603bd5e669c",
+      "git_blob": "4cc5d5a598805fba56b940f4c5bcb4af35ea6f2b"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/STARTUP_VERIFICATION.json",
       "bytes": 2474,
       "SHA256": "04f2227f3d0cb6f9cc26f8254d6a5a2b0fa9e54bf3feb451ced33e1d45a8fd3a",
       "git_blob": "61644c9b9106bcd6d44bd00f6ea46408947d303b"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/calibration_1793789965293116547.json",
+      "bytes": 614,
+      "SHA256": "e2bacf03c69d2f673a400ab3277b6f05d12a99b3fa4d6975442cd38297c3161d",
+      "git_blob": "3285b577b6786455f4c38f6f2598f8bba32337d9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/manifest.json",
+      "bytes": 10119,
+      "SHA256": "39721f98f5f262e05a1e3fb60b58025bc6ac06ac0a3449d84a29fb1e7dc44eb6",
+      "git_blob": "a985b249d38736a48d53b8c906b9516a6b22bfca"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/populations/L128_seed2000000000.json",
+      "bytes": 1138060,
+      "SHA256": "c2b07da378a9581fe89ae10e43b31d8ffb2870771ee20a9d29dc1e87db0fc58e",
+      "git_blob": "54bf2368bad7ed117cf7d111a20b38d0a727f3de"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_0/warmup_2081350.json",
+      "bytes": 718,
+      "SHA256": "4d6c1e63eda90cfbda64597058827ca4f3bafb9be41f80ebc7a16f25d1db192d",
+      "git_blob": "3b565ddb03acd91f68982ab9eda9a271975174d9"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/calibration_1793789967431372288.json",
+      "bytes": 611,
+      "SHA256": "703170c7bdb364d6e3200dbc92c9aafa4be84a4c91811d37b0c9238037a26f34",
+      "git_blob": "1ed288c905225fafc61a4dcfb9ac36f34e84c683"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/manifest.json",
+      "bytes": 10119,
+      "SHA256": "1e2a305347704b62cca3422f8ac67808a77a8d08707042346052f991b408df7f",
+      "git_blob": "6f776acb49899e3ad2c52346b404f2b33110ee40"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/populations/L128_seed2001000000.json",
+      "bytes": 1140150,
+      "SHA256": "eac55ceeac939a051a1fa2f576653e0d4acf2d1bef3454a55fce630ca6f7be99",
+      "git_blob": "d6075fb8b9c60d18f95186acb463ad2948366d98"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_1/warmup_2081350.json",
+      "bytes": 716,
+      "SHA256": "71161a4b167b2b3265f7857ca98025aa50f8f0dba9d80c08757b9418ef59765b",
+      "git_blob": "e8d61afb1984e600e2306ec5f7a259275bfcdc85"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/calibration_1793789968092139167.json",
+      "bytes": 613,
+      "SHA256": "771fd2ab8a7016a794d2e1bb8390ed8c3028ebc616838d97f6969dc9c6cbc158",
+      "git_blob": "4daaa460ed4710094eb66bb0ec775ff58ab9d73d"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/manifest.json",
+      "bytes": 10119,
+      "SHA256": "c51e007cb150309559f8c587cded39f1c80a8b62177cb8fd26d00b4a418bc33d",
+      "git_blob": "b127933bfdf880b6dee7f50cfe3e343696ebfa9a"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/populations/L128_seed2002000000.json",
+      "bytes": 1139507,
+      "SHA256": "fbb143cbe75cee42af8200e31e93da7214bc20d311783b03e399d6d4b6d6ed65",
+      "git_blob": "26da21cebbb488ec039fa0b6930e9af8cfa28fd8"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/workers/worker_2/warmup_2081350.json",
+      "bytes": 715,
+      "SHA256": "0143314136084d82e9888574472948b067b7cb64296f870742e12441cd18ffee",
+      "git_blob": "758118f24aadb8fa5127d95eb23bcd3e67d20f43"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/gradual_budget_job_status.json",
@@ -14101,8 +14179,8 @@
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/same_run_logit_job_status.json",
       "bytes": 1598,
-      "SHA256": "1c19c6f213c5840dae00af47edd53a3b087b50a7020935cac911bd72c8c68c3f",
-      "git_blob": "8c1026121b91f52c3d5582dcea5b7824080c5863"
+      "SHA256": "fac9333e829de1d9ee2c22fc770e5897defca46d1f1b743ef8a01d8b0d6b1164",
+      "git_blob": "07e5f5612b33e8460cc65841d6252db6e7865814"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/wall_clock_followup_job_status.json",
