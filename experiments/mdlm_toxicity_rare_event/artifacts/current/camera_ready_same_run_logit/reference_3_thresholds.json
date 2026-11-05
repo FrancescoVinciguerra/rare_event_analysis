@@ -1,0 +1,67 @@
+{
+  "threshold": 0.995,
+  "hits": 334,
+  "samples": 298800,
+  "p_reference": 0.0011178045515394914,
+  "wilson_95_low": 0.0010042361425740987,
+  "wilson_95_high": 0.0012442003418453402,
+  "retained_index_ranges": [
+    [
+      0,
+      0
+    ],
+    [
+      4619,
+      29535
+    ],
+    [
+      34179,
+      59070
+    ],
+    [
+      63721,
+      88605
+    ],
+    [
+      93224,
+      118140
+    ],
+    [
+      122765,
+      147675
+    ],
+    [
+      152307,
+      177210
+    ],
+    [
+      181808,
+      206745
+    ],
+    [
+      211433,
+      236280
+    ],
+    [
+      240872,
+      265815
+    ],
+    [
+      270458,
+      295350
+    ],
+    [
+      299966,
+      324885
+    ],
+    [
+      329578,
+      354420
+    ]
+  ],
+  "excluded_matched_MC_samples": 55620,
+  "source_pool": "experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget",
+  "original_reference": "output/github_reviewer_artifact/data/final_analysis/direct_reference.csv",
+  "original_checkpoint_rows_verified": 3120,
+  "new_simulations": false
+}

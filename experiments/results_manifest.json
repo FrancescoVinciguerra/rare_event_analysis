@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
-  "published_snapshot_utc": "2026-11-04T19:35:02.050664+00:00",
+  "published_snapshot_utc": "2026-11-05T11:12:50.737924+00:00",
   "repository": "https://github.com/FrancescoVinciguerra/rare_event_analysis",
   "scope": "Available scientific experiment code, notebooks, raw runs, plots, and historical results; no simulations rerun for publication",
-  "files": 2650,
-  "bytes": 320703723,
+  "files": 2661,
+  "bytes": 326965434,
   "groups": {
     "experiments/RESULTS_INDEX.md": 1,
     "experiments/gaussian_rollback_gpu_previous": 54,
     "experiments/gaussian_rollback_resampling": 22,
     "experiments/gaussian_rollback_smc": 27,
-    "experiments/mdlm_toxicity_rare_event": 2479,
+    "experiments/mdlm_toxicity_rare_event": 2490,
     "output/github_reviewer_artifact": 63,
     "results/tail_probability_validation": 4
   },
@@ -22,7 +22,7 @@
     "completion_record": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/COMPLETION_STATUS.json"
   },
   "audit": {
-    "index_files_checked": 2700,
+    "index_files_checked": 2711,
     "archives_inspected": 16,
     "unpublished_commits_checked": 0,
     "notebooks": [
@@ -92,9 +92,9 @@
   "entries": [
     {
       "path": "experiments/RESULTS_INDEX.md",
-      "bytes": 7204,
-      "SHA256": "fe8248f15eaad825455a5ef9399b9d442a7d461672302e88030fe70c589f20f2",
-      "git_blob": "8e6509c21b586a06eeb7a3e5aa4998b774f0c549"
+      "bytes": 8827,
+      "SHA256": "405e97b2e8501962ab2d737655fe7d676c30ee82bdd3d36031fe9b84b2d22939",
+      "git_blob": "4bae66f9cf6470734cec5c87bea192919b686669"
     },
     {
       "path": "experiments/gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb",
@@ -721,6 +721,18 @@
       "git_blob": "578984f09c01ff46de2d766ca652ece332e5c81f"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/analysis/add_threshold_0995.py",
+      "bytes": 8346,
+      "SHA256": "5264b0d79bed20866fb82a2a270e784c2fb1dfe7519653461f415851e53dfc16",
+      "git_blob": "5a71d8f6a8fab63269871aca3e47742701e2a7e5"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/analysis/analyze_relative_variance.py",
+      "bytes": 9643,
+      "SHA256": "a6971d7de67d6530caf9be41534e03c2cc674d1c9c23ee33b8c32f56d619da44",
+      "git_blob": "dfd6b0a3088f503934db077030ac893fa7d47d63"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/analysis/analyze_saved_levels.py",
       "bytes": 17584,
       "SHA256": "09a11d5676342780bb2d99880d20daff664c85bf8a4b79739fbf74d4c22fbbed",
@@ -770,9 +782,9 @@
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/analysis/plot_same_run_ladder.py",
-      "bytes": 8458,
-      "SHA256": "8bce4d3825f6864d0c7d3aa303714bd0b808edd43d56023263c703d8b45eef1c",
-      "git_blob": "6ed1b41de6b3456d9f6d921a91d9da926e48ca63"
+      "bytes": 8476,
+      "SHA256": "8a9fee1bf990c58ae3e11b069c97d20c2a6ca1c141f7fb49e811de67a3d9dc45",
+      "git_blob": "684a2fba9f7d15e76f3f0a99591ab9b4bdd4c44f"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/analysis/plot_wall_clock_followup.py",
@@ -13579,6 +13591,12 @@
       "git_blob": "0389417496a6a6bff86ecc02b0c185efe1e378f0"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/checkpoint_runs_3_thresholds.csv",
+      "bytes": 1018512,
+      "SHA256": "1a2affd2e2b559483edcee349e3aec16d4b14b152d669838ede64cf989b903d1",
+      "git_blob": "01240a53576e9cf46e2a478edd60a6a9c63801c1"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/comparison_policy.json",
       "bytes": 47691,
       "SHA256": "4eb54dcd6a66dd34b9290c68d7e463f6e0cca956318f76fac83ee374659d9e07",
@@ -14101,6 +14119,12 @@
       "git_blob": "34df93d575525a874c73637ed5fef9682aa8e8ed"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/checkpoint_runs_3_thresholds.csv",
+      "bytes": 1041335,
+      "SHA256": "83cdb81a9390ad5f72b5b6576d53baef6b94680f0438f332a91541ff1be512a2",
+      "git_blob": "3741f130f2be043e58a6ca06032111963b29ae27"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code/analysis/plot_same_run_ladder.py",
       "bytes": 8458,
       "SHA256": "8bce4d3825f6864d0c7d3aa303714bd0b808edd43d56023263c703d8b45eef1c",
@@ -14599,6 +14623,30 @@
       "git_blob": "939235f29c3c3b87e11d3a6e7abf4e10e7a9d87b"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/reference_3_thresholds.json",
+      "bytes": 1108,
+      "SHA256": "cee53d59e17f2b63747e3e40e5ef4476fbcd0e13f85e0988c07e868cda255e70",
+      "git_blob": "a1a92217cb4534938ee4097ef4f1d56db8d263fb"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/relative_std_SMC_3_thresholds.png",
+      "bytes": 664086,
+      "SHA256": "ae9c41530c62e377c0eefd0f3ed91daa3895ae4bea4e57ac0bfc871fe79cca97",
+      "git_blob": "2dd89b28b76f236c8b1a07cb568ed1e8534a8719"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/relative_std_audit_3_thresholds.json",
+      "bytes": 8977,
+      "SHA256": "457cac8e00d45acbdc8d260873a216e3c8c2225e22e75a7e285383d90eefe476",
+      "git_blob": "09b4422838c8deb414b14c413d553efd8887ffbd"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/relative_std_comparison_3_thresholds.csv",
+      "bytes": 61929,
+      "SHA256": "3198f33feb80532e2ef6689434d6d7fb845c4741ce5de4df8ddea893acc629b6",
+      "git_blob": "7b6d0d5afa41bf395f46d018b549f30ab268a5f2"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/report_status.json",
       "bytes": 184,
       "SHA256": "77daebedbc322210d53b8ae3a5702c504bd3cbbc107a54907000417ad3c289ba",
@@ -14617,16 +14665,34 @@
       "git_blob": "70ab0556813cadec4ce6e4f20e3a64f29ec3e88a"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_log_error_3_thresholds.png",
+      "bytes": 1619544,
+      "SHA256": "318d4a7df094dc070179b4cd1fdc78b8fe2fb3974836bc0ced37293bb5edd527",
+      "git_blob": "ead258e7026b19ea2846502fcb4947e38644f957"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_plot_audit.json",
       "bytes": 192115,
       "SHA256": "4ee38a45c8f22c79f685d58b86ae2cce9dab826ad4d5c3d91223fffff5da4278",
       "git_blob": "4388bbe7e680c96abc25484b5a31e28a3265f58b"
     },
     {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_plot_audit_3_thresholds.json",
+      "bytes": 288359,
+      "SHA256": "236e228bc20b9e76132383492bbc676c74e2af3d7f45ddbe599dc0d64a21bf5c",
+      "git_blob": "b7b2973aec39cb252bf8c1649f19d0d042b5f3d1"
+    },
+    {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio.png",
       "bytes": 1084425,
       "SHA256": "0505356f654ffdbe5301def683699d1a772f0001dd2060000821f713767917af",
       "git_blob": "c069680364b3dc2e97c29c86d8bacf6f3fc45723"
+    },
+    {
+      "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio_3_thresholds.png",
+      "bytes": 1538231,
+      "SHA256": "e9cfebaf2204ff980410a10429ec08cf1a9dd5bad463c854c24b045d32a3f0f3",
+      "git_blob": "162cbc3f02003785bff8872c9237383efc4b0f0b"
     },
     {
       "path": "experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/saved_MC_blocks.json",

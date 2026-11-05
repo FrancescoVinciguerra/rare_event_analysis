@@ -27,13 +27,13 @@ verification records describe which notebook versions were actually run.
 
 ## MDLM toxicity experiments
 
-The toxicity threshold q is a classifier score, not the original event
-probability. The independent finite reference is 444/200000 for q>=0.99 and
-26/200000 for q>=0.999; it is not exact ground truth. The Gaussian probabilities
-above and these estimated probabilities must not be conflated.
+The toxicity threshold q is a classifier score. The estimated event
+probabilities are 444/200,000 for q ≥ 0.99, 334/298,800 for q ≥ 0.995,
+and 26/200,000 for q ≥ 0.999.
 
 | Study | Results |
 |---|---|
+| Three-threshold reanalysis including q ≥ 0.995 | [Ratio boxplots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio_3_thresholds.png), [log-error boxplots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_log_error_3_thresholds.png), [relative standard deviation](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/relative_std_SMC_3_thresholds.png), [dispersion table](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/relative_std_comparison_3_thresholds.csv) |
 | Completed same-run ladder, Phi=log(q), N=128, 12 seeds, lambda=0.5,...,8, 4 MH/level | [Report](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/REPORT.html), [all checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/checkpoint_runs.csv), [log-error plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/same_run_ladder_log_error.png), [ratio plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/same_run_ladder_ratio.png) |
 | Completed logit-Phi follow-up, same parameters and 12 seeds | [Report](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/REPORT.html), [all checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/checkpoint_runs.csv), [log-error plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_log_error.png), [ratio plots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/same_run_ladder_ratio.png), [validation](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/delivery_validation.json) |
 | Gradual low-budget / strong-tilt screening | [Report and run data](mdlm_toxicity_rare_event/artifacts/current/camera_ready_gradual_budget/) |
@@ -67,6 +67,25 @@ Both SMC estimators share a population and its generation cost.
 Figures preserve zero estimates, identify positive-only conditional panels,
 show full tails as well as zooms, and distinguish the median from the mean.
 Checkpoints of the same run are correlated and are not independent replicates.
+
+### Reanalysis at q ≥ 0.995
+
+The [reference calculation](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/reference_3_thresholds.json)
+uses the 298,800 saved crude trajectories outside the union of the prefixes
+used by the two same-run ladders. It gives 0.0011178 with a 95% Wilson interval
+of [0.0010042, 0.0012442]. The earlier thresholds use their original
+200,000-trajectory reference.
+
+The extended checkpoint tables contain 780 additional estimates for each
+potential. [Logit checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/checkpoint_runs_3_thresholds.csv) ·
+[Log(q) checkpoints](mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_ladder/checkpoint_runs_3_thresholds.csv)
+
+Relative standard deviation is the sample standard deviation across the
+12 independent runs at each fixed tilt, divided by the event's reference
+probability. All zero estimates contribute to this calculation. Run
+`python experiments/mdlm_toxicity_rare_event/analysis/add_threshold_0995.py`
+from the repository root to regenerate the tables and figures from saved
+populations and crude scores.
 
 ## Paper analysis bundle
 

@@ -16,8 +16,8 @@ METHODS=[('smc','SMC non normalizzato','#2878b5'),
          ('snis','SMC + SNIS','#ed8b23'),('crude','Crude MC','#929292')]
 
 
-def render(root):
-    rows=list(csv.DictReader((root/'checkpoint_runs.csv').open(encoding='utf-8')))
+def render(root, *, checkpoint_file='checkpoint_runs.csv', suffix='', reference_note=None):
+    rows=list(csv.DictReader((root/checkpoint_file).open(encoding='utf-8')))
     rows=[r for r in rows if int(r['level'])>0 and int(r['sweep'])==4]
     if not rows:raise ValueError('No completed level populations')
     if {int(r['N']) for r in rows}!={128}:raise ValueError('Do not pool particle counts')
@@ -27,7 +27,6 @@ def render(root):
     if len(potentials)!=1:raise ValueError('Do not pool different Phi choices')
     phi_name=next(iter(potentials))
     phi_label='logit(q)' if phi_name=='logit' else 'log(q)'
-    if events!=[.99,.999]:raise ValueError('This study compares exactly two events')
     keys=[(r['configuration'],r['seed'],r['lambda'],r['threshold']) for r in rows]
     if len(keys)!=len(set(keys)):raise ValueError('Duplicate independent observation')
     calibrated=any(r.get('MC_comparison_available')=='True' and r['MC_comparison_measured']=='False' for r in rows)
@@ -40,7 +39,7 @@ def render(root):
         transformed=all_ratios if kind=='ratio' else np.log10(1+abs(all_ratios-1))
         zoom=2. if kind=='ratio' else .4
         full=max(zoom,float(transformed.max())*1.08+.01)
-        fig,axes=plt.subplots(2*len(events),2,figsize=(28,22),squeeze=False)
+        fig,axes=plt.subplots(2*len(events),2,figsize=(28,11*len(events)),squeeze=False)
         for e,a in enumerate(events):
             for view in [0,1]:
                 for column in [0,1]:
@@ -101,13 +100,13 @@ def render(root):
               +('Linea tratteggiata: rapporto 1.' if kind=='ratio' else 'Linea tratteggiata: errore relativo 100%, anche per stima zero.')
               +' Nessuna media fra tilt. Stime nulle e outlier conservati.\n'
               +cost_text+' Ogni stima usa 1 GPU e 4 CPU; 3 seed in parallelo.\n'
-              +'Riferimenti finiti: score 0,99 = 444/200.000; score 0,999 = 26/200.000. Non sono probabilità esatte.')
+              +(reference_note or 'Riferimenti stimati: score 0,99 = 444/200.000; score 0,999 = 26/200.000.'))
         fig.text(.5,.013,foot,ha='center',fontsize=9)
         fig.subplots_adjust(left=.055,right=.99,top=.91,bottom=.14,hspace=.88,wspace=.19)
-        path=root/f'same_run_ladder_{kind}.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
-    (root/'same_run_ladder_plot_audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
+        path=root/f'same_run_ladder_{kind}{suffix}.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
+    (root/f'same_run_ladder_plot_audit{suffix}.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
     report=root/'REPORT.html'
-    if report.exists():
+    if report.exists() and not suffix:
         content=report.read_text(encoding='utf-8').split('<!-- same-run-figures -->')[0]+'<!-- same-run-figures -->'
         for path in paths:content+=f'<p><a href="{path.name}"><img src="{path.name}" style="width:100%"></a></p>'
         report.write_text(content,encoding='utf-8')
