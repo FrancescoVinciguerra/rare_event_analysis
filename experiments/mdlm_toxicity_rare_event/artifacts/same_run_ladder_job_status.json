@@ -38,8 +38,8 @@
   "files_downloaded": 76,
   "figures_rendered": true,
   "local_figures": [
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_ladder\\same_run_ladder_log_error.png",
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_ladder\\same_run_ladder_ratio.png"
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_ladder\\plots\\same_run_ladder_log_error.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_ladder\\plots\\same_run_ladder_ratio.png"
   ],
   "validated_checkpoint_event_estimates": 1560,
   "results_validated": true

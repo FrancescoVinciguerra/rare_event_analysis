@@ -15,9 +15,9 @@ import time
 from pathlib import Path
 
 import numpy as np
-import torch
 
 from .configuration import decoder_id, evaluator_id, fingerprint, load_yaml
+from .pipeline import estimates as estimates
 from .storage import atomic_write_json, initialize_manifest
 
 
@@ -65,25 +65,6 @@ def plan(study_path: Path):
                 for a,k in zip(study['thresholds'],study['reference']['discoveries'])},
             'runs': study['independent_runs'], 'sampler_base_seed': s['base_seed']})
     return {'study': study, 'configurations': rows}
-
-
-def estimates(log_weights, rewards, log_z, scores, threshold, lambda_final):
-    """Both LaTeX estimators, in float64 log space on one population."""
-    log_weights = torch.as_tensor(log_weights,dtype=torch.float64)
-    rewards = torch.as_tensor(rewards,dtype=torch.float64)
-    scores = torch.as_tensor(scores,dtype=torch.float64)
-    if not torch.isclose(torch.logsumexp(log_weights,0),torch.tensor(0.,dtype=torch.float64),atol=1e-9):
-        raise ValueError('Terminal SMC weights must already be normalized')
-    reverse = log_weights - lambda_final * rewards
-    denominator = torch.logsumexp(reverse,0)
-    event = scores >= threshold
-    numerator = torch.logsumexp(torch.where(event,reverse,-torch.inf),0)
-    return {'smc': float(torch.exp(log_z+numerator)),
-        'snis': float(torch.exp(numerator-denominator)),
-        'event_particles': int(event.sum()),
-        'reverse_ess_fraction': float(torch.exp(-torch.logsumexp(2*(reverse-denominator),0))/len(scores)),
-        'reverse_max_weight': float(torch.exp(reverse-denominator).max()),
-        'reverse_mass': float(torch.exp(log_z+denominator))}
 
 
 def transition_budget(summary):

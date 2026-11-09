@@ -11,7 +11,7 @@ finalize() {
     python -m diffusion_toxicity_smc_experiment.accuracy_budget report \
       --study "$EXPERIMENT_DIR/configs/mdlm_owt_accuracy_budget_pilot.yaml" --output-root "$root"
     if python -c 'import importlib.util; raise SystemExit(importlib.util.find_spec("matplotlib") is None)'; then
-      python "$EXPERIMENT_DIR/analysis/plot_accuracy_budget.py" --results "$root/camera_ready_accuracy_budget_pilot"
+      python "$EXPERIMENT_DIR/plots/plot_accuracy_budget.py" --results "$root/camera_ready_accuracy_budget_pilot"
     else
       echo 'CSV/HTML ready; PNG figures will be rendered locally after downloading, without changing the Avon environment.'
     fi

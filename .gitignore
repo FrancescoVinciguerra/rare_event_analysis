@@ -40,7 +40,7 @@ tmp/
 
 # Download transport archives can include runtime bytecode/cache directories.
 # Their extracted scientific results and frozen source are published instead.
-experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit_results.tar.gz
+experiments/mdlm_toxicity_rare_event/artifacts/current/*_results.tar.gz
 experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code_failed_job_2081343.tar.gz
 
 # Explicit publication of scientific data overrides the generic rules above.

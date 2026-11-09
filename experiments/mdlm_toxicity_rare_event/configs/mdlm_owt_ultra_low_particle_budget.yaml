@@ -1,0 +1,19 @@
+extends: mdlm_owt_particle_scaling.yaml
+study_name: camera_ready_ultra_low_particle_budget
+output_subdirectory: camera_ready_ultra_low_particle_budget
+ultra_low_particle_budget: true
+record_population_checkpoints: true
+thresholds: [0.99, 0.995]
+plot_thresholds: [0.99, 0.995]
+checkpoint_tilts: {0.99: [0.5], 0.995: [1.0]}
+independent_runs: 24
+base_seed: 2300000000
+warmup_base_seed: 22999411
+reference:
+  samples: [200000, 298800]
+  discoveries: [444, 334]
+configurations:
+  - {id: N32_L15, N: 32, schedule: [0.5, 1, 1.5], moves_per_level: 4}
+  - {id: N48_L15, N: 48, schedule: [0.5, 1, 1.5], moves_per_level: 4}
+resources:
+  SLURM_walltime: '01:00:00'

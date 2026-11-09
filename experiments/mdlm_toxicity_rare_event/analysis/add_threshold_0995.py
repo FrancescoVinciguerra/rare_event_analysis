@@ -9,6 +9,8 @@ from pathlib import Path
 import numpy as np
 
 from analyze_relative_variance import analyze
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "plots"))
+
 from plot_same_run_ladder import render
 
 EXPERIMENT = Path(__file__).resolve().parents[1]

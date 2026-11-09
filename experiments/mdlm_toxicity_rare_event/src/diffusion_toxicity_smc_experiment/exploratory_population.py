@@ -5,9 +5,8 @@ the kernel call receives the explicit fixed schedule. No models load on import.
 """
 import torch
 import time
-from .camera_ready_gpu import component_config
 from .exploratory_kernel import run_scheduled_trajectory_component
-from .low_budget import estimates
+from .pipeline import component_config, estimates
 from .smc import ess_from_log_weights
 from .potentials import potential_from_config
 

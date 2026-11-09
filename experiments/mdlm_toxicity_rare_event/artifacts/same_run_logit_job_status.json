@@ -46,8 +46,8 @@
   "files_downloaded": 137,
   "figures_rendered": true,
   "local_figures": [
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_logit\\same_run_ladder_log_error.png",
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_logit\\same_run_ladder_ratio.png"
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_logit\\plots\\same_run_ladder_log_error.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_same_run_logit\\plots\\same_run_ladder_ratio.png"
   ],
   "scientific_status": "COMPLETE_VALIDATED",
   "results_validated": true,

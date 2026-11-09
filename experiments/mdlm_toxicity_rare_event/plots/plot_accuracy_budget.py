@@ -9,7 +9,7 @@ from pathlib import Path
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--results',type=Path,required=True)
     args=parser.parse_args();root=args.results
-    spec=importlib.util.spec_from_file_location('shared_level_boxes',Path(__file__).with_name('analyze_saved_levels.py'))
+    spec=importlib.util.spec_from_file_location('shared_level_boxes',Path(__file__).resolve().parents[1] / 'analysis/analyze_saved_levels.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     study=json.loads((root/'manifest.json').read_text(encoding='utf-8'))['study']
     with (root/'runs.csv').open(encoding='utf-8') as f:records=list(csv.DictReader(f))
@@ -40,7 +40,7 @@ def main():
     if html.exists():
         content=html.read_text(encoding='utf-8');marker='<!-- scientific-boxplots -->'
         content=content.split(marker)[0]+marker
-        for image in images:content+=f'<p><a href="{image.name}"><img src="{image.name}" style="width:100%"></a></p>'
+        for image in images:content+=f'<p><a href="{image.relative_to(root).as_posix()}"><img src="{image.relative_to(root).as_posix()}" style="width:100%"></a></p>'
         html.write_text(content,encoding='utf-8')
     print(json.dumps({'figures':[str(x) for x in images],'new_simulations':False},indent=2))
 

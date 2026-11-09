@@ -5,6 +5,14 @@ language models. The original experiments use Automated Readability Index
 (ARI); the masked-diffusion toxicity experiment is isolated in its own
 directory.
 
+To run one MDLM RollBack SMC estimate, start with the
+[MDLM quick start](experiments/mdlm_toxicity_rare_event/README.md#quick-start).
+
+The research checkout keeps the campaign drivers and results together. To export
+the standalone estimator source tree from an installed checkout, run
+`python tools/export_mdlm_source.py`. The ZIP contains the estimator package,
+one resolved configuration, its dependencies, and a short README.
+
 ## Experiments
 
 - **[Results index, Gaussian toy notebooks, and individual runs](experiments/RESULTS_INDEX.md)**:
@@ -16,9 +24,7 @@ directory.
 - [`experiments/gaussian_rollback_gpu_previous/`](experiments/gaussian_rollback_gpu_previous/):
   saved Gaussian GPU and deep-tilt experiments with their notebooks and run data.
 - [`experiments/mdlm_toxicity_rare_event/`](experiments/mdlm_toxicity_rare_event/README.md):
-  unconditional MDLM-OWT generation, FK-style SMC steering, toxicity scoring,
-  and reverse-SNIS rare-event estimation. Its code, configurations, Avon
-  scripts, documentation, tests, and local artifact layout are self-contained.
+  unconditional MDLM-OWT generation and RollBack SMC estimation of toxicity tails.
 - [`suffix_direct_mh_smc_experiment/`](suffix_direct_mh_smc_experiment/):
   suffix direct-MH SMC for the ARI experiment.
 - [`official_annealed_tps_experiment/`](official_annealed_tps_experiment/):

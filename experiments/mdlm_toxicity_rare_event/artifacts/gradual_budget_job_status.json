@@ -20,8 +20,8 @@
   "files_downloaded": 635,
   "figures_rendered": true,
   "local_figures": [
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\gradual_budget_log_error_positive_and_all.png",
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\gradual_budget_ratio_positive_and_all.png"
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\plots\\gradual_budget_log_error_positive_and_all.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_gradual_budget\\plots\\gradual_budget_ratio_positive_and_all.png"
   ],
   "plot_data_selection": "positive estimates and all runs including zero, side by side; each shown with zoom and full tails"
 }

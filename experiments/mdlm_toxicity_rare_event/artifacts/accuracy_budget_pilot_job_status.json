@@ -56,7 +56,7 @@
   "result_archive_SHA256": "e37c4e6d8c996bc7d964233c0b3a846295504f7ffb150228d61bb1c6fcb2b3d1",
   "files_downloaded": 1091,
   "local_figures": [
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\accuracy_budget_log_error_boxplots.png",
-    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\accuracy_budget_ratio_boxplots.png"
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\plots\\accuracy_budget_log_error_boxplots.png",
+    "C:\\Users\\UTENTE\\Downloads\\rea_of_llms_supplementary_code-main\\experiments\\mdlm_toxicity_rare_event\\artifacts\\current\\camera_ready_accuracy_budget_pilot\\plots\\accuracy_budget_ratio_boxplots.png"
   ]
 }

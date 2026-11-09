@@ -11,7 +11,7 @@ import time
 
 import torch
 
-from .low_budget import estimates
+from .pipeline import estimates
 from .smc import ess_from_log_weights
 from .potentials import ToxicityPotential
 

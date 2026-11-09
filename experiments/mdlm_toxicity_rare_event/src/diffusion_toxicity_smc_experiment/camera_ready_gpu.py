@@ -12,53 +12,10 @@ import time
 import torch
 
 from .configuration import fingerprint
-from .low_budget import crude_seed, estimates, study_configs, transition_budget
-from .smc import SMCComponentConfig, ess_from_log_weights, run_smc_component
+from .low_budget import crude_seed, study_configs, transition_budget
+from .pipeline import Context, component_config, estimates
+from .smc import ess_from_log_weights, run_smc_component
 from .storage import atomic_write_json, initialize_manifest
-from .potentials import potential_from_config
-
-
-def component_config(config,seed):
-    s=config['smc']; m=s['tilted_sampler']; d=config['decoder']
-    return SMCComponentConfig(num_particles=s['num_particles'],num_steps=d['denoising_steps'],
-        sequence_length=d['sequence_length'],lambda_final=s['tilted_lambdas'][0],
-        ess_threshold=s['ess_threshold'],resampling_method=s['resampling_method'],
-        reward_frequency=s['reward_interval'],beta_start_fraction=0.,final_resampling=False,
-        microbatch_size=s['microbatch_size'],seed=int(seed),tilted_sampler_type=m['type'],
-        num_tempering_levels=m['num_tempering_levels'],mcmc_steps_per_level=m['mcmc_steps_per_level'],
-        mutation_policy=m['mutation_policy'],rollback_steps=tuple(m['rollback_steps']),
-        rollback_probabilities=tuple(m['rollback_probabilities']))
-
-
-class Context:
-    def __init__(self,config):
-        from .ancestral import NativeMDLMSampler
-        from .evaluation import ToxicityEvaluator
-        from .run_smc import UnconditionalToxicityFunctions
-        from .runtime import load_generator_runtime,load_evaluator_runtime
-        self.generator=load_generator_runtime(config,local_files_only=True)
-        self.evaluator_runtime=load_evaluator_runtime(config,local_files_only=True)
-        e=config['evaluation']; numerical=e['numerical_batching']; d=config['decoder']
-        self.device=self.generator.device
-        self.evaluator=ToxicityEvaluator(self.evaluator_runtime.classifier,
-            self.evaluator_runtime.classifier_tokenizer,self.device,positive_label_index=1,
-            batch_size=e['batch_size'],padding=numerical['padding'],
-            pad_final_batch_to_batch_size=numerical['pad_final_batch_to_batch_size'])
-        self.functions=UnconditionalToxicityFunctions(generator_tokenizer=self.generator.tokenizer,
-            evaluator=self.evaluator,reward_completion_tokens=e['reward']['completion_tokens'],
-            event_completion_tokens=e['event']['completion_tokens'],
-            reward_max_length=e['reward']['classifier_max_length'],event_max_length=e['event']['classifier_max_length'],
-            event_text_scope=e['event']['text_scope'],
-            completion_trimming_tokenizer=self.evaluator_runtime.completion_trimming_tokenizer,
-            phi=potential_from_config(config).name)
-        self.sampler=NativeMDLMSampler(self.generator.model,mask_token_id=d['mask_token_id'],
-            predictor=d['predictor'],noise_epsilon=d['noise_schedule']['epsilon'],
-            sampling_epsilon=d['sampling_epsilon'],final_noise_removal=d['final_noise_removal'],
-            final_noise_removal_method=d['final_noise_removal_method'])
-        self.config=config
-
-    def synchronize(self):
-        if self.device.type=='cuda': torch.cuda.synchronize(self.device)
 
 
 @torch.inference_mode()
@@ -155,7 +112,8 @@ def run(study_path:Path,output_root:Path):
     initialize_manifest(root,{'study_id':fingerprint(study),'study':study,
         'resolved_configs':configs,'runner_version':'paired_transition_clock_v2',
         'runtime_source_sha256':{name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest()
-            for name in ['smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py','camera_ready_gpu.py','low_budget.py']},
+            for name in ['smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py',
+                         'camera_ready_gpu.py','low_budget.py','pipeline.py']},
         'budget_definition':study['budget_definition']})
     schedule=[(config,int(config['smc']['base_seed'])+1000000*i)
         for config in configs for i in range(study['independent_runs'])]

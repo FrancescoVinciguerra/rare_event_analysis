@@ -1,0 +1,46 @@
+{
+  "threshold": 0.9995,
+  "hits": 10,
+  "samples": 975775,
+  "p_hat": 1.0248264200251082e-05,
+  "wilson_95": [
+    5.566852047535578e-06,
+    1.8866408654295562e-05
+  ],
+  "reference_basis": "pooled_crude",
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d",
+  "distinct_seed_streams": 1825,
+  "includes_matched_crude_pool": true,
+  "cohorts": [
+    {
+      "name": "original_direct",
+      "samples": 200000,
+      "hits": 2,
+      "seed_streams": 685,
+      "source": "artifacts/current/mdlm_owt/offline_terminal_tail_analysis/terminal_tail_v2_20260823/csv/group_tail_summary.csv",
+      "source_sha256": "a7234f4ab68ae50b4b281d6bf8264974965ecdf752496a08b479c5d58ff95cf8",
+      "seed_inventory_sha256": "74366d1df699432692f00269ba21f02a7183e035b01ac1d121dc8e9c67924974"
+    },
+    {
+      "name": "camera_ready_gradual_budget",
+      "samples": 354420,
+      "hits": 2,
+      "seed_streams": 192,
+      "scores_sha256": "561c8e970ce6a1ae1691f640cce5264545702ab01d0543fe594510dce10bfd98"
+    },
+    {
+      "name": "camera_ready_accuracy_budget_pilot",
+      "samples": 121355,
+      "hits": 2,
+      "seed_streams": 360,
+      "scores_sha256": "4fd835da2f4474023d62a3f3357718378a0b77389c582006a79c52a96374d7e7"
+    },
+    {
+      "name": "camera_ready_crude_tail_reference",
+      "samples": 300000,
+      "hits": 4,
+      "seed_streams": 588
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+extends: mdlm_owt_same_run_logit.yaml
+study_name: camera_ready_particle_scaling
+output_subdirectory: camera_ready_particle_scaling
+particle_scaling: true
+same_run_ladder: false
+record_population_checkpoints: false
+thresholds: [0.99, 0.995, 0.999]
+plot_thresholds: [0.99, 0.995, 0.999]
+target_tilts: {0.99: 0.5, 0.995: 0.5, 0.999: 2.5}
+independent_runs: 24
+base_seed: 2100000000
+warmup_base_seed: 20999411
+reference:
+  samples: [200000, 298800, 200000]
+  discoveries: [444, 334, 26]
+mc_pool: camera_ready_accuracy_budget_pilot
+mc_pool_samples: 121355
+mc_pool_scores_sha256: 4fd835da2f4474023d62a3f3357718378a0b77389c582006a79c52a96374d7e7
+configurations:
+  - {id: N128_L05, N: 128, schedule: [0.5], moves_per_level: 4}
+  - {id: N160_L05, N: 160, schedule: [0.5], moves_per_level: 4}
+  - {id: N192_L05, N: 192, schedule: [0.5], moves_per_level: 4}
+  - {id: N256_L05, N: 256, schedule: [0.5], moves_per_level: 4}
+  - {id: N128_L25, N: 128, schedule: [0.5, 1, 1.5, 2, 2.5], moves_per_level: 4}
+  - {id: N160_L25, N: 160, schedule: [0.5, 1, 1.5, 2, 2.5], moves_per_level: 4}
+  - {id: N192_L25, N: 192, schedule: [0.5, 1, 1.5, 2, 2.5], moves_per_level: 4}
+  - {id: N256_L25, N: 256, schedule: [0.5, 1, 1.5, 2, 2.5], moves_per_level: 4}
+resources:
+  SLURM_walltime: '06:00:00'

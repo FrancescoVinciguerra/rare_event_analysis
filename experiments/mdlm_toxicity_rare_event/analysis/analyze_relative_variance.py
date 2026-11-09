@@ -122,7 +122,9 @@ def analyze(old_root, new_root, output, statistic='variance', *,
             + (reference_note or 'Riferimenti stimati da 200.000 traiettorie: 444 eventi e 26 eventi.'))
     fig.text(.5,.015,footer,ha='center',fontsize=8.5)
     fig.subplots_adjust(left=.065,right=.985,top=.89,bottom=.27,wspace=.24)
-    image_path=output/f'{prefix}_SMC{suffix}.png'
+    figure_dir = output / 'plots'
+    figure_dir.mkdir(exist_ok=True)
+    image_path=figure_dir/f'{prefix}_SMC{suffix}.png'
     fig.savefig(image_path,dpi=300);plt.close(fig)
     (output/f'{prefix}_audit{suffix}.json').write_text(json.dumps(dict(
         definition='Sample standard deviation across 12 independent complete runs, divided by the finite probability reference' if is_std

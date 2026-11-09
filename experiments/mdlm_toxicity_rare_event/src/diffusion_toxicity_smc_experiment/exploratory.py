@@ -19,6 +19,7 @@ import numpy as np
 
 from .configuration import decoder_id, evaluator_id, fingerprint, load_yaml
 from .low_budget import crude_seed, transition_budget
+from .pipeline import audit_population as audit_population
 from .storage import atomic_write_json, initialize_manifest
 
 
@@ -59,34 +60,6 @@ def plan(path):
     return {'status':'prepared_not_submitted','study':study,'configurations':cases,
         'comparison':'Each run receives floor(actual native transitions / 33) complete crude paths',
         'selection':'Exploratory results only; any final choice requires independent validation runs'}
-
-
-def audit_population(p,config):
-    """Reconstruct every normalizer increment from its saved pre-mutation inputs."""
-    c=config['_exploration'];n=config['smc']['num_particles'];previous=0.;previous_z=0.
-    expected_old=np.full(n,-math.log(n))
-    for level,grid in zip(p['level_diagnostics'],c['schedule']):
-        old=np.array(level['previous_normalized_log_weights']);rewards=np.array(level['rewards_before_mutation'])
-        if not np.allclose(old,expected_old,rtol=0,atol=1e-10):raise AssertionError('Mutation changed weights or resampling reset is wrong')
-        x=old+(grid-previous)*rewards;peak=x.max();increment=float(peak+np.log(np.exp(x-peak).sum()))
-        if not math.isclose(increment,level['log_normalizer_increment'],abs_tol=1e-11): raise AssertionError('G evaluated on wrong state or wrong normalizer')
-        if not math.isclose(previous_z+increment,level['log_normalizer_estimate'],abs_tol=1e-10): raise AssertionError('Z not updated at every level')
-        if not math.isclose(previous_z,level['log_z_before_weight'],abs_tol=1e-10): raise AssertionError('Wrong incoming Z')
-        expected=not level['terminal'] and level['ess_before_resampling']<.5*n
-        if bool(level['resampled'])!=expected: raise AssertionError('Wrong ESS or terminal resampling policy')
-        if level['mutation_sweeps']!=c['moves_per_level']: raise AssertionError('Wrong move count')
-        expected_old=np.full(n,-math.log(n)) if expected else x-increment
-        previous=grid;previous_z=level['log_normalizer_estimate']
-    if len(p['level_diagnostics'])!=len(c['schedule']): raise AssertionError('Missing levels')
-    if not math.isclose(previous_z,p['summary']['log_normalizer_estimate'],abs_tol=1e-10): raise AssertionError('Terminal Z mismatch')
-    if sum(x['proposals'] for x in p['mutation_diagnostics'])!=n*len(c['schedule'])*c['moves_per_level']: raise AssertionError('Missing proposals')
-    if 'particles' in p:
-        if not np.allclose([x['final_log_weight'] for x in p['particles']],expected_old,rtol=0,atol=1e-10):raise AssertionError('Terminal mutation changed weights')
-    steps=config.get('decoder',{}).get('denoising_steps')
-    if steps is not None:
-        expected_steps=n*steps+sum(x['rollback_particle_steps'] for x in p['mutation_diagnostics'])
-        if expected_steps!=p['summary']['total_decoder_particle_steps']:raise AssertionError('Rejected proposal cost omitted')
-    return True
 
 
 def write_csv(path,rows):
@@ -157,7 +130,9 @@ def run(path,output_root,*,max_seconds=19800,worker_id=0,workers=1):
     study,configs=study_configs(path);root=Path(output_root)/study['output_subdirectory']
     schedule=assigned_runs(study,configs,worker_id,workers)
     if workers>1:root=root/'workers'/f'worker_{worker_id}'
-    modules=['exploratory.py','exploratory_kernel.py','exploratory_population.py','exploration_figures.py','smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py','camera_ready_gpu.py','low_budget.py']
+    modules=['exploratory.py','exploratory_kernel.py','exploratory_population.py','exploration_figures.py',
+             'smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py','camera_ready_gpu.py',
+             'low_budget.py','pipeline.py']
     initialize_manifest(root,{'study_id':fingerprint(study),'study':study,'resolved_configs':configs,
         'runner_version':'explicit_fixed_grids_v2','budget':'All DDPM and terminal categorical transitions, rejected proposals included',
         'parallel_execution':{'workers':workers,'worker_id':worker_id,'assignment':'run_index modulo workers'},

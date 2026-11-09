@@ -145,7 +145,7 @@ File trasferiti/creati o aggiornati, relativi a experiments/mdlm_toxicity_rare_e
 - src/diffusion_toxicity_smc_experiment/accuracy_budget.py
 - scripts/slurm_avon_accuracy_budget.sh
 - scripts/submit_avon_accuracy_budget.sh
-- analysis/plot_accuracy_budget.py
+- plots/plot_accuracy_budget.py
 - analysis/analyze_saved_levels.py (renderer condiviso; nessun dato modificato)
 - tests/test_accuracy_budget.py
 - docs/ACCURACY_VS_BUDGET.md

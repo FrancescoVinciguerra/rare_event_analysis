@@ -38,7 +38,7 @@ echo "report_dir=${REPORT_DIR}"
 echo "output_dir=${OUTPUT_DIR}"
 echo "analysis_only=true"
 
-python "${EXPERIMENT_DIR}/analysis/offline_publication_figures.py" \
+python "${EXPERIMENT_DIR}/plots/offline_publication_figures.py" \
   --artifact-root "${ARTIFACT_ROOT}" \
   --report-dir "${REPORT_DIR}" \
   --output-dir "${OUTPUT_DIR}" \

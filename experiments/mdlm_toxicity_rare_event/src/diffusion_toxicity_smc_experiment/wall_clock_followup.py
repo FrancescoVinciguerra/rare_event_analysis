@@ -43,7 +43,8 @@ def run(path,output_root,worker_id):
     files=sorted((source/'workers'/f'worker_{source_rank}'/'runs').glob('*.json'))
     if not files:raise ValueError('No saved SMC runs to match')
     lookup={c['_exploration']['id']:c for c in configs}
-    modules=['wall_clock_followup.py','camera_ready_gpu.py','low_budget.py','smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py']
+    modules=['wall_clock_followup.py','camera_ready_gpu.py','low_budget.py','smc.py','ancestral.py',
+             'evaluation.py','run_smc.py','runtime.py','pipeline.py']
     initialize_manifest(root,{'followup_id':fingerprint(f),'source_study_id':fingerprint(study),
         'followup':f,'source_worker':source_rank,'SMC_repeated':False,
         'source_run_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in files},

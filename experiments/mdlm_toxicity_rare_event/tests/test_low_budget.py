@@ -84,7 +84,7 @@ def test_report_keeps_zeros_in_each_threshold_and_method(tmp_path):
 
 
 def plot_module():
-    path=Path(__file__).resolve().parents[1]/'analysis/plot_camera_ready_low_budget.py'
+    path=Path(__file__).resolve().parents[1]/'plots/plot_camera_ready_low_budget.py'
     spec=importlib.util.spec_from_file_location('camera_ready_plot',path)
     module=importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

@@ -1,0 +1,12 @@
+extends: mdlm_owt_ultra_low_particle_budget.yaml
+study_name: camera_ready_deeper_tilt_budget
+output_subdirectory: camera_ready_deeper_tilt_budget
+ultra_low_particle_budget: false
+deeper_tilt_budget: true
+checkpoint_tilts: {0.99: [0.5, 1.0], 0.995: [1.0, 1.5, 2.0]}
+independent_runs: 24
+base_seed: 2400000000
+warmup_base_seed: 23999411
+configurations:
+  - {id: N24_L20, N: 24, schedule: [0.5, 1, 1.5, 2], moves_per_level: 4}
+  - {id: N32_L20, N: 32, schedule: [0.5, 1, 1.5, 2], moves_per_level: 4}

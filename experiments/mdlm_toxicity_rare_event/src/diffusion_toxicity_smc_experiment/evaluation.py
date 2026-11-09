@@ -10,6 +10,8 @@ import torch
 
 from rea_llms.statistics import wilson_interval
 
+from .potentials import ToxicityPotential
+
 
 @dataclass
 class ToxicityEvaluator:
@@ -163,3 +165,96 @@ def unconditional_mdlm_prefix_classifier_text(
 
     prefix_ids = [int(value) for value in token_ids[:completion_tokens]]
     return decoder_tokenizer.decode(prefix_ids, skip_special_tokens=True), prefix_ids
+
+
+class UnconditionalToxicityFunctions:
+    def __init__(
+        self,
+        *,
+        generator_tokenizer: Any,
+        evaluator: ToxicityEvaluator,
+        reward_completion_tokens: int,
+        event_completion_tokens: int,
+        reward_max_length: int,
+        event_max_length: int,
+        event_text_scope: str,
+        completion_trimming_tokenizer: Any,
+        phi: str = "log_probability",
+    ) -> None:
+        self.generator_tokenizer = generator_tokenizer
+        self.evaluator = evaluator
+        self.reward_completion_tokens = reward_completion_tokens
+        self.event_completion_tokens = event_completion_tokens
+        self.reward_max_length = reward_max_length
+        self.event_max_length = event_max_length
+        self.event_text_scope = event_text_scope
+        self.completion_trimming_tokenizer = completion_trimming_tokenizer
+        self.potential = ToxicityPotential(phi)
+        self.last_reward_rows: list[dict[str, Any]] = []
+        self.last_reward_texts: list[str] = []
+        self.last_event_rows: list[dict[str, Any]] = []
+        self.last_event_texts: list[str] = []
+        self.last_event_token_ids: list[list[int]] = []
+
+    def reward(self, tokens: torch.Tensor) -> torch.Tensor:
+        truncated = tokens[:, : self.reward_completion_tokens]
+        self.last_reward_texts = self.generator_tokenizer.batch_decode(
+            truncated.detach().cpu().tolist(), skip_special_tokens=True
+        )
+        self.last_reward_rows = self.evaluator.score_texts(
+            self.last_reward_texts, max_length=self.reward_max_length
+        )
+        return torch.tensor(
+            [self.potential.from_classifier_row(
+                row, positive_label_index=getattr(self.evaluator, "positive_label_index", 1)
+            ) for row in self.last_reward_rows],
+            dtype=torch.float64,
+            device=tokens.device,
+        )
+
+    def event(self, tokens: torch.Tensor) -> torch.Tensor:
+        self.last_event_texts = []
+        self.last_event_token_ids = []
+        terminal_token_ids = tokens.detach().cpu().tolist()
+        if self.event_text_scope == "first_generated_mdlm_tokens_only":
+            for token_ids in terminal_token_ids:
+                text, prefix_ids = unconditional_mdlm_prefix_classifier_text(
+                    token_ids=token_ids,
+                    decoder_tokenizer=self.generator_tokenizer,
+                    completion_tokens=self.event_completion_tokens,
+                )
+                self.last_event_texts.append(text)
+                self.last_event_token_ids.append(prefix_ids)
+        elif (
+            self.event_text_scope
+            == "generated_text_retokenized_and_trimmed_with_roberta_large"
+        ):
+            decoded = self.generator_tokenizer.batch_decode(
+                terminal_token_ids, skip_special_tokens=True
+            )
+            for text in decoded:
+                trimmed_text, token_ids = unconditional_trimmed_classifier_text(
+                    decoded_text=text,
+                    trimming_tokenizer=self.completion_trimming_tokenizer,
+                    completion_tokens=self.event_completion_tokens,
+                )
+                self.last_event_texts.append(trimmed_text)
+                self.last_event_token_ids.append(token_ids)
+        else:
+            raise ValueError(f"unsupported event text scope: {self.event_text_scope}")
+        if identical_classifier_inputs(
+            self.last_reward_texts,
+            first_max_length=self.reward_max_length,
+            second_texts=self.last_event_texts,
+            second_max_length=self.event_max_length,
+        ):
+            self.last_event_rows = self.last_reward_rows
+        else:
+            self.last_event_rows = self.evaluator.score_texts(
+                self.last_event_texts, max_length=self.event_max_length
+            )
+        return torch.tensor(
+            [row["is_event"] for row in self.last_event_rows],
+            dtype=torch.bool,
+            device=tokens.device,
+        )

@@ -102,7 +102,7 @@ def test_report_and_plotter_do_not_pool_equal_N_configurations(tmp_path):
     summaries=list(csv.DictReader((root/'summary.csv').open()))
     assert len(summaries)==18 and all(x['runs']=='1' and float(x['zero_percent'])==100 for x in summaries)
     html=(root/'REPORT.html').read_text();assert html.count('<svg ')==2
-    path=BASE/'analysis/plot_camera_ready_exploration.py';spec=importlib.util.spec_from_file_location('exploration_plot',path)
+    path=BASE/'plots/plot_camera_ready_exploration.py';spec=importlib.util.spec_from_file_location('exploration_plot',path)
     mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod)
     out=mod.make_figures(root/'runs.csv',root,title_prefix='SYNTHETIC LAYOUT TEST — ')
     assert len(out)==2

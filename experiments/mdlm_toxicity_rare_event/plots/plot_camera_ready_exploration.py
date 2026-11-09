@@ -71,6 +71,8 @@ def read_runs(path):
 def make_figures(runs_csv,output_directory,title_prefix=''):
     rows=read_runs(runs_csv)
     out=Path(output_directory); out.mkdir(parents=True,exist_ok=True)
+    figure_dir = out / 'plots'
+    figure_dir.mkdir(exist_ok=True)
     groups=sorted({(r['comparison'],r['threshold']) for r in rows})
     sizes=sorted({r['configuration'] for r in rows})
     configuration_labels={r['configuration']:r['configuration_label'] for r in rows}
@@ -138,7 +140,7 @@ def make_figures(runs_csv,output_directory,title_prefix=''):
                         labels.append(f'{configuration_labels[n]}\nfuori: {outside}\nzeri [%]: {zeros}\nrun: {count}')
                     else: labels.append(f'{configuration_labels[n]}\nrun: {count}')
                 ax.set_xticks(range(len(sizes)),labels,fontsize=9)
-                ax.set_xlabel('Configurazione: particelle / livelli / mosse MH; crude a pari tempo')
+                ax.set_xlabel('Configurazione: particelle / livelli / mosse MH; crude a pari transizioni')
                 descriptor='Zoom' if col==0 else ('Distribuzione completa; lineare 0–1, log oltre 1' if kind=='ratio' else 'Distribuzione completa: tutti gli outlier')
                 ax.set_title(f'Score ≥ {a:g} · {POLICIES[policy]} · {descriptor}\n'
                     f'Reference = {p:.5f}; IC 95% [{low:.5f}, {high:.5f}]',fontsize=12)
@@ -160,9 +162,9 @@ def make_figures(runs_csv,output_directory,title_prefix=''):
         if kind=='log_error': caption+='\nPiù basso è meglio; la metrica non distingue sovrastima e sottostima.'
         fig.text(.5,.014,caption,ha='center',fontsize=9)
         fig.subplots_adjust(left=.09,right=.98,top=.90,bottom=.22 if len(groups)==2 else .15,hspace=.72,wspace=.20)
-        path=out/f'wall_clock_{kind}_boxplots.png'
+        path=figure_dir/f'exploration_{kind}_boxplots.png'
         fig.savefig(path,dpi=300); plt.close(fig); paths.append(path)
-    (out/'wall_clock_plot_audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
+    (out/'exploration_plot_audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
     return paths
 
 

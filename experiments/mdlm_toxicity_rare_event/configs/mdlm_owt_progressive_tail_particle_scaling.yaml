@@ -1,0 +1,36 @@
+extends: mdlm_owt_extreme_tail_scaling.yaml
+study_name: camera_ready_progressive_tail_particle_scaling
+output_subdirectory: camera_ready_progressive_tail_particle_scaling
+terminal_particle_scaling: true
+checkpoint_tilts: {0.9995: [6.5]}
+independent_runs: 24
+base_seed: 2700000000
+warmup_base_seed: 26999411
+reference:
+  samples: [975775]
+  discoveries: [10]
+  source: artifacts/current/camera_ready_low_particle_budget/pooled_reference_q09995.json
+  source_sha256: ae34787e5b72a8f23a30cfaed92ee9e497555d68044152544fbbbfa88c1aca17
+  includes_matched_crude_pool: true
+mc_pool_additional: camera_ready_accuracy_budget_pilot
+mc_pool_samples: 475775
+mc_pool_scores_sha256: 11610fd075cb41ad06df599e75552941c6a26dd924dcb3d01aacc8b891afedea
+configurations:
+  - id: N320_L65
+    N: 320
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+    moves_per_level: 4
+  - id: N384_L65
+    N: 384
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+    moves_per_level: 4
+  - id: N448_L65
+    N: 448
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+    moves_per_level: 4
+  - id: N512_L65
+    N: 512
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+    moves_per_level: 4
+resources:
+  SLURM_walltime: '24:00:00'

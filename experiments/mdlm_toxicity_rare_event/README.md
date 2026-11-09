@@ -1,19 +1,41 @@
 # Unconditional MDLM toxicity rare-event benchmark
 
-This directory is the complete boundary of the experiment:
+## Quick start
 
-```text
-mdlm_toxicity_rare_event/
-├── src/diffusion_toxicity_smc_experiment/  Python package
-├── configs/                                scientific configurations
-├── scripts/                                local and Avon launchers
-├── docs/                                   derivation and runbook
-├── tests/                                  focused regression tests
-└── artifacts/
-    ├── current/                            saved scientific outputs
-    ├── logs/                               SLURM logs (local-only)
-    └── archive/                            historical scientific outputs
+From the repository root, with Python 3.11 and a PyTorch environment:
+
+```bash
+python -m pip install -e .
+python -m diffusion_toxicity_smc_experiment.estimate --particles 2 --tilt 0.5
 ```
+
+The first run downloads about 1.2 GB of pinned model weights. It uses CUDA by
+default. Add `--device cpu` for CPU or `--offline` for a prefilled model cache.
+The example checks that the pipeline runs. Omit `--particles` and `--tilt`
+to use 64 particles and terminal tilt 1. Set the event with `--threshold`
+(default 0.995) and the random seed with `--seed` (default 42).
+The JSON output includes the non-self-normalized estimate `p_hat_smc`,
+the seed, the event count, and the runtime.
+
+This entry point uses the 32-step native MDLM decoder, a logit score,
+tilt increments of 0.5, and four RollBack–MH moves per level. Systematic
+resampling is triggered by ESS/N below 0.5 and skipped at the final level.
+A single estimate can be zero when its terminal population contains no event.
+
+## Repository layout
+
+| Path | Contents |
+| --- | --- |
+| `src/diffusion_toxicity_smc_experiment/` | Estimator entry point, model setup, native decoder and RollBack–MH kernel |
+| `configs/` and `scripts/` | Model and experiment settings, local and Avon launchers |
+| `analysis/` | Recompute estimates, diagnostics and comparisons from saved runs |
+| `plots/` | Render figures from analysis outputs |
+| `artifacts/current/<campaign>/` | Run data, CSVs and reports, with images in `plots/` |
+
+<details>
+<summary>Historical experiments and Avon workflows</summary>
+
+See [the kernel and estimator](docs/TRAJECTORY_RESAMPLE_MOVE.md) for the derivation.
 
 Run commands from the repository root. The import name remains
 `diffusion_toxicity_smc_experiment`; only its source location changed.
@@ -302,3 +324,5 @@ The final CPU report writes run/component CSV files, a JSON summary, and paired
 uniform-versus-pilot-weight SVG box plots for every threshold.  It also reports
 runtime, decoder particle-steps, classifier calls, reverse ESS, genealogical
 diversity, and peak CUDA memory without folding them into one arbitrary cost.
+
+</details>

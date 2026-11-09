@@ -4,11 +4,14 @@ Artifacts are deliberately separated from source files. Scientific results
 are versioned in Git following the publication request; machine-local logs,
 credentials, caches, and private Avon connection notes remain excluded.
 
-- `current/`: destination for new direct, SMC, evaluation, and comparison
-  artifacts.
+- `current/`: run data, CSVs and reports, grouped by campaign. The
+  `camera_ready_*` campaigns keep generated images in their own `plots/`.
 - `logs/`: stdout and stderr from Avon jobs.
 - `archive/avon_jobs/`: read-only local copies of earlier Avon results.
 - `archive/transfer_packages/`: historical source-transfer archives.
+
+Extracted campaign files are the working copies. Transport archives are kept
+when they contain unique files or original versions of reports.
 
 See the [experiment results index](../../RESULTS_INDEX.md) for saved studies,
 Gaussian toy experiments, and the status of ongoing jobs. A running job's

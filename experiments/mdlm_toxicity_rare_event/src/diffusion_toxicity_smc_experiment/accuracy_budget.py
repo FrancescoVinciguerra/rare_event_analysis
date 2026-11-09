@@ -32,12 +32,51 @@ def study_configs(path):
     path=Path(path);study=load_yaml(path);base=load_yaml(path.parent/study['base_config'])
     if (decoder_id(base),evaluator_id(base))!=(study['reference']['decoder_id'],study['reference']['evaluator_id']):
         raise ValueError('Frozen P/evaluator differ from the reference')
-    expected_thresholds=[.99,.999] if study.get('same_run_ladder') else [.9,.99,.999]
+    scaling = study.get('particle_scaling', False)
+    ultra_low = study.get('ultra_low_particle_budget', False)
+    deeper_tilt = study.get('deeper_tilt_budget', False)
+    extreme_tail = study.get('extreme_tail_scaling', False)
+    if scaling:
+        if extreme_tail:
+            expected_thresholds = [.9995]
+        else:
+            expected_thresholds = [.99, .995] if ultra_low or deeper_tilt else [.99, .995, .999]
+    else:
+        expected_thresholds = [.99, .999] if study.get('same_run_ladder') else [.9, .99, .999]
     if study['thresholds']!=expected_thresholds or study['comparison']!='measured_matched_wall_clock':
         raise ValueError('Thresholds differ from this frozen study or measured clock comparison is missing')
     if len(study['reference']['discoveries'])!=len(study['thresholds']):
         raise ValueError('Every threshold needs its own independent reference count')
-    if study['plot_thresholds']!=[.99,.999] or (not study.get('same_run_ladder') and study['control_threshold']!=.9):
+    if scaling:
+        checkpoint_tilts = study.get('checkpoint_tilts')
+        if extreme_tail:
+            if study.get('terminal_particle_scaling', False):
+                expected_cases = {(n, 6.5) for n in (320, 384, 448, 512)}
+                expected_checkpoints = {.9995: [6.5]}
+            else:
+                expected_cases = {(256, 9.)}
+                expected_checkpoints = {.9995: [k / 2 for k in range(1, 19)]}
+        elif deeper_tilt:
+            expected_cases = {(24, 2.), (32, 2.)}
+            expected_checkpoints = {.99: [.5, 1.], .995: [1., 1.5, 2.]}
+        elif ultra_low:
+            expected_cases = {(32, 1.5), (48, 1.5)}
+            expected_checkpoints = {.99: [.5], .995: [1.]}
+        elif checkpoint_tilts:
+            expected_cases = {(64, 3.), (96, 3.)}
+            expected_checkpoints = {.99: [.5], .995: [1.], .999: [.5, 3.]}
+        else:
+            expected_cases = {(n, tilt) for n in (128, 160, 192, 256) for tilt in (.5, 2.5)}
+            expected_checkpoints = None
+        cases = study['configurations']
+        if len(cases) != len(expected_cases) or {(c['N'], c['schedule'][-1]) for c in cases} != expected_cases:
+            raise ValueError('Particle-scaling configurations differ from the frozen design')
+        if study['plot_thresholds'] != expected_thresholds or study['phi'] != 'logit':
+            raise ValueError('Particle scaling requires the logit potential and its event thresholds')
+        if checkpoint_tilts != expected_checkpoints or (expected_checkpoints
+                and not study.get('record_population_checkpoints')):
+            raise ValueError('The low-budget study requires its paired checkpoints')
+    elif study['plot_thresholds']!=[.99,.999] or (not study.get('same_run_ladder') and study['control_threshold']!=.9):
         raise ValueError('Keep 0.9 as control; focus rare-event plots on 0.99 and 0.999')
     if int(study['independent_runs'])<1:raise ValueError('No independent runs')
     configs=[];ids=set()
@@ -45,7 +84,10 @@ def study_configs(path):
         grid=[float(x) for x in case['schedule']]
         if case['id'] in ids or not grid or any(not math.isfinite(x) for x in grid):
             raise ValueError('Duplicate configuration or invalid grid')
-        if study.get('same_run_ladder'):
+        if scaling:
+            if grid != [.5*k for k in range(1, len(grid)+1)] or case['moves_per_level'] != 4:
+                raise ValueError('Particle scaling fixes half-step schedules and four MH moves')
+        elif study.get('same_run_ladder'):
             if grid != [.5*k for k in range(1,17)] or case['moves_per_level'] != 4:
                 raise ValueError('Same-run study fixes 0.5 increments to 8 and four MH moves')
             if case['N'] != 128 or not study.get('record_population_checkpoints'):
@@ -258,7 +300,7 @@ def run(path,output_root,worker_id=0,workers=3,max_seconds=20700):
     study,configs=study_configs(path);tasks=assigned_runs(study,configs,worker_id,workers)
     root=Path(output_root)/study['output_subdirectory']/'workers'/f'worker_{worker_id}'
     modules=['accuracy_budget.py','exploratory_population.py','exploratory_kernel.py','exploratory.py','camera_ready_gpu.py',
-             'low_budget.py','smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py','configuration.py']
+             'low_budget.py','smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py','configuration.py','pipeline.py']
     if study.get('record_population_checkpoints'):
         modules.append('population_checkpoints.py')
     initialize_manifest(root,{'study':study,'study_id':fingerprint(study),'worker_id':worker_id,'workers':workers,

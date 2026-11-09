@@ -103,12 +103,14 @@ def render(root, *, checkpoint_file='checkpoint_runs.csv', suffix='', reference_
               +(reference_note or 'Riferimenti stimati: score 0,99 = 444/200.000; score 0,999 = 26/200.000.'))
         fig.text(.5,.013,foot,ha='center',fontsize=9)
         fig.subplots_adjust(left=.055,right=.99,top=.91,bottom=.14,hspace=.88,wspace=.19)
-        path=root/f'same_run_ladder_{kind}{suffix}.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
+        figure_dir = root / 'plots'
+        figure_dir.mkdir(exist_ok=True)
+        path=figure_dir/f'same_run_ladder_{kind}{suffix}.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
     (root/f'same_run_ladder_plot_audit{suffix}.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
     report=root/'REPORT.html'
     if report.exists() and not suffix:
         content=report.read_text(encoding='utf-8').split('<!-- same-run-figures -->')[0]+'<!-- same-run-figures -->'
-        for path in paths:content+=f'<p><a href="{path.name}"><img src="{path.name}" style="width:100%"></a></p>'
+        for path in paths:content+=f'<p><a href="{path.relative_to(root).as_posix()}"><img src="{path.relative_to(root).as_posix()}" style="width:100%"></a></p>'
         report.write_text(content,encoding='utf-8')
     return paths
 

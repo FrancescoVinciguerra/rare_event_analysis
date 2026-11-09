@@ -204,7 +204,9 @@ def figures(root,study,rows,*,methods=None,filename_prefix='levels',title_suffix
             +(caption_tail or 'Queste NON sono copie terminali senza resampling finale. Mancano i tempi intermedi: nessun confronto MC a pari wall clock è ricostruito.'))
         fig.text(.5,.013,caption,ha='center',fontsize=9)
         fig.subplots_adjust(left=.05,right=.99,top=.895,bottom=.205,hspace=.65,wspace=.29)
-        path=root/f'{filename_prefix}_{kind}_boxplots.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
+        figure_dir = root / 'plots'
+        figure_dir.mkdir(exist_ok=True)
+        path=figure_dir/f'{filename_prefix}_{kind}_boxplots.png';fig.savefig(path,dpi=300);plt.close(fig);paths.append(path)
     audit_name='level_plot_audit.json' if filename_prefix=='levels' else f'{filename_prefix}_plot_audit.json'
     (root/audit_name).write_text(json.dumps(plot_audit,indent=2),encoding='utf-8')
     return paths
@@ -228,7 +230,7 @@ def main():
           'run che terminino a ogni livello escludendo il rispettivo resampling finale. '
           'I tempi cumulativi intermedi e le copie terminali non sono salvati: nessun MC a pari tempo viene inventato.')
     body='<h1>Stimatori lungo i livelli delle run salvate</h1><p>'+escape(note)+'</p>'
-    for path in paths:body+=f'<p><a href="{path.name}"><img src="{path.name}" style="width:100%"></a></p>'
+    for path in paths:body+=f'<p><a href="{path.relative_to(root).as_posix()}"><img src="{path.relative_to(root).as_posix()}" style="width:100%"></a></p>'
     body+='<p><a href="level_estimates.csv">Singole run e livelli</a> · <a href="level_summary.csv">Quantili e zeri</a> · <a href="level_reconstruction_audit.json">Controlli e provenienza</a></p>'
     (root/'LEVELS_REPORT.html').write_text('<!doctype html><html lang="it"><meta charset="utf-8"><style>body{font:16px Arial;margin:24px}p{max-width:1600px}</style>'+body+'</html>',encoding='utf-8')
     (root/'LEVELS_ANALYSIS.md').write_text('# Analisi dei livelli salvati\n\n'+note+'\n',encoding='utf-8')

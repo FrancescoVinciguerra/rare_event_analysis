@@ -58,7 +58,7 @@ def read_runs(path):
             raise ValueError('Reference differs from the frozen 200k reference')
         if 'lambda_final' in row and float(row['lambda_final'])!=3:
             raise ValueError('Expected the agreed final tilt 3')
-        key=(row['comparison'],row['N'],row['seed'],row['threshold'])
+        key=(row['comparison'],row['configuration'],row['seed'],row['threshold'])
         if key in keys: raise ValueError('Duplicated run; do not pool repeated levels')
         keys.add(key)
         for method,_,_ in METHODS:
@@ -71,11 +71,14 @@ def read_runs(path):
 def make_figures(runs_csv,output_directory,title_prefix=''):
     rows=read_runs(runs_csv)
     out=Path(output_directory); out.mkdir(parents=True,exist_ok=True)
+    figure_dir = out / 'plots'
+    figure_dir.mkdir(exist_ok=True)
     groups=sorted({(r['comparison'],r['threshold']) for r in rows})
-    sizes=sorted({r['N'] for r in rows})
+    sizes=sorted({r['configuration'] for r in rows})
+    configuration_labels={r['configuration']:r['configuration_label'] for r in rows}
     # Each plotted array consists of independent runs of exactly one setting.
     series={(policy,a,n,key):np.array([r[key] for r in rows if
-        (r['comparison'],r['threshold'],r['N'])==(policy,a,n)],dtype=float)
+        (r['comparison'],r['threshold'],r['configuration'])==(policy,a,n)],dtype=float)
         for policy,a in groups for n in sizes for key,_,_ in METHODS}
     audit={'source':str(Path(runs_csv).resolve()),'source_rows':len(rows),
         'box_percentiles':[25,75],'whisker_iqr':1.5,'zeros_included':True,
@@ -105,7 +108,7 @@ def make_figures(runs_csv,output_directory,title_prefix=''):
                             meanprops={'marker':'D','markerfacecolor':'black','markeredgecolor':'white','markersize':4},
                             flierprops={'marker':'.','markersize':2.3,'markerfacecolor':color,'markeredgecolor':color,'alpha':.5})
                         if col==0:
-                            entry={'kind':kind,'comparison':policy,'threshold':a,'N':n,'method':key,
+                            entry={'kind':kind,'comparison':policy,'threshold':a,'configuration':n,'method':key,
                                 'runs':len(values),'zeros':int((values==0).sum()),
                                 'outside_zoom':int((transformed>zoom_upper).sum()),
                                 'maximum':float(transformed.max())}
@@ -134,10 +137,10 @@ def make_figures(runs_csv,output_directory,title_prefix=''):
                     if col==0 and count:
                         outside='/'.join(str(annotation[(n,k)]['outside_zoom']) for k,_,_ in METHODS)
                         zeros='/'.join(f"{100*annotation[(n,k)]['zeros']/count:g}" for k,_,_ in METHODS)
-                        labels.append(f'{n}\nfuori: {outside}\nzeri [%]: {zeros}\nrun: {count}')
-                    else: labels.append(f'{n}\nrun: {count}')
+                        labels.append(f'{configuration_labels[n]}\nfuori: {outside}\nzeri [%]: {zeros}\nrun: {count}')
+                    else: labels.append(f'{configuration_labels[n]}\nrun: {count}')
                 ax.set_xticks(range(len(sizes)),labels,fontsize=9)
-                ax.set_xlabel('Numero di particelle SMC N; budget crude abbinato')
+                ax.set_xlabel('Configurazione: particelle / livelli / mosse MH; crude a pari tempo')
                 descriptor='Zoom' if col==0 else ('Distribuzione completa; lineare 0–1, log oltre 1' if kind=='ratio' else 'Distribuzione completa: tutti gli outlier')
                 ax.set_title(f'Score ≥ {a:g} · {POLICIES[policy]} · {descriptor}\n'
                     f'Reference = {p:.5f}; IC 95% [{low:.5f}, {high:.5f}]',fontsize=12)
@@ -151,17 +154,17 @@ def make_figures(runs_csv,output_directory,title_prefix=''):
         else:
             handles += [Line2D([0],[0],color='#bc3434',linestyle='--',label='Errore relativo 100%\nanche quando la stima è zero')]
         title='Errore relativo logaritmico' if kind=='log_error' else 'Rapporto fra stima e reference'
-        fig.suptitle(f'{title_prefix}{title} · MDLM, tilt 1→2→3, quattro mosse MH per livello',fontsize=17,y=.985)
-        fig.legend(handles=handles,loc='lower center',ncol=3,bbox_to_anchor=(.5,.047),fontsize=10)
+        fig.suptitle(f'{title_prefix}{title} · MDLM · incrementi di tilt 0,5 fino a 3',fontsize=17,y=.985)
+        fig.legend(handles=handles,loc='lower center',ncol=3,bbox_to_anchor=(.5,.085 if len(groups)==2 else .047),fontsize=10)
         caption=('Box: 25°–75° percentile; baffi: 1,5 IQR. Mediana e media sono distinte; la media può cadere fuori dal box.\n'
             'Fuori scala: conteggi; zeri: percentuali. Ordine SMC / SNIS / crude, su tutte le run. Tutti gli outlier nel pannello completo.\n'
             'La reference è una stima da 200.000 campioni IID, non ground truth esatta. Nessuna media tra livelli o configurazioni.')
         if kind=='log_error': caption+='\nPiù basso è meglio; la metrica non distingue sovrastima e sottostima.'
         fig.text(.5,.014,caption,ha='center',fontsize=9)
         fig.subplots_adjust(left=.09,right=.98,top=.90,bottom=.22 if len(groups)==2 else .15,hspace=.72,wspace=.20)
-        path=out/f'camera_ready_{kind}_boxplots.png'
+        path=figure_dir/f'wall_clock_{kind}_boxplots.png'
         fig.savefig(path,dpi=300); plt.close(fig); paths.append(path)
-    (out/'camera_ready_plot_audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
+    (out/'wall_clock_plot_audit.json').write_text(json.dumps(audit,indent=2),encoding='utf-8')
     return paths
 
 

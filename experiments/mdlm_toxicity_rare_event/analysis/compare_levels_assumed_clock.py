@@ -115,7 +115,7 @@ def main():
           'eseguiti: non sono copie con esclusione del resampling al rispettivo livello finale. '
           'La probabilità di riferimento è stimata da 200.000 traiettorie, non è nota esattamente.')
     body='<h1>Livelli intermedi contro MC: ipotesi di tempi uniformi</h1><p>'+escape(note)+'</p>'
-    for image in images:body+=f'<p><a href="{image.name}"><img src="{image.name}" style="width:100%"></a></p>'
+    for image in images:body+=f'<p><a href="{image.relative_to(root).as_posix()}"><img src="{image.relative_to(root).as_posix()}" style="width:100%"></a></p>'
     body+='<p><a href="level_assumed_clock_estimates.csv">Singole run</a> · <a href="level_assumed_clock_summary.csv">Riassunto</a> · <a href="level_assumed_clock_audit.json">Provenienza e ipotesi</a></p>'
     (root/'LEVELS_ASSUMED_CLOCK_REPORT.html').write_text('<!doctype html><html lang="it"><meta charset="utf-8"><style>body{font:16px Arial;margin:24px}</style>'+body+'</html>',encoding='utf-8')
     (root/'LEVELS_ASSUMED_CLOCK_ANALYSIS.md').write_text('# Confronto sotto ipotesi di tempi uniformi\n\n'+note+'\n',encoding='utf-8')

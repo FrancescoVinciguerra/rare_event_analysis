@@ -22,7 +22,7 @@ finalize() {
     if test "$analysis_result" -eq 0; then
       python "$EXPERIMENT_DIR/analysis/same_run_timing.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
       if python -c "import importlib.util; raise SystemExit(importlib.util.find_spec('matplotlib') is None)"; then
-        python "$EXPERIMENT_DIR/analysis/plot_same_run_ladder.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
+        python "$EXPERIMENT_DIR/plots/plot_same_run_ladder.py" --results "$OUTPUT_ROOT/$name" || analysis_result=$?
       else
         echo 'Matplotlib unavailable in this HPC environment: CSVs/report saved; render plots locally after download.'
       fi

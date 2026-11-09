@@ -100,7 +100,7 @@ DESTINATION: Avon, `/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code`.
 
 FILES ADDED by the bundle: this document, the low-budget YAML, `low_budget.py`,
 the two camera-ready shell scripts, `tests/test_low_budget.py`,
-`analysis/plot_camera_ready_low_budget.py`, and the portable GPU/report modules
+`plots/plot_camera_ready_low_budget.py`, and the portable GPU/report modules
 `camera_ready_gpu.py` and `camera_ready_report.py`. No existing
 scientific kernel, model, startup file, environment or result is replaced.
 
@@ -195,11 +195,12 @@ shown and explicitly distinguished; the mean can lie outside the box.
 Offline command, on the local analysis machine after downloading real runs.csv:
 
 ```bash
-python experiments/mdlm_toxicity_rare_event/analysis/plot_camera_ready_low_budget.py --runs PATH_TO_REAL_RESULTS/runs.csv
+python experiments/mdlm_toxicity_rare_event/plots/plot_camera_ready_low_budget.py --runs PATH_TO_REAL_RESULTS/runs.csv
 ```
 
-Outputs next to that CSV: `camera_ready_log_error_boxplots.png`,
-`camera_ready_ratio_boxplots.png`, and a plot-audit JSON containing the exact
+The figures `camera_ready_log_error_boxplots.png` and
+`camera_ready_ratio_boxplots.png` go in `plots/`. The plot-audit JSON next to
+the input CSV contains the exact
 counts. Rendering is tested on clearly labeled synthetic layout fixtures in
 temporary test directories only; they are NOT experimental results.
 

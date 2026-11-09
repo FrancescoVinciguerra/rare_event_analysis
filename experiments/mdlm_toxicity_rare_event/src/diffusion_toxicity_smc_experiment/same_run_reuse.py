@@ -254,7 +254,7 @@ def run_fresh(study_path,output_root,worker_id,workers,max_seconds,calibration_r
     source_names=['smc.py','ancestral.py','evaluation.py','run_smc.py','runtime.py',
                   'camera_ready_gpu.py','low_budget.py','exploratory_kernel.py',
                   'exploratory_population.py','population_checkpoints.py','potentials.py',
-                  'accuracy_budget.py','same_run_reuse.py','configuration.py']
+                  'accuracy_budget.py','same_run_reuse.py','configuration.py','pipeline.py']
     sources={name:hashlib.sha256(Path(__file__).with_name(name).read_bytes()).hexdigest() for name in source_names}
     manifest=dict(study_id=fingerprint(study),study=study,resolved_configs=configs,
         source_SHA256=sources,phi=potential_from_config(configs[0]).manifest(),
@@ -296,7 +296,9 @@ def run_fresh(study_path,output_root,worker_id,workers,max_seconds,calibration_r
         result=population(context,config,study,seed);result['timing_device']=device
         audit_population(result,config)
         atomic_write_json(destination(config,seed),result)
-        print(f"SMC_PHI_SAVED phi={result['phi']['name']} seed={seed} N=128 lambda=8 seconds={result['summary']['runtime_seconds']:.3f}",flush=True)
+        summary = result['summary']
+        print(f"SMC_PHI_SAVED phi={result['phi']['name']} seed={seed} N={summary['num_particles']} "
+              f"lambda={summary['lambda']:g} seconds={summary['runtime_seconds']:.3f}", flush=True)
 
 
 if __name__=='__main__':

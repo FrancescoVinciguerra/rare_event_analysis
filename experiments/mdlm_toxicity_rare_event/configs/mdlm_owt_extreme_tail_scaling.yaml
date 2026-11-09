@@ -1,0 +1,27 @@
+extends: mdlm_owt_particle_scaling.yaml
+study_name: camera_ready_extreme_tail_scaling
+output_subdirectory: camera_ready_extreme_tail_scaling
+extreme_tail_scaling: true
+record_population_checkpoints: true
+thresholds: [0.9995]
+plot_thresholds: [0.9995]
+checkpoint_tilts:
+  0.9995: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9]
+independent_runs: 12
+base_seed: 2500000000
+warmup_base_seed: 24999411
+reference:
+  samples: [200000]
+  discoveries: [2]
+  source: artifacts/current/mdlm_owt/offline_terminal_tail_analysis/terminal_tail_v2_20260823/csv/group_tail_summary.csv
+  source_sha256: a7234f4ab68ae50b4b281d6bf8264974965ecdf752496a08b479c5d58ff95cf8
+mc_pool: camera_ready_gradual_budget
+mc_pool_samples: 354420
+mc_pool_scores_sha256: 561c8e970ce6a1ae1691f640cce5264545702ab01d0543fe594510dce10bfd98
+configurations:
+  - id: N256_L90
+    N: 256
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9]
+    moves_per_level: 4
+resources:
+  SLURM_walltime: '04:00:00'

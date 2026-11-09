@@ -116,7 +116,9 @@ def main():
                  '12 repliche per configurazione. Riferimenti indipendenti stimati; score 0,999 basato su 26/200.000 eventi.',
                  ha='center', fontsize=9)
         fig.subplots_adjust(top=.91, bottom=.14, hspace=.85, wspace=.24)
-        path = root / f'gradual_budget_{kind}_positive_and_all.png'
+        figure_dir = root / 'plots'
+        figure_dir.mkdir(exist_ok=True)
+        path = figure_dir / f'gradual_budget_{kind}_positive_and_all.png'
         fig.savefig(path, dpi=300)
         plt.close(fig)
         images.append(path)
@@ -125,7 +127,7 @@ def main():
     content = report.read_text(encoding='utf-8').split('<!-- gradual-budget-figures -->')[0]
     content += '<!-- gradual-budget-figures -->'
     for path in images:
-        content += f'<p><a href="{path.name}"><img src="{path.name}" style="width:100%"></a></p>'
+        content += f'<p><a href="{path.relative_to(root).as_posix()}"><img src="{path.relative_to(root).as_posix()}" style="width:100%"></a></p>'
     report.write_text(content, encoding='utf-8')
     print(json.dumps({'figures': [str(p) for p in images], 'groups_audited': len(audit)}, indent=2))
 
