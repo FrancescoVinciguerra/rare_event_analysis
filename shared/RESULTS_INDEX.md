@@ -69,7 +69,7 @@ verified. Cross-platform float64 differences were below 4e-15 relative.
 The earlier [3-run partial snapshot](../mdlm/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json)
 is retained as historical provenance; it is superseded by the completion record.
 See also the [configuration](../mdlm/configs/mdlm_owt_same_run_logit.yaml)
-and [methods](../mdlm/docs/SAME_RUN_LOGIT.md).
+and [methods](../mdlm/reproduction/docs/SAME_RUN_LOGIT.md).
 
 For the completed same-run ladder, MC reuses a frozen pool of independent
 native trajectories in fixed disjoint blocks across seeds, with nested prefixes
@@ -98,7 +98,7 @@ potential. [Logit checkpoints](../mdlm/artifacts/current/camera_ready_same_run_l
 Relative standard deviation is the sample standard deviation across the
 12 independent runs at each fixed tilt, divided by the event's reference
 probability. All zero estimates contribute to this calculation. Run
-`python mdlm/analysis/add_threshold_0995.py`
+`python mdlm/reproduction/analysis/add_threshold_0995.py`
 from the repository root to regenerate the tables and figures from saved
 populations and crude scores.
 

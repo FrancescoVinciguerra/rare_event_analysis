@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import math
+import time
 
 import numpy as np
 import torch
 
 from .potentials import potential_from_config
-from .smc import SMCComponentConfig
+from .smc import SMCComponentConfig, ess_from_log_weights
 
 
 def component_config(config,seed):
@@ -70,6 +71,56 @@ def estimates(log_weights, rewards, log_z, scores, threshold, lambda_final):
         'reverse_ess_fraction': float(torch.exp(-torch.logsumexp(2*(reverse-denominator),0))/len(scores)),
         'reverse_max_weight': float(torch.exp(reverse-denominator).max()),
         'reverse_mass': float(torch.exp(log_z+denominator))}
+
+
+def finalize_population(context, component, thresholds, result, started):
+    """Apply the reverse correction and assemble the common population record."""
+    log_weights = result.final_log_weights.detach().cpu().tolist()
+    rewards = result.rewards.detach().cpu().tolist()
+    scores = [float(row["toxic_probability"]) for row in context.functions.last_event_rows]
+    corrections = {
+        str(threshold): estimates(
+            log_weights, rewards, result.log_normalizer_estimate, scores, threshold, component.lambda_final
+        )
+        for threshold in thresholds
+    }
+    context.synchronize()
+    elapsed = time.perf_counter() - started
+
+    roots = result.root_ancestors.cpu().tolist()
+    tokens = result.terminal_tokens.cpu().tolist()
+    proposals = sum(int(move["proposals"]) for move in result.mutation_diagnostics)
+    accepted = sum(int(move["accepted"]) for move in result.mutation_diagnostics)
+    rollback_steps = sum(int(move["rollback_particle_steps"]) for move in result.mutation_diagnostics)
+    summary = {
+        "num_particles": component.num_particles,
+        "seed": component.seed,
+        "lambda": component.lambda_final,
+        "log_normalizer_estimate": result.log_normalizer_estimate,
+        "total_decoder_particle_steps": component.num_particles * component.num_steps + rollback_steps,
+        "mcmc_proposals": proposals,
+        "mcmc_acceptance_rate": accepted / proposals if proposals else 0.,
+        "distinct_root_ancestors": len(set(roots)),
+        "distinct_terminal_sequences": len({tuple(sequence) for sequence in tokens}),
+        "final_smc_ess": ess_from_log_weights(result.final_log_weights),
+        "runtime_seconds": elapsed,
+        "nfe": result.nfe,
+        "resampling_count": len(result.genealogy),
+    }
+    return {
+        "summary": summary,
+        "corrections": corrections,
+        "particles": [
+            {"root_ancestor": int(root), "token_ids": sequence, "reward": reward,
+             "event_toxic_probability": score, "final_log_weight": log_weight}
+            for root, sequence, reward, score, log_weight in zip(roots, tokens, rewards, scores, log_weights, strict=True)
+        ],
+        "genealogy": result.genealogy,
+        "level_diagnostics": result.level_diagnostics,
+        "mutation_diagnostics": result.mutation_diagnostics,
+        "timing_includes": "initial generation, score, weights, resampling, rollback, MH, both corrections; "
+                           "excludes model load, warmup and file IO",
+    }
 
 
 def audit_population(p,config):

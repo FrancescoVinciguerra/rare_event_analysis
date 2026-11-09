@@ -1,13 +1,11 @@
 """GPU population measurement using the scheduled version of the SAME kernel.
 
-Population recording is materialized from camera_ready_gpu.population; only
-the kernel call receives the explicit fixed schedule. No models load on import.
+The explicit fixed schedule can record each mutation as an optional checkpoint.
 """
 import torch
 import time
 from .exploratory_kernel import run_scheduled_trajectory_component
-from .pipeline import component_config, estimates
-from .smc import ess_from_log_weights
+from .pipeline import component_config, finalize_population
 from .potentials import potential_from_config
 
 @torch.inference_mode()
@@ -27,39 +25,13 @@ def population(context,config,study,seed):
     result=run_scheduled_trajectory_component(schedule=config['_exploration']['schedule'],sampler=context.sampler,fixed_prefix_token_ids=None,
         reward_fn=f.reward,event_fn=f.event,config=c,device=context.device,
         population_observer=observer)
-    # Include final transfers and BOTH threshold corrections in the measured estimate.
-    log_weights=result.final_log_weights.detach().cpu().tolist()
-    rewards=result.rewards.detach().cpu().tolist()
-    scores=[float(r['toxic_probability']) for r in f.last_event_rows]
-    corrections={str(a):estimates(log_weights,rewards,result.log_normalizer_estimate,
-        scores,a,c.lambda_final) for a in study['thresholds']}
-    context.synchronize(); elapsed=time.perf_counter()-started
-    if checkpoints is not None:
-        # The final time also includes the terminal score recheck and corrections.
-        checkpoints[-1]['runtime_seconds_cumulative'] = elapsed
-        checkpoints[-1]['corrections'] = corrections
-    roots=result.root_ancestors.cpu().tolist(); tokens=result.terminal_tokens.cpu().tolist()
-    proposals=sum(int(m['proposals']) for m in result.mutation_diagnostics)
-    accepted=sum(int(m['accepted']) for m in result.mutation_diagnostics)
-    ddpm=c.num_particles*c.num_steps+sum(int(m['rollback_particle_steps']) for m in result.mutation_diagnostics)
-    summary={'num_particles':c.num_particles,'seed':int(seed),'lambda':c.lambda_final,
-        'log_normalizer_estimate':result.log_normalizer_estimate,
-        'total_decoder_particle_steps':ddpm,'mcmc_proposals':proposals,
-        'mcmc_acceptance_rate':accepted/proposals if proposals else 0.,
-        'distinct_root_ancestors':len(set(roots)),
-        'distinct_terminal_sequences':len({tuple(t) for t in tokens}),
-        'final_smc_ess':ess_from_log_weights(result.final_log_weights),
-        'runtime_seconds':elapsed,'nfe':result.nfe,
-        'resampling_count':len(result.genealogy)}
-    output = {'summary':summary,'phi':potential.manifest(),'corrections':corrections,
-        'particles':[{'root_ancestor':int(roots[i]),'token_ids':tokens[i],
-            'reward':rewards[i],'event_toxic_probability':scores[i],
-            'final_log_weight':log_weights[i]} for i in range(c.num_particles)],
-        'genealogy':result.genealogy,'level_diagnostics':result.level_diagnostics,
-        'mutation_diagnostics':result.mutation_diagnostics,
-        'timing_includes':'initial generation, score, weights, resampling, rollback, MH, both corrections; excludes model load, warmup and file IO'}
+    output = finalize_population(context, c, study['thresholds'], result, started)
+    output['phi'] = potential.manifest()
     if checkpoints is not None:
         from .population_checkpoints import first_event_checkpoint
+        # Include terminal score validation and reverse correction in the last checkpoint.
+        checkpoints[-1]['runtime_seconds_cumulative'] = output['summary']['runtime_seconds']
+        checkpoints[-1]['corrections'] = output['corrections']
         output['population_checkpoints'] = checkpoints
         output['first_event'] = {}
         for a in study['thresholds']:

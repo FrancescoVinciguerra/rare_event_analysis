@@ -6,7 +6,7 @@ import sys
 import pytest
 
 
-directory=Path(__file__).resolve().parents[1]/'analysis'
+directory=Path(__file__).resolve().parents[1]/'reproduction/analysis'
 sys.path.insert(0,str(directory))
 try:
     spec=importlib.util.spec_from_file_location('assumed_clock_analysis',directory/'compare_levels_assumed_clock.py')

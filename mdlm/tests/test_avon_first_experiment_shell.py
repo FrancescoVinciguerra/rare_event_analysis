@@ -38,7 +38,7 @@ def _dry_run(stage: str) -> str:
     result = subprocess.run(
         [
             _bash_executable(),
-            str(EXPERIMENT_ROOT / "scripts" / "submit_avon_first_experiment.sh"),
+            str(EXPERIMENT_ROOT / "reproduction/scripts" / "submit_avon_first_experiment.sh"),
             stage,
         ],
         cwd=REPOSITORY_ROOT,
@@ -66,7 +66,7 @@ def _serious_dry_run(stage: str) -> str:
     result = subprocess.run(
         [
             _bash_executable(),
-            str(EXPERIMENT_ROOT / "scripts" / "submit_avon_serious_comparison.sh"),
+            str(EXPERIMENT_ROOT / "reproduction/scripts" / "submit_avon_serious_comparison.sh"),
             stage,
         ],
         cwd=REPOSITORY_ROOT,
@@ -95,7 +95,7 @@ def _submission_probability_dry_run(stage: str) -> str:
             _bash_executable(),
             str(
                 EXPERIMENT_ROOT
-                / "scripts"
+                / "reproduction/scripts"
                 / "submit_avon_submission_probability.sh"
             ),
             stage,
@@ -110,7 +110,7 @@ def _submission_probability_dry_run(stage: str) -> str:
 
 
 def test_all_avon_shell_scripts_pass_bash_syntax() -> None:
-    scripts = sorted((EXPERIMENT_ROOT / "scripts").glob("*.sh"))
+    scripts = sorted((EXPERIMENT_ROOT / "reproduction/scripts").glob("*.sh"))
     assert scripts
     subprocess.run(
         [_bash_executable(), "-n", *[str(path) for path in scripts]],
@@ -121,7 +121,7 @@ def test_all_avon_shell_scripts_pass_bash_syntax() -> None:
 
 def test_avon_runtime_fails_closed_on_shadowed_experiment_package() -> None:
     common = (
-        EXPERIMENT_ROOT / "scripts" / "avon_job_common.sh"
+        EXPERIMENT_ROOT / "reproduction/scripts" / "avon_job_common.sh"
     ).read_text(encoding="utf-8")
     assert 'export PYTHONSAFEPATH=1' in common
     assert 'export PYTHONPATH="${EXPERIMENT_DIR}/src:${PROJECT_DIR}/shared:${PROJECT_DIR}"' in common

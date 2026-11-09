@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-path=Path(__file__).resolve().parents[1]/'analysis/analyze_saved_levels.py'
+path=Path(__file__).resolve().parents[1]/'reproduction/analysis/analyze_saved_levels.py'
 spec=importlib.util.spec_from_file_location('saved_level_analysis',path)
 analysis=importlib.util.module_from_spec(spec);spec.loader.exec_module(analysis)
 

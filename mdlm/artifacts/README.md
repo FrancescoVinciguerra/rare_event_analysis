@@ -13,6 +13,11 @@ credentials, caches, and private Avon connection notes remain excluded.
 Extracted campaign files are the working copies. Transport archives are kept
 when they contain unique files or original versions of reports.
 
+Within a campaign, `workers/*/populations/` holds SMC populations and their
+weights and checkpoints. `baselines/` holds saved crude Monte Carlo draws.
+`runs.csv` and `summary.csv` are the analysis tables. A `code/` directory is
+the frozen source snapshot of that campaign.
+
 See the [experiment results index](../../shared/RESULTS_INDEX.md) for saved studies,
 Gaussian toy experiments, and the status of ongoing jobs. A running job's
 launch metadata is not a completed scientific result.
