@@ -7,22 +7,22 @@ La derivazione completa è in [DERIVAZIONE.md](DERIVAZIONE.md). I risultati dell
 Dalla radice del repository, con l'ambiente Python esistente:
 
 ```powershell
-.venv/Scripts/python.exe -m pytest experiments/gaussian_rollback_smc/test_model.py -q
-.venv/Scripts/python.exe experiments/gaussian_rollback_smc/run_experiment.py
+.venv/Scripts/python.exe -m pytest experiments/toy_gaussian/gaussian_rollback_smc/test_model.py -q
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_smc/run_experiment.py
 ```
 
 Il controllo aggiuntivo del caso lambda=0 (4000 repliche con stream indipendente 3) si riproduce con:
 
 ```powershell
-.venv/Scripts/python.exe experiments/gaussian_rollback_smc/check_zero_tilt.py
-.venv/Scripts/python.exe experiments/gaussian_rollback_smc/report.py
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_smc/check_zero_tilt.py
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_smc/report.py
 ```
 
 Oppure usare qualsiasi Python con numpy, scipy, matplotlib e pytest installati:
 
 ```text
-python -m pytest experiments/gaussian_rollback_smc/test_model.py -q
-python experiments/gaussian_rollback_smc/run_experiment.py
+python -m pytest experiments/toy_gaussian/gaussian_rollback_smc/test_model.py -q
+python experiments/toy_gaussian/gaussian_rollback_smc/run_experiment.py
 ```
 
 Parametri predefiniti: T=16, R=8, una mutazione per livello, schedule lineare, N=2048, 2000 repliche per configurazione, 128 blocchi pilota indipendenti da 16384 storie ciascuno. Il pilot non contribuisce alle stime di probabilità del confronto. Si esplorano lambda=1,2,3 e profondità uniforme d in {1,...,D}, D=1,4,16, oltre al controllo lambda=0, D=16. Crude MC genera anch'esso traiettorie originali complete. Gli stimatori ordinario e SNIS condividono le stesse storie entro una replica; le repliche, le configurazioni, crude MC e pilot hanno stream separati.
@@ -32,7 +32,7 @@ Seed principale: 20260929. Ogni generatore NumPy usa `SeedSequence([seed, stream
 Esempio di esecuzione piccola in una directory distinta, senza sovrascrivere i risultati principali:
 
 ```text
-python experiments/gaussian_rollback_smc/run_experiment.py --particles 1024 --replicates 50 --pilot-blocks 4 --pilot-size 4096 --output experiments/gaussian_rollback_smc/small_run
+python experiments/toy_gaussian/gaussian_rollback_smc/run_experiment.py --particles 1024 --replicates 50 --pilot-blocks 4 --pilot-size 4096 --output experiments/toy_gaussian/gaussian_rollback_smc/small_run
 ```
 
 ## File

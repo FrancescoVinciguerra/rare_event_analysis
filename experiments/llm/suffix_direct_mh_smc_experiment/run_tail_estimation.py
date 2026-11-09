@@ -13,9 +13,11 @@ from typing import Any
 
 from tqdm.auto import tqdm
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+EXPERIMENT_ROOT = Path(__file__).resolve().parents[1]
+ROOT = EXPERIMENT_ROOT.parents[1]
+for directory in (ROOT, EXPERIMENT_ROOT):
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
 
 from rea_llms.benchmarking import configuration_fingerprint, git_commit  # noqa: E402
 from rea_llms.models import (  # noqa: E402
@@ -53,7 +55,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--prompt", default=DEFAULT_PROMPT)
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
-    parser.add_argument("--output-root", type=Path, default=Path("outputs"))
+    parser.add_argument("--output-root", type=Path, default=EXPERIMENT_ROOT / "outputs")
     parser.add_argument("--experiment-label", default="suffix_smc_tail_estimation")
     parser.add_argument("--skip-completed", action="store_true")
     parser.add_argument("--overwrite", action="store_true")

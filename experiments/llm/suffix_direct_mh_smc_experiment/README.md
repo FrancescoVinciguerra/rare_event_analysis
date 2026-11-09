@@ -20,10 +20,10 @@ this is valid but adds a final resampling source of Monte Carlo variance.
 The proposal is the temperature-one base-LM conditional for a regenerated
 suffix. The completion length is fixed and the suffix-length law is
 state-independent, yielding the acceptance probability derived in
-[`REA_algorithms_minimal.tex`](../REA_algorithms_minimal.tex).
+[`REA_algorithms_minimal.tex`](../../../REA_algorithms_minimal.tex).
 
 ```bash
-python suffix_direct_mh_smc_experiment/run_experiment.py \
+python experiments/llm/suffix_direct_mh_smc_experiment/run_experiment.py \
   --device auto --num-particles 64 --max-new-tokens 100 \
   --lambdas 0,-0.25,-0.5,-1 --mcmc-steps-per-level 5 \
   --suffix-sizes 1,2,4,8,16,32,64,100 --seed 12345
@@ -32,7 +32,7 @@ python suffix_direct_mh_smc_experiment/run_experiment.py \
 For multi-seed ARI tail estimation:
 
 ```bash
-python suffix_direct_mh_smc_experiment/run_tail_estimation.py \
+python experiments/llm/suffix_direct_mh_smc_experiment/run_tail_estimation.py \
   --device auto --seeds 12345,12346,12347 \
   --num-particles 256 --max-new-tokens 100 \
   --lambdas 0,-0.25,-0.5,-0.75,-1,-1.5,-2 \

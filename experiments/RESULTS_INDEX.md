@@ -1,9 +1,8 @@
 # Saved experiment results
 
-This index accompanies the code, notebooks, individual-run data, figures, and
-historical results published together in this repository. The files retain
-their existing experiment directories. See `results_manifest.json` for file
-sizes and SHA256 hashes of the published snapshot.
+This index links to the current locations of saved runs, notebooks, and plots.
+[The November 5 publication manifest](results_manifest.json) records sizes and
+SHA256 hashes using the directory layout of that historical snapshot.
 
 ## Gaussian full-trajectory toy model
 
@@ -16,20 +15,36 @@ formulas to runs with resampling.
 
 | Study | Code / notebook | Saved runs and results |
 |---|---|---|
-| Independent paths, no resampling | [Code and derivation](gaussian_rollback_smc/README.md) | [Results](gaussian_rollback_smc/RISULTATI.md), [individual replicates](gaussian_rollback_smc/results/replicates.csv) |
-| ESS-triggered systematic resampling | [Self-contained Colab notebook](gaussian_rollback_resampling/RollBack_SMC_Colab.ipynb), [theory](gaussian_rollback_resampling/TEORIA.md) | [Individual runs](gaussian_rollback_resampling/results/runs.csv), [summary](gaussian_rollback_resampling/results/summary.csv), [results folder](gaussian_rollback_resampling/results/) |
-| Historical GPU comparisons | [Colab notebook](gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb), [sampler](gaussian_rollback_gpu_previous/gpu_model.py) | [Results](gaussian_rollback_gpu_previous/results/), [individual runs](gaussian_rollback_gpu_previous/results/runs.csv) |
-| Historical deeper tilt ladders | [Colab notebook](gaussian_rollback_gpu_previous/RollBack_SMC_deep_tilts_Colab.ipynb), [sampler](gaussian_rollback_gpu_previous/deep_model.py) | [Results](gaussian_rollback_gpu_previous/deep_results/), [individual runs](gaussian_rollback_gpu_previous/deep_results/runs.csv) |
+| Independent paths, no resampling | [Code and derivation](toy_gaussian/gaussian_rollback_smc/README.md) | [Results](toy_gaussian/gaussian_rollback_smc/RISULTATI.md), [individual replicates](toy_gaussian/gaussian_rollback_smc/results/replicates.csv) |
+| ESS-triggered systematic resampling | [Self-contained Colab notebook](toy_gaussian/gaussian_rollback_resampling/RollBack_SMC_Colab.ipynb), [theory](toy_gaussian/gaussian_rollback_resampling/TEORIA.md) | [Individual runs](toy_gaussian/gaussian_rollback_resampling/results/runs.csv), [summary](toy_gaussian/gaussian_rollback_resampling/results/summary.csv), [results folder](toy_gaussian/gaussian_rollback_resampling/results/) |
+| Historical GPU comparisons | [Colab notebook](toy_gaussian/gaussian_rollback_gpu_previous/RollBack_SMC_GPU_Colab.ipynb), [sampler](toy_gaussian/gaussian_rollback_gpu_previous/gpu_model.py) | [Results](toy_gaussian/gaussian_rollback_gpu_previous/results/), [individual runs](toy_gaussian/gaussian_rollback_gpu_previous/results/runs.csv) |
+| Historical deeper tilt ladders | [Colab notebook](toy_gaussian/gaussian_rollback_gpu_previous/RollBack_SMC_deep_tilts_Colab.ipynb), [sampler](toy_gaussian/gaussian_rollback_gpu_previous/deep_model.py) | [Results](toy_gaussian/gaussian_rollback_gpu_previous/deep_results/), [individual runs](toy_gaussian/gaussian_rollback_gpu_previous/deep_results/runs.csv) |
 
 Other checkpoint notebooks, small verification runs, saved plots, and original
 result archives are retained in the corresponding directories. Execution
 verification records describe which notebook versions were actually run.
+
+## Autoregressive LLM experiments
+
+- [ARI, annealed TPS/MBAR, and QwenGuard notebooks](llm/README.md#notebooks)
+- [Saved ARI tail validation](llm/results/tail_probability_validation/)
 
 ## MDLM toxicity experiments
 
 The toxicity threshold q is a classifier score. The estimated event
 probabilities are 444/200,000 for q ≥ 0.99, 334/298,800 for q ≥ 0.995,
 and 26/200,000 for q ≥ 0.999.
+
+### Matched-budget figures
+
+- [Mean and median across compute budgets](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/plots/combined_compute_scaling_mean_median_with_tail.png)
+- [Relative standard deviation across compute budgets](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/plots/combined_compute_scaling_relative_sd_with_tail.png)
+- [Log-relative-error boxplots](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/plots/combined_compute_scaling_log_relative_error.png)
+- [Two small runs versus one large run](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/plots/paired_runs_matched_gpu.png)
+
+The [run-level estimates](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/combined_compute_scaling_runs.csv)
+and [bootstrap table](mdlm_toxicity_rare_event/artifacts/current/camera_ready_low_particle_budget/rare_event_bootstrap_uncertainty_with_tail.csv)
+remain available. Earlier renderings can be found in the repository history.
 
 | Study | Results |
 |---|---|

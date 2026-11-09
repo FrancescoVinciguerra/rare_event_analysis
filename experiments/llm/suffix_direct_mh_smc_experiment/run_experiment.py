@@ -8,9 +8,11 @@ from pathlib import Path
 
 from tqdm.auto import tqdm
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+EXPERIMENT_ROOT = Path(__file__).resolve().parents[1]
+ROOT = EXPERIMENT_ROOT.parents[1]
+for directory in (ROOT, EXPERIMENT_ROOT):
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
 
 from rea_llms.models import (  # noqa: E402
     DEFAULT_MODEL_NAME,
@@ -53,7 +55,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--local-files-only", action="store_true")
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument("--model-dtype", choices=TORCH_DTYPES, default="auto")
-    parser.add_argument("--output-root", type=Path, default=Path("outputs"))
+    parser.add_argument("--output-root", type=Path, default=EXPERIMENT_ROOT / "outputs")
     parser.add_argument("--experiment-label", default="suffix_direct_mh_smc")
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--overwrite", action="store_true")

@@ -17,7 +17,6 @@ data/
 outputs/
 results/
 **/direct_baseline_*.json.gz
-suffix_direct_mh_smc_experiment/results/
 **/results/tmp*/
 **/results/raw*/
 **/samples.jsonl
@@ -51,9 +50,9 @@ experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_log
 !experiments/**/samples.jsonl
 !experiments/**/*samples.jsonl
 !experiments/**/*samples.csv
-!results/
-results/*
-!results/tail_probability_validation/
-!results/tail_probability_validation/**
+experiments/llm/suffix_direct_mh_smc_experiment/results/
+experiments/llm/results/*
+!experiments/llm/results/tail_probability_validation/
+!experiments/llm/results/tail_probability_validation/**
 !output/github_reviewer_artifact/data/
 !output/github_reviewer_artifact/data/**

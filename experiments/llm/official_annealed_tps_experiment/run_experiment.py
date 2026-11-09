@@ -7,9 +7,11 @@ from pathlib import Path
 import numpy as np
 from tqdm.auto import tqdm
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+EXPERIMENT_ROOT = Path(__file__).resolve().parents[1]
+ROOT = EXPERIMENT_ROOT.parents[1]
+for directory in (ROOT, EXPERIMENT_ROOT):
+    if str(directory) not in sys.path:
+        sys.path.insert(0, str(directory))
 
 from official_annealed_tps_experiment.annealed_tps import (  # noqa: E402
     OfficialAnnealedTPSConfig,
@@ -52,7 +54,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--ari-convention", choices=ARI_CONVENTIONS, default="current")
     parser.add_argument("--ari-cap", type=float, default=15.0)
     parser.add_argument("--tail-thresholds", default="10,12,15,18")
-    parser.add_argument("--output-root", type=Path, default=Path("outputs"))
+    parser.add_argument("--output-root", type=Path, default=EXPERIMENT_ROOT / "outputs")
     parser.add_argument("--experiment-label", default="official_annealed_tps")
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--skip-completed", action="store_true")

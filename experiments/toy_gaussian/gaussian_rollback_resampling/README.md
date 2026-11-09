@@ -43,9 +43,9 @@ Non viene affermata una CLT in N dimostrata per systematic non ordinato con sogl
 Il notebook non richiede questi file separati. Per ispezionare/eseguire il codice localmente dalla radice del repository:
 
 ```powershell
-.venv/Scripts/python.exe experiments/gaussian_rollback_resampling/checks.py
-.venv/Scripts/python.exe experiments/gaussian_rollback_resampling/build_notebook.py
-.venv/Scripts/python.exe experiments/gaussian_rollback_resampling/execute_notebook.py
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_resampling/checks.py
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_resampling/build_notebook.py
+.venv/Scripts/python.exe experiments/toy_gaussian/gaussian_rollback_resampling/execute_notebook.py
 ```
 
 Le utility di costruzione/esecuzione richiedono nbformat, nbclient e ipykernel; queste dipendenze sono strumenti di verifica locale, non requisiti aggiuntivi per Colab. `build_notebook.py` ricrea il notebook senza output, quindi va seguito da `execute_notebook.py` se si vuole conservare una copia eseguita.
