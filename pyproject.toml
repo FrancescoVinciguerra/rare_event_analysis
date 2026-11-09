@@ -30,9 +30,9 @@ torch = [
 
 [tool.setuptools.packages.find]
 where = [
-    ".",
-    "experiments/llm",
-    "experiments/mdlm_toxicity_rare_event/src",
+    "shared",
+    "llm",
+    "mdlm/src",
 ]
 include = [
     "rea_llms",
@@ -74,13 +74,13 @@ namespaces = false
 
 [tool.pytest.ini_options]
 pythonpath = [
-    ".",
-    "experiments/llm",
-    "experiments/mdlm_toxicity_rare_event/src",
+    "shared",
+    "llm",
+    "mdlm/src",
 ]
 testpaths = [
-    "experiments/llm/tests",
-    "experiments/mdlm_toxicity_rare_event/tests",
+    "llm/tests",
+    "mdlm/tests",
 ]
 markers = [
     "slow: optional slow integration tests",

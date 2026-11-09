@@ -26,8 +26,8 @@ results/
 
 # Experiment results are versioned alongside the code. Runtime scratch files,
 # credentials, caches, and private Avon operating notes remain local.
-experiments/mdlm_toxicity_rare_event/artifacts/logs/*
-!experiments/mdlm_toxicity_rare_event/artifacts/logs/.gitkeep
+mdlm/artifacts/logs/*
+!mdlm/artifacts/logs/.gitkeep
 .codex-private/
 tmp/
 *.egg-info/
@@ -39,20 +39,34 @@ tmp/
 
 # Download transport archives can include runtime bytecode/cache directories.
 # Their extracted scientific results and frozen source are published instead.
-experiments/mdlm_toxicity_rare_event/artifacts/current/*_results.tar.gz
-experiments/mdlm_toxicity_rare_event/artifacts/current/camera_ready_same_run_logit/code_failed_job_2081343.tar.gz
+mdlm/artifacts/current/*_results.tar.gz
+mdlm/artifacts/current/camera_ready_same_run_logit/code_failed_job_2081343.tar.gz
 
 # Explicit publication of scientific data overrides the generic rules above.
-!experiments/**/results/
-!experiments/**/results/**
-!experiments/**/data/
-!experiments/**/data/**
-!experiments/**/samples.jsonl
-!experiments/**/*samples.jsonl
-!experiments/**/*samples.csv
-experiments/llm/suffix_direct_mh_smc_experiment/results/
-experiments/llm/results/*
-!experiments/llm/results/tail_probability_validation/
-!experiments/llm/results/tail_probability_validation/**
-!output/github_reviewer_artifact/data/
-!output/github_reviewer_artifact/data/**
+!toy_gaussian/**/results/
+!llm/**/results/
+!mdlm/**/results/
+!toy_gaussian/**/results/**
+!llm/**/results/**
+!mdlm/**/results/**
+!toy_gaussian/**/data/
+!llm/**/data/
+!mdlm/**/data/
+!toy_gaussian/**/data/**
+!llm/**/data/**
+!mdlm/**/data/**
+!toy_gaussian/**/samples.jsonl
+!llm/**/samples.jsonl
+!mdlm/**/samples.jsonl
+!toy_gaussian/**/*samples.jsonl
+!llm/**/*samples.jsonl
+!mdlm/**/*samples.jsonl
+!toy_gaussian/**/*samples.csv
+!llm/**/*samples.csv
+!mdlm/**/*samples.csv
+llm/suffix_direct_mh_smc_experiment/results/
+llm/results/*
+!llm/results/tail_probability_validation/
+!llm/results/tail_probability_validation/**
+!shared/output/github_reviewer_artifact/data/
+!shared/output/github_reviewer_artifact/data/**
