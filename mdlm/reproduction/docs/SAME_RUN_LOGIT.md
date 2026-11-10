@@ -1,131 +1,52 @@
-# Same-run ladder: Phi selezionabile, confronto log(q) / logit(q)
+# Continuing SMC ladders: log probability, MC reuse, and logit
 
-Richiesta: ripetere le 12 ladder completate nel job 2079904 cambiando soltanto
-Phi. Nessuna nuova generazione crude MC, nemmeno per warm-up o calibrazione.
-I risultati e il codice precedenti restano disponibili.
+## Shared design
 
-## Definizione e selezione di Phi
+The [original study](../../configs/mdlm_owt_same_run_ladder.yaml) and the [logit follow-up](../../configs/mdlm_owt_same_run_logit.yaml) use one $N=128$ ladder per seed, with **12 seeds** $2{,}000{,}000{,}000+1{,}000{,}000i$ for $i=0,\ldots,11$. The ladder goes from 0 to 8 in half-steps, with four RollBack–MH moves per level. Each seed yields **65 populations**: the initial state and one after each of 64 moves. The native path costs 33 transitions, including the terminal categorical draw.
 
-Configurazione generale del sampler: `smc.phi: log_probability` (default,
-Phi=log(q), comportamento precedente) oppure `smc.phi: logit`
-(Phi=log(q/(1-q))). Nelle configurazioni di studio la chiave `phi` viene
-propagata a `smc.phi` in ogni configurazione risolta.
+Both events, $q\ge0.99$ and $q\ge0.999$, use the same populations and finite IID references of 444/200,000 and 26/200,000. Weight once per level, update $\widehat Z$ before mutation, use systematic resampling when ESS/$N<0.5$, and skip terminal resampling. The recorded populations are the ones actually used in the continuing run. The two estimators use the current tilt and are reported separately at each checkpoint, without terminal copies, averaging over levels or stopping on discovery.
 
-La trasformazione e' implementata in `potentials.py`. Il logit si calcola dai
-logits originali: per due classi, logit_toxic - logit_non_toxic. Non si applicano
-epsilon o clipping alle probabilita'. Si conserva separatamente q per gli
-eventi. Il classificatore, la definizione degli eventi e P non cambiano.
+One event particle identifies a positive checkpoint. Compare the 16 end-of-level populations across independent seeds. Label positive-only and all-run views, show zooms and full tails, count zeros, and distinguish mean from median. Also retain the first-event checkpoint and all per-move diagnostics, including times, native transitions, acceptance, ESS, reverse weights, genealogy and normalizers. Checkpoints within a seed are dependent.
 
-Tutti i fattori usano la stessa Phi: G_k=exp((lambda_k-lambda_{k-1})Phi),
-accettazione MH min(1,exp(lambda_k(Phi'-Phi))), correzione exp(-lambda_k Phi).
-Z_hat viene aggiornato prima della mutazione a ogni livello. Le mutazioni
-non cambiano i pesi. L'osservatore recupera q con sigmoid(Phi) per il logit,
-con exp(Phi) per lo score precedente; vicino a una soglia ricontrolla la
-probabilita' originale del classificatore, includendone il tempo.
+## Execution and baseline history
 
-## Disegno invariato
+| Stage | Baseline policy | Recorded outcome |
+|---|---|---|
+| Original $\Phi=\log q$, [job 2079596](../../artifacts/same_run_ladder_original_job_status.json) | Fresh crude baselines planned at end-of-level checkpoints and at first discovery. Fix the count before drawing samples using independent calibration, and measure actual time on the same GPU. | Cancelled after 01:58:51 during baseline generation. The monitor recorded three completed SMC ladders, three terminal crude baselines, 40 checkpoint crude baselines, zero complete comparison runs, and no result archive. The completed SMC states and crude draws were preserved. |
+| Resume, [job 2079904](../../artifacts/same_run_ladder_job_status.json) | Run the nine missing SMC seeds and reuse saved IID draws for all checkpoints. No new crude warm-up or calibration. | Completed all 12 ladders in 00:42:49. The resume verified the original source hashes and retained existing populations, crude draws and manifests. |
+| Logit, [job 2081343](../../artifacts/same_run_logit_job_2081343_status.json) and [job 2081350](../../artifacts/same_run_logit_job_status.json) | Repeat the 12 seeds with only the potential changed. Reuse the same crude pool, ordering and seed blocks. The prefix lengths can differ because SMC runtimes differ. | First attempt failed in 45 s before model load. The retry completed all 12 ladders and its scientific CSVs. The batch exit was 1 because Matplotlib was missing during plotting. |
 
-- N=128; 12 seed distinti: 2000000000 + 1000000*i, i=0,...,11.
-- Gli stessi seed del precedente studio consentono il confronto appaiato;
-  dopo la prima selezione diversa, le traiettorie delle due varianti divergono.
-- Una singola ladder per seed: lambda=0.5,1,...,8, 16 livelli, 4 MH/livello.
-- Una pesatura/livello, systematic se ESS/N<0.5, nessun resampling finale.
-- Rollback invariato: profondita' uniformi {4,8,16,24,32}, piu' il completamento
-  categorico terminale. Processo nativo completo di 33 transizioni.
-- Eventi q>=0.99 e q>=0.999 dalla stessa popolazione.
-- Registrazione di tutte le 65 popolazioni: iniziale + dopo ogni mossa MH.
-- Entrambi gli stimatori dopo ogni MH con il lambda corrente; nessuna media
-  fra livelli, nessun arresto al primo evento e nessuna nuova copia terminale.
-- Calibrazione temporale precedente sulla stessa GPU fisica e 4 CPU.
-- Tre GPU parallele per i seed; ciascuna stima usa una GPU e 4 CPU.
+The reused pool is **192 baseline files with 354,420 IID trajectories** from the gradual-budget study. The independent 200,000-draw reference stays separate. Each planned seed has a fixed disjoint block of **29,535** trajectories in deterministic file order. A checkpoint uses the first
 
-I valori di lambda delle due Phi non hanno la stessa intensita'. Questa e'
-una verifica controllata della richiesta a schedule invariata, non una promessa
-di efficienza del logit fino a 8. Si salvano anche acceptance, ESS prima/dopo
-resampling, ESS e massimo peso dopo correzione, genealogia e Z_hat.
+$$
+n_{\rm MC}=\left\lfloor
+  \frac{\text{measured cumulative SMC seconds}}
+       {\text{calibrated crude seconds per path}}
+\right\rfloor
+$$
 
-## Riuso del crude MC e report
+draws in that block. If the requested count exceeds its block, the code raises an error. Prefixes are nested within a seed and disjoint across seeds. The calibration applies to the same physical GPU and four-CPU allocation. These are **calibrated time equivalents**, distinct from the original fresh crude runs with measured wall times.
 
-Pool precedente completo: camera_ready_gradual_budget, 192 baseline, 354420
-traiettorie IID. I 200000 campioni del riferimento non sono usati per MC.
-Stesso ordine dei file e stesso blocco disgiunto per seed del report precedente.
-Per ogni checkpoint: n_MC=floor(tempo SMC cumulativo / costo MC calibrato).
-La lunghezza del prefisso puo' cambiare con il tempo della nuova run; il costo
-MC e' un equivalente calibrato, non una misura MC ripetuta.
+All three stages used three GPUs for independent seeds, with one GPU and four CPUs per estimate and 60 GB host RAM for the job. The original job capped OMP, MKL, OpenBLAS and NumExpr at four threads per task. It allowed 12 hours, or 36 allocated GPU-hours. The resume and logit stages allowed two hours on the original node. Keep warm-up and calibration separate from per-estimate time.
 
-Output: workers/*/populations, checkpoint_runs.csv, first_event_runs.csv,
-runs.csv, summary.csv, timing_steps.csv, saved_MC_blocks.json,
-comparison_policy.json, REPORT.html e due figure con zoom/code, positivi/tutte
-le run, mediana, media e conteggi degli zeri. Nessuna media fra tilt.
+## Potential change and validation
 
-## Risorse, origine, destinazione e comandi
+The original `smc.phi: log_probability` uses $\log q$. The `logit` option computes $\log(q/(1-q))$ from the difference of the two classifier logits, without clipping probabilities or inserting epsilon. The score $q$ and event definition stay separate. The new potential is used consistently in
 
-Origine: C:/Users/UTENTE/Downloads/rea_of_llms_supplementary_code-main.
-Destinazione: stuhvh@avon.scrtp.warwick.ac.uk tramite Hammer.
-Progetto remoto: /gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code.
-Nuova cartella risultati: mdlm/artifacts/current/camera_ready_same_run_logit.
-Il sorgente congelato viene trasferito nella sottocartella `code` del nuovo
-risultato. Non si sovrascrivono sorgenti o risultati sul cluster.
-Il trasferimento avviene sul canale SSH gia' autenticato: payload tar.gz in
-base64, SHA256 verificato prima dell'estrazione. Elenco e hash dei file sono
-registrati nel bundle e nel manifest di deployment.
+$$
+G_k=\exp((\lambda_k-\lambda_{k-1})\Phi),\qquad
+\alpha_k=\min(1,\exp(\lambda_k(\Phi'-\Phi))),\qquad
+\text{reverse factor}=\exp(-\lambda_k\Phi).
+$$
 
-Risorse: partizione gpu, account stats, qos normal, nodo gpu007,
-3 quadro_rtx_6000, 3 task da 4 CPU, 60 GB, massimo 2 ore.
-Durata indicativa: circa un'ora, da verificare con le nuove run.
+Mutation leaves weights fixed. The observer uses sigmoid for logit and exp for log-probability, with a timed recheck of the original classifier probability near event thresholds. Shared seeds allow a paired comparison, although paths diverge once selection differs. Equal numerical tilts have different strength under the two potentials.
 
-```bash
-export PROJECT_DIR=/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code
-export OUTPUT_ROOT="$PROJECT_DIR/mdlm/artifacts/current"
-export EXPERIMENT_DIR="$OUTPUT_ROOT/camera_ready_same_run_logit/code"
-export CALIBRATION_ROOT="$OUTPUT_ROOT/camera_ready_same_run_ladder"
-export LOG_DIR="$PROJECT_DIR/mdlm/artifacts/logs"
-export VENV_DIR=/gpfs/home/stats/stuhvh/venvs/toxicity-smc
-export HF_HOME=/gpfs/home/stats/stuhvh/hf-cache
-export AVON_MODULES='GCCcore/13.2.0 Python/3.11.5'
-sbatch --parsable --no-requeue --account=stats --partition=gpu --qos=normal --gres=gpu:quadro_rtx_6000:3 --nodes=1 --nodelist=gpu007 --ntasks=3 --cpus-per-task=4 --mem=60G --time=02:00:00 --job-name=mdlm-ladder-logit --chdir="$PROJECT_DIR" --export=ALL --output="$LOG_DIR/%x-%j.out" --error="$LOG_DIR/%x-%j.err" "$EXPERIMENT_DIR/scripts/slurm_avon_same_run_phi.sh"
-```
+The first logit job picked up an older package of the same name through pytest's search path. The corrected job explicitly uses `pytest_snapshot.ini` and the frozen source root, checks the imported package path, and passed 18 local checks under simulated SLURM settings. The failed source snapshot was preserved. The retry's figures were generated locally from the saved CSVs, with no new SMC or MC. The current batch script defers rendering if Matplotlib is unavailable.
 
-Comando scientifico di ciascun task (worker=0,1,2):
+Offline validation checked **1,560 checkpoint/event pairs**, including normalizers, weights, native counts and crude prefixes against the frozen pool. The [results index](../../../shared/RESULTS_INDEX.md) links the report, checkpoint estimates and validation. The main outputs include `checkpoint_runs.csv`, `first_event_runs.csv`, `timing_steps.csv` for the logit run, `saved_MC_blocks.json` and `comparison_policy.json`.
 
-```bash
-python -m diffusion_toxicity_smc_experiment.same_run_reuse run-fresh --study "$EXPERIMENT_DIR/configs/mdlm_owt_same_run_logit.yaml" --output-root "$OUTPUT_ROOT" --calibration-root "$CALIBRATION_ROOT" --max-seconds 6300 --workers 3 --worker-id "$worker"
-```
+## Reproduction entry points
 
-Solo calcolo sotto SLURM; nessun modello o esperimento sul nodo login.
-Ogni run completa e' salvata atomicamente e verificata prima delle successive.
-La ripresa salta i seed gia' completati e verifica Phi, configurazione e hash
-del codice. Il job genera automaticamente CSV, report e figure prima di creare
-l'archivio scaricabile.
-
-## Verifica iniziale e isolamento dei test
-
-Il primo invio, 2081343, e' terminato FAILED dopo 45 secondi prima di
-caricare modelli o produrre popolazioni. La configurazione pytest del vecchio
-repository reinseriva nel path un pacchetto omonimo storico. Il job usa ora
-esplicitamente `pytest_snapshot.ini` e la root dello snapshot; un test verifica
-anche il percorso effettivo del package importato. I 18 controlli del job sono
-passati localmente con le stesse variabili SLURM simulate. La copia del codice
-del tentativo fallito viene conservata prima della correzione. Nessun risultato
-precedente o campione scientifico e' cancellato.
-
-## Risultato dell'esecuzione e recupero completo
-
-Il job 2081350 ha completato tutte le 12 ladder: i tre worker GPU hanno
-terminato con exit code 0. La fase scientifica e i CSV sono completi.
-Lo stato batch FAILED (exit 1) e' dovuto soltanto a Matplotlib assente durante
-la generazione delle immagini. Dopo il download, le due figure sono state
-prodotte localmente dagli stessi CSV, senza ripetere simulazioni. Lo script
-SLURM corrente rinvia il rendering al PC quando Matplotlib non e' disponibile,
-senza trasformare questa dipendenza grafica opzionale in un errore dei sampler.
-Lo snapshot `code/` conserva il sorgente effettivamente usato nel job.
-
-La verifica completa e' riproducibile senza caricare modelli:
-
-```bash
-python mdlm/reproduction/analysis/verify_same_run_ladder_results.py --results mdlm/artifacts/current/camera_ready_same_run_logit --study mdlm/configs/mdlm_owt_same_run_logit.yaml --mc-pool mdlm/artifacts/current/camera_ready_gradual_budget
-```
-
-Sono stati verificati 1560 checkpoint/evento, i normalizzatori, i pesi, i
-conteggi delle transizioni e tutti i prefissi MC dai 192 file sorgente congelati.
-Nessun nuovo campione MC e nessuna nuova run SMC per la pubblicazione.
+- The original [submitter](../scripts/submit_avon_same_run_ladder.sh) runs the [ladder worker](../scripts/slurm_avon_same_run_ladder.sh) with `accuracy_budget run --max-seconds 41400 --workers 3`. The [resume worker](../scripts/slurm_avon_same_run_reuse.sh) uses `same_run_reuse run`.
+- The [logit worker](../scripts/slurm_avon_same_run_phi.sh) uses `same_run_reuse run-fresh`, with `--max-seconds 6300 --workers 3` and the original ladder as the calibration source. Its frozen bundle and hashes identify the executed code. Use the [Avon runbook](AVON_RUNBOOK.md) for cluster setup.
+- The [offline verifier](../analysis/verify_same_run_ladder_results.py) accepts `--results` for the logit run, `--study` for its YAML, and `--mc-pool` for the saved gradual-budget pool. It reads saved data without loading models.

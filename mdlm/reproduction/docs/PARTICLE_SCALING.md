@@ -1,63 +1,28 @@
-# Population size at fixed tilt
+# Population size at fixed tilt and under a lower budget
 
-Compare the non-normalized RollBack SMC estimator with crude Monte Carlo
-as the population grows from 128 to 160, 192 and 256. Use 24 independent
-SMC runs per size and terminal tilt. The earlier 12-run logit ladder serves
-as pilot data. The new campaign uses distinct seeds.
+Both campaigns use the logit RollBack–MH pipeline, with the earlier 12-seed [logit ladder](SAME_RUN_LOGIT.md) as a pilot. The new campaigns use distinct seeds. The YAMLs specify the schedules, rollback choices, mutation counts and systematic resampling policy. Compare the non-self-normalized SMC estimator with crude MC.
 
-- Terminal tilt 0.5 for score thresholds 0.99 and 0.995.
-- Terminal tilt 2.5 for score threshold 0.999.
-- Both terminal populations also evaluate the other thresholds for secondary
-  analysis. The two tilts use separate runs with no resampling at their
-  terminal levels. The earlier pilot's intermediate populations could
-  resample at those levels before continuing.
-- Keep logit, half-step tempering, four RollBack–MH moves per level, uniform
-  native rollback depths, and systematic resampling at ESS/N below 0.5.
-- Each of the eight configurations has 24 new SMC seeds, for 192 runs.
-  Each worker handles eight replicates of each configuration.
-- Estimate crude MC from the 121,355 saved native trajectories of the
-  completed accuracy-budget pilot. Use disjoint blocks of 5,056 trajectories
-  across replicate ranks. Within each rank, reuse prefixes across sizes and
-  tilts. The number of trajectories in a prefix is the floor of synchronized
-  SMC time divided by the previously calibrated MC seconds per trajectory
-  on the same physical GPU with four CPU cores. If a budget exceeds its
-  block, report the mismatch instead of silently capping it.
-- Reference counts are 444/200,000, 334/298,800, and 26/200,000. The
-  accuracy-budget MC streams differ from the gradual-budget MC streams
-  used to obtain the reference for 0.995.
-- Reconstruct log estimates from the saved log normalizer, log weights
-  and potentials. Compute the log relative error with `expm1` and
-  `log1p` on the negative log-ratio branch. Preserve zero estimates.
-- Report per-run ratios and log errors, RSD, mean and median, zero counts,
-  and the number within a factor of ten, grouped by fixed size and tilt.
+| Design | Config and replication | Which populations supply the estimates |
+|---|---|---|
+| Fixed terminal tilt | [Particle-scaling YAML](../../configs/mdlm_owt_particle_scaling.yaml). $N=128,160,192,256$, two independent tilt settings per size, 24 runs per setting, **192 runs** total. | Terminate at 0.5 for $q\ge0.99$ and $q\ge0.995$, or at 2.5 for $q\ge0.999$. Both terminal populations also evaluate the other thresholds for secondary analysis. |
+| Lower particle budget | [Low-particle YAML](../../configs/mdlm_owt_low_particle_budget.yaml). $N=64,96$, 24 ladders per size, **48 ladders** total. | Continue one ladder to 3 per seed. Evaluate $q\ge0.99$ at 0.5, $q\ge0.995$ at 1, and $q\ge0.999$ at 0.5 and 3, using the population after the fourth MH move. |
 
-## Avon submission
+A separate run ending at a given tilt skips terminal resampling. A continuing ladder can resample at that same tilt before moving on. Consequently the earlier pilot checkpoints and the low-budget checkpoints are distinct from independently terminated populations. Preserve this distinction when comparing the campaigns. Use cumulative synchronized times and native transition counts at the actual checkpoint.
 
-Origin: `C:/Users/UTENTE/Downloads/rea_of_llms_supplementary_code-main`.
-Destination: `stuhvh@avon.scrtp.warwick.ac.uk` via Hammer.
-Working directory: `/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code`.
-The deployment uploads a checksummed source archive into
-`mdlm/artifacts/current/camera_ready_particle_scaling/code`
-and creates a separate result directory. This contains worker manifests,
-atomic per-run population files, CSVs and validation of campaign completion.
-The result archive is `camera_ready_particle_scaling_results.tar.gz` alongside
-the result directory. Scheduler logs go in the existing `artifacts/logs`.
-No model inference or analysis runs on the login node.
+## Matched crude controls and independent references
 
-```bash
-export PROJECT_DIR=/gpfs/home/stats/stuhvh/rea_of_llms_supplementary_code
-export OUTPUT_ROOT="$PROJECT_DIR/mdlm/artifacts/current"
-export EXPERIMENT_DIR="$OUTPUT_ROOT/camera_ready_particle_scaling/code"
-export CALIBRATION_ROOT="$OUTPUT_ROOT/camera_ready_same_run_ladder"
-export LOG_DIR="$PROJECT_DIR/mdlm/artifacts/logs"
-export VENV_DIR=/gpfs/home/stats/stuhvh/venvs/toxicity-smc
-export HF_HOME=/gpfs/home/stats/stuhvh/hf-cache
-export AVON_MODULES='GCCcore/13.2.0 Python/3.11.5'
-sbatch --parsable --no-requeue --account=stats --partition=gpu --qos=normal --gres=gpu:quadro_rtx_6000:3 --nodes=1 --nodelist=gpu007 --ntasks=3 --cpus-per-task=4 --mem=60G --time=06:00:00 --job-name=mdlm-particle-scaling --chdir="$PROJECT_DIR" --export=ALL --output="$LOG_DIR/%x-%j.out" --error="$LOG_DIR/%x-%j.err" "$EXPERIMENT_DIR/scripts/slurm_avon_particle_scaling.sh"
-```
+Both campaigns reuse **121,355 native crude trajectories** from the completed [accuracy-budget pilot](ACCURACY_VS_BUDGET.md). The fixed-tilt study uses disjoint blocks of **5,056** paths across replicate ranks. Within a rank, take nested prefixes across settings. The lower-budget comparison likewise uses disjoint rank blocks and nested prefixes across checkpoints. Set the prefix length to the floor of measured cumulative SMC seconds divided by calibrated crude seconds per path on the same physical GPU with four CPU cores. Report a budget that exceeds its block. The low-budget records also retain exact native-transition budgets.
 
-Scientific command inside each allocated worker, with `worker` set to 0, 1 or 2:
+The reference counts at $q\ge0.99,0.995,0.999$ are **444/200,000**, **334/298,800**, and **26/200,000**, respectively. The accuracy-budget crude streams differ from the gradual-budget streams used for the 0.995 reference. Treat the references as finite IID estimates.
 
-```bash
-python -m diffusion_toxicity_smc_experiment.same_run_reuse run-fresh --study "$EXPERIMENT_DIR/configs/mdlm_owt_particle_scaling.yaml" --output-root "$OUTPUT_ROOT" --calibration-root "$CALIBRATION_ROOT" --max-seconds 21000 --workers 3 --worker-id "$worker"
-```
+## Estimation and reporting
+
+Reconstruct $\ell=\log\widehat Z+\operatorname{logsumexp}_{i\in A}(\log\overline W_i-\lambda\Phi_i)$ from the saved population. For $\delta=\ell-\log p_{\rm ref}$, compute the log-relative error $\log_{10}(1+|\exp(\delta)-1|)$ as $\delta/\log(10)$ for $\delta\ge0$, and $\operatorname{log1p}(-\operatorname{expm1}(\delta))/\log(10)$ otherwise. Keep zero estimates, represented by $\ell=-\infty$ in log space.
+
+Report ratios, absolute and log-relative errors, relative standard deviation, mean and median, zero counts, and counts within a factor of ten. Group by size and tilt. The lower-budget study's working scale-recovery criterion was **at least 12 of 24 runs** within a factor of ten, and it expressed the crude budget as a fraction of $1/p_{\rm ref}$. These are conventions of that study. Its recorded checkpoint mapping remains distinct from later choices of which checkpoints to feature.
+
+## Reproduction entry points
+
+Both designs use [the particle-scaling worker](../scripts/slurm_avon_particle_scaling.sh) and `same_run_reuse run-fresh` with a checksummed source bundle, original ladder calibration, and three workers. The fixed-endpoint worker handles eight replicates per setting. The historical fixed-endpoint submission requested six hours, with a worker limit of 21,000 s. The smaller-ladder submission used `STUDY_CONFIG=mdlm_owt_low_particle_budget.yaml`, `RESULT_NAME=camera_ready_low_particle_budget`, and `SOFT_MAX_SECONDS=6900` with a two-hour allocation. Both used one GPU and four CPUs per run, with 20 GB host RAM per worker.
+
+Use the [Avon runbook](AVON_RUNBOOK.md) for setup. The result bundles retain per-seed populations, worker manifests, CSVs and completion checks. [Particle-scaling plots](../plots/plot_particle_scaling.py) and [combined-budget analysis](../analysis/combine_particle_budgets.py) read saved outputs.
