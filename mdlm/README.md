@@ -1,44 +1,46 @@
-# Unconditional MDLM toxicity rare-event benchmark
+# MDLM rare-event estimation
 
 ## Quick start
 
-From the repository root, with Python 3.11 and a PyTorch environment:
+Run these commands from the repository root.
 
 ```bash
 python -m pip install -e .
-python -m diffusion_toxicity_smc_experiment.estimate --particles 2 --tilt 0.5
+python mdlm/reproduce.py --config mdlm/configs/paper.yaml --mode plan
+python mdlm/reproduce.py --config mdlm/configs/paper.yaml --mode smoke
 ```
 
-The first run downloads about 1.2 GB of pinned model weights. It uses CUDA by
-default. Add `--device cpu` for CPU or `--offline` for a prefilled model cache.
-The example checks that the pipeline runs. Omit `--particles` and `--tilt`
-to use 64 particles and terminal tilt 1. Set the event with `--threshold`
-(default 0.995) and the random seed with `--seed` (default 42).
-The JSON output includes the non-self-normalized estimate `p_hat_smc`,
-the seed, the event count, and the runtime.
-
-This entry point uses the 32-step native MDLM decoder, a logit score,
-tilt increments of 0.5, and four RollBack–MH moves per level. Systematic
-resampling is triggered by ESS/N below 0.5 and skipped at the final level.
-A single estimate can be zero when its terminal population contains no event.
+[reproduce.py](reproduce.py) runs the canonical RollBack–SMC and crude MC
+experiment. Set the particle grid, seeds, checkpoints and comparison policy in
+[paper.yaml](configs/paper.yaml). Use `--mode run` for the experiment and
+`--mode analysis` to build the tables and figures from saved populations.
+The [reproduction guide](reproduction/README.md) covers crude MC, resume,
+archived inputs and the GPU integration test.
 
 ## Repository layout
 
-| Start here | Contents |
-| --- | --- |
-| [src/](src/diffusion_toxicity_smc_experiment/) | The estimator and reusable experiment code. `estimate.py` is the single-run entry point. |
-| [configs/](configs/) | Pinned model settings and named campaign configurations. The single-run command picks its own configuration. |
-| [artifacts/](artifacts/README.md) | Saved trajectories, particles, weights, checkpoints, CSVs, and reports. Each campaign's images are in its `plots/` folder. |
-| [reproduction/](reproduction/README.md) | Study protocols, Slurm launchers, offline analysis, and figure renderers. |
-| [tests/](tests/) | Sampler, numerical, and launcher checks. |
+- [src/](src/diffusion_toxicity_smc_experiment/) contains the reusable sampler,
+  estimators and analysis used to produce tables and figures.
+- [tests/](tests/) covers the paper workflow, the sampler and historical
+  numerical regressions. Those regressions use [legacy presets](configs/legacy/).
+- The [historical campaign notes](reproduction/docs/HISTORICAL_CAMPAIGNS.md)
+  identify the frozen sources and recovery commands. The
+  [results index](../shared/RESULTS_INDEX.md#mdlm-toxicity-experiments) links to
+  saved results and figures.
 
-The standalone source exporter is the smallest reproducible code bundle. It
-copies the 12 MDLM Python modules used by the estimator, two shared utility
-files, one resolved configuration, the dependency list, and the quick start.
+## Single estimate
 
 ```bash
-python mdlm/tools/export_mdlm_source.py
+python -m diffusion_toxicity_smc_experiment.estimate --particles 2 --tilt 0.5
 ```
 
-For the RollBack–MH derivation, see the [method notes](reproduction/docs/TRAJECTORY_RESAMPLE_MOVE.md).
-For the main figures, start with the [results index](../shared/RESULTS_INDEX.md#matched-budget-figures).
+The estimator loads about 1.2 GB of pinned model weights on first use. It
+defaults to CUDA. Set `--device cpu` for CPU or `--offline` for a prefilled
+model cache. Defaults are 64 particles, tilt 1, threshold 0.995 and seed 42.
+The JSON output includes the non-self-normalized estimate `p_hat_smc` and
+the event count.
+
+## Standalone source export
+
+From an installed checkout, run `python mdlm/tools/export_mdlm_source.py`
+to package the single-estimate command with its resolved configuration.

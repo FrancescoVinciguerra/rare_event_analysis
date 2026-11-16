@@ -176,7 +176,7 @@ def smc_run_directory(config: dict[str, Any], output_root: Path | None = None) -
 def run_benchmark_smc(
     config: dict[str, Any], *, output_root: Path | None, allow_network: bool
 ) -> Path:
-    validate_benchmark_config(config)
+    validate_benchmark_config(config, for_execution=True)
     decoder = config["decoder"]
     if decoder["generation_mode"] != "unconditional":
         raise ValueError("the current SMC benchmark requires unconditional generation")
@@ -307,9 +307,6 @@ def run_benchmark_smc(
                         "rollback_probabilities", []
                     )
                 ),
-                waste_free_chain_length=int(
-                    tilted_sampler_cfg.get("chain_length", 1)
-                ),
                 num_x0_samples=int(
                     tilted_sampler_cfg.get("num_x0_samples", 4)
                 ),
@@ -351,10 +348,7 @@ def run_benchmark_smc(
                     result.log_normalizer_estimate, 0.0, abs_tol=1e-10
                 ):
                     raise RuntimeError("lambda=0 did not reduce to the base sampler")
-                if (
-                    result.tilted_sampler_type != "trajectory_waste_free"
-                    and result.genealogy
-                ):
+                if result.genealogy:
                     raise RuntimeError("lambda=0 unexpectedly changed genealogy")
             corrected = result.reverse_snis.corrected_log_weights
             corrected_tensor = torch.tensor(corrected, dtype=torch.float64)
@@ -424,16 +418,6 @@ def run_benchmark_smc(
                         "event_toxic_probability": functions.last_event_rows[index][
                             "toxic_probability"
                         ],
-                        "waste_free_chain_id": (
-                            int(result.waste_free_chain_ids[index].cpu())
-                            if result.waste_free_chain_ids is not None
-                            else None
-                        ),
-                        "waste_free_chain_position": (
-                            int(result.waste_free_chain_positions[index].cpu())
-                            if result.waste_free_chain_positions is not None
-                            else None
-                        ),
                     }
                 )
             component_summary = {
@@ -496,30 +480,6 @@ def run_benchmark_smc(
                 "classifier_texts_scored": classifier_texts_scored,
                 "runtime_seconds": result.runtime_seconds,
                 "trajectory_storage_bytes": result.trajectory_storage_bytes,
-                "waste_free_seed_count": (
-                    component_config.num_particles
-                    // component_config.waste_free_chain_length
-                    if result.tilted_sampler_type == "trajectory_waste_free"
-                    else None
-                ),
-                "waste_free_chain_length": (
-                    component_config.waste_free_chain_length
-                    if result.tilted_sampler_type == "trajectory_waste_free"
-                    else None
-                ),
-                "waste_free_retained_states_per_level": (
-                    component_config.num_particles
-                    if result.tilted_sampler_type == "trajectory_waste_free"
-                    else None
-                ),
-                "waste_free_rejected_self_transitions": (
-                    sum(
-                        int(row["rejected_self_transitions"])
-                        for row in (result.waste_free_diagnostics or [])
-                    )
-                    if result.tilted_sampler_type == "trajectory_waste_free"
-                    else None
-                ),
                 "mcmc_proposals": sum(
                     int(row["proposals"])
                     for row in (result.mutation_diagnostics or [])
@@ -579,7 +539,6 @@ def run_benchmark_smc(
                     "genealogy": result.genealogy,
                     "level_diagnostics": result.level_diagnostics,
                     "mutation_diagnostics": result.mutation_diagnostics or [],
-                    "waste_free_diagnostics": result.waste_free_diagnostics or [],
                     "pre_final_resampling_log_weights": [
                         float(value)
                         for value in result.pre_final_resampling_log_weights.cpu().tolist()

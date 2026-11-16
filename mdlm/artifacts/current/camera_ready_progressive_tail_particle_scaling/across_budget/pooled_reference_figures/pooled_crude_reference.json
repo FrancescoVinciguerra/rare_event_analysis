@@ -1,0 +1,92 @@
+{
+  "decoder_id": "cb78b724cdaa4a7ec1c91955be80de5e169f77ab776a98ec3ae1dc6aa0cfb609",
+  "evaluator_id": "91e750abf0a456123b42a8aec27719a35e80950dd4c7387e6a3f47a62084691d",
+  "distinct_seed_streams": 1825,
+  "includes_matched_crude_pool": true,
+  "thresholds": [
+    0.99,
+    0.995,
+    0.999,
+    0.9995
+  ],
+  "cohorts": {
+    "original_direct": {
+      "samples": 200000,
+      "hits": [
+        444,
+        228,
+        26,
+        2
+      ]
+    },
+    "camera_ready_gradual_budget": {
+      "samples": 354420,
+      "hits": [
+        782,
+        388,
+        37,
+        2
+      ]
+    },
+    "camera_ready_accuracy_budget_pilot": {
+      "samples": 121355,
+      "hits": [
+        271,
+        119,
+        10,
+        2
+      ]
+    },
+    "camera_ready_crude_tail_reference": {
+      "samples": 300000,
+      "hits": [
+        685,
+        359,
+        40,
+        4
+      ]
+    }
+  },
+  "references": [
+    {
+      "threshold": 0.99,
+      "hits": 2182,
+      "samples": 975775,
+      "p_reference": 0.0022361712484947863,
+      "wilson_95": [
+        0.0021443889602986766,
+        0.002331872742907176
+      ]
+    },
+    {
+      "threshold": 0.995,
+      "hits": 1094,
+      "samples": 975775,
+      "p_reference": 0.0011211601035074684,
+      "wilson_95": [
+        0.001056695891688277,
+        0.0011895523007236643
+      ]
+    },
+    {
+      "threshold": 0.999,
+      "hits": 113,
+      "samples": 975775,
+      "p_reference": 0.00011580538546283723,
+      "wilson_95": [
+        9.633215652925698e-05,
+        0.00013921451558045363
+      ]
+    },
+    {
+      "threshold": 0.9995,
+      "hits": 10,
+      "samples": 975775,
+      "p_reference": 1.0248264200251082e-05,
+      "wilson_95": [
+        5.566852047535579e-06,
+        1.8866408654295565e-05
+      ]
+    }
+  ]
+}

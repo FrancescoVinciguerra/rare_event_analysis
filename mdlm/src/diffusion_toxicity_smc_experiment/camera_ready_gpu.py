@@ -5,57 +5,30 @@ from collections import Counter
 from dataclasses import replace
 import json
 import hashlib
-import math
 from pathlib import Path
 import time
 
 import torch
 
+from . import pipeline
 from .configuration import fingerprint
+from .crude import native_clock_count, sample_batch as crude
 from .low_budget import crude_seed, study_configs, transition_budget
-from .pipeline import Context, component_config, finalize_population
 from .smc import run_smc_component
 from .storage import atomic_write_json, initialize_manifest
 
 
 @torch.inference_mode()
 def population(context,config,study,seed):
-    c=component_config(config,seed); f=context.functions
+    c=pipeline.component_config(config,seed); f=context.functions
     context.synchronize(); started=time.perf_counter()
     result=run_smc_component(sampler=context.sampler,fixed_prefix_token_ids=None,
         reward_fn=f.reward,event_fn=f.event,config=c,device=context.device)
-    return finalize_population(context, c, study['thresholds'], result, started)
+    return pipeline.finalize_population(context, c, study['thresholds'], result, started)
 
 
-@torch.inference_mode()
-def crude(context,seed,thresholds,*,count,policy='matched_transitions',target_seconds=None):
-    """Fixed sample count, chosen before observing ANY baseline sample.
-
-    Wall-clock counts use independent timing calibration, not a stopping rule
-    depending on the runtime/content of the baseline's own observations.
-    """
-    if count<1: raise ValueError('Empty crude budget')
-    g=torch.Generator(device=context.device.type).manual_seed(int(seed))
-    f=context.functions; d=context.config['decoder']; s=context.config['smc']
-    context.sampler.reset_nfe()
-    context.synchronize(); started=time.perf_counter()
-    paths,_=context.sampler.sample_trajectory(batch_size=count,sequence_length=d['sequence_length'],
-        num_steps=d['denoising_steps'],fixed_prefix_token_ids=None,device=context.device,
-        generator=g,microbatch_size=s['microbatch_size'])
-    f.reward(paths[:,-1]); f.event(paths[:,-1])
-    scores=[float(r['toxic_probability']) for r in f.last_event_rows]
-    estimates_out={str(a):sum(q>=a for q in scores)/len(scores) for a in thresholds}
-    context.synchronize(); elapsed=time.perf_counter()-started
-    return {'scores':scores,'seed':int(seed),'n':len(scores),'native_transitions':33*len(scores),
-        'runtime_seconds':elapsed,'nfe':context.sampler.nfe,'estimates':estimates_out,
-        'target_seconds':target_seconds,
-        'overshoot_seconds':max(0.,elapsed-target_seconds) if target_seconds is not None else None,
-        'policy':policy,'sample_count_chosen_before_generation':True}
-
-
-def wall_clock_count(smc_seconds,seconds_per_crude_sample):
-    if smc_seconds<=0 or seconds_per_crude_sample<=0: raise ValueError('Invalid timing calibration')
-    return max(1,math.floor(smc_seconds/seconds_per_crude_sample))
+def wall_clock_count(smc_seconds, seconds_per_crude_sample):
+    return native_clock_count(smc_seconds, seconds_per_crude_sample)
 
 
 def rows_for(population_data,baseline,study):
@@ -93,7 +66,7 @@ def run(study_path:Path,output_root:Path):
         for config in configs for i in range(study['independent_runs'])]
     def final_path(config,seed): return root/'runs'/f'N{config["smc"]["num_particles"]}_seed{seed}.json'
     if all(final_path(c,s).exists() for c,s in schedule): report(study_path,output_root); return
-    context=Context(configs[0])
+    context=pipeline.Context(configs[0])
     warm_started=time.perf_counter()
     population(context,configs[0],study,9824711)
     crude(context,9824712,study['thresholds'],count=16)

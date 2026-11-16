@@ -10,13 +10,14 @@ import numpy as np
 import pytest
 import torch
 
-from diffusion_toxicity_smc_experiment.exploratory import study_configs,plan,audit_population,report,assigned_runs
+from diffusion_toxicity_smc_experiment.exploratory import study_configs,plan,report,assigned_runs
 from diffusion_toxicity_smc_experiment.exploratory_kernel import run_scheduled_trajectory_component,validate_schedule
 from diffusion_toxicity_smc_experiment.smc import SMCComponentConfig,run_trajectory_resample_move_component
-from diffusion_toxicity_smc_experiment.low_budget import crude_seed,estimates
+from diffusion_toxicity_smc_experiment.low_budget import crude_seed
+from diffusion_toxicity_smc_experiment.pipeline import audit_population,estimates
 
 BASE=Path(__file__).resolve().parents[1]
-STUDY=BASE/'configs/mdlm_owt_exploration_v2.yaml'
+STUDY=BASE/'configs/legacy/mdlm_owt_exploration_v2.yaml'
 
 class NativeBinaryPaths:
     predictor='ddpm';mask_token_id=9
@@ -58,6 +59,64 @@ def test_explicit_linear_schedule_matches_original_kernel_exactly(levels):
 @pytest.mark.parametrize('grid',[[0,1,3],[.1,.1,3],[.1,1,2],[.1,3],[.1,float('nan'),3]])
 def test_invalid_schedules_fail_before_sampling(grid):
     with pytest.raises(ValueError):validate_schedule(grid,component())
+
+@pytest.mark.parametrize("final_resampling", [False, True])
+def test_generated_schedule_mutates_only_after_resampling(final_resampling):
+    args = kernel_args()
+    args["config"] = replace(
+        args["config"], ess_threshold=0.0, lambda_final=0.1,
+        mutation_policy="after_resampling", final_resampling=final_resampling,
+    )
+    result = run_trajectory_resample_move_component(**args)
+    assert [row["eta"] for row in result.level_diagnostics] == [
+        0.1 * level / 3 for level in (1, 2, 3)
+    ]
+    assert [row["resampled"] for row in result.level_diagnostics] == [
+        False, False, final_resampling,
+    ]
+    assert [row["mutation_sweeps"] for row in result.level_diagnostics] == [
+        0, 0, 4 if final_resampling else 0,
+    ]
+    assert "log_normalizer_increment" not in result.level_diagnostics[-1]
+    assert len(result.mutation_diagnostics) == (4 if final_resampling else 0)
+    if final_resampling:
+        assert result.genealogy[-1]["final_resampling"]
+        assert torch.equal(
+            result.final_log_weights, torch.full_like(result.final_log_weights, -math.log(64))
+        )
+    else:
+        assert torch.equal(result.final_log_weights, result.pre_final_resampling_log_weights)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"final_resampling": True}, "excludes final resampling"),
+        ({"mutation_policy": "after_resampling"}, "mutates at every level"),
+    ],
+)
+def test_explicit_schedule_retains_its_policy_restrictions(overrides, message):
+    with pytest.raises(ValueError, match=message):
+        validate_schedule([1.0, 2.0, 3.0], replace(component(), **overrides))
+
+
+def test_continuing_nonuniform_schedule_preserves_intermediate_resampling():
+    checkpoints = []
+    continuing = run_scheduled_trajectory_component(
+        **kernel_args(), schedule=[1.0, 1.75, 3.0],
+        population_observer=lambda **state: checkpoints.append(state),
+    )
+    args = kernel_args()
+    args["config"] = replace(args["config"], num_tempering_levels=1, lambda_final=1.0)
+    terminal = run_scheduled_trajectory_component(**args, schedule=[1.0])
+
+    assert [row["delta_lambda"] for row in continuing.level_diagnostics] == [1.0, 0.75, 1.25]
+    first_level = [state for state in checkpoints if state["level"] == 1]
+    assert len(first_level) == 4
+    assert all(state["resampled"] and not state["level_is_final"] for state in first_level)
+    assert not terminal.level_diagnostics[-1]["resampled"]
+    assert first_level[-1]["log_normalizer_estimate"] == terminal.log_normalizer_estimate
+
 
 def test_normalizer_ledger_covers_resampling_and_no_resampling():
     result=run_scheduled_trajectory_component(**kernel_args(),schedule=[1,2,3])
@@ -139,12 +198,13 @@ def test_merged_report_reads_independent_worker_directories(tmp_path):
 
 @pytest.mark.parametrize('workers',[1,3])
 def test_driver_interleaves_cases_and_resumes_saved_runs(tmp_path,monkeypatch,workers):
+    from diffusion_toxicity_smc_experiment import pipeline
     import diffusion_toxicity_smc_experiment.camera_ready_gpu as gpu
     import diffusion_toxicity_smc_experiment.exploratory_population as recorder
     import diffusion_toxicity_smc_experiment.exploratory as driver
     calls=[]
     monkeypatch.delenv('SLURM_JOB_ID',raising=False)
-    monkeypatch.setattr(gpu,'Context',lambda config:SimpleNamespace(config=config))
+    monkeypatch.setattr(pipeline,'Context',lambda config:SimpleNamespace(config=config))
     def population(context,config,study,seed):
         n=config['smc']['num_particles'];case=config['_exploration'];r=len(case['schedule']);m=case['moves_per_level']
         calls.append(('SMC',case['id'],seed))
@@ -155,7 +215,7 @@ def test_driver_interleaves_cases_and_resumes_saved_runs(tmp_path,monkeypatch,wo
     def crude(context,seed,thresholds,*,count,policy='matched_transitions',**kwargs):
         calls.append(('MC',seed));return {'seed':seed,'n':count,'scores':[.1]*count,'native_transitions':33*count,'runtime_seconds':.1,
             'policy':policy,'overshoot_seconds':None,'estimates':{str(a):0. for a in thresholds}}
-    monkeypatch.setattr(recorder,'population',population);monkeypatch.setattr(gpu,'crude',crude);monkeypatch.setattr(driver,'audit_population',lambda *args:True)
+    monkeypatch.setattr(recorder,'population',population);monkeypatch.setattr(gpu,'crude',crude);monkeypatch.setattr(pipeline,'audit_population',lambda *args:True)
     for rank in range(workers):driver.run(STUDY,tmp_path,worker_id=rank,workers=workers)
     driver.report(STUDY,tmp_path)
     smc=[x for x in calls if x[0]=='SMC']

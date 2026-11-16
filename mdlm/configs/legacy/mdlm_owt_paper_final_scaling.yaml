@@ -1,0 +1,37 @@
+extends: mdlm_owt_progressive_tail_particle_scaling.yaml
+study_name: camera_ready_paper_final_scaling
+output_subdirectory: camera_ready_paper_final_scaling
+paper_final_scaling: true
+thresholds: [0.99, 0.995, 0.999, 0.9995]
+plot_thresholds: [0.99, 0.995, 0.999, 0.9995]
+recorded_thresholds: [0.9995]
+checkpoint_tilts: {0.99: [0.5], 0.995: [1.0], 0.999: [2.5], 0.9995: [6.5]}
+independent_runs: 24
+warmup_base_seed: 27999411
+reuse_campaign: camera_ready_progressive_tail_particle_scaling
+reuse_particle_counts: [320, 384, 448, 512]
+reference:
+  samples: [975775, 975775, 975775, 975775]
+  discoveries: [2182, 1094, 113, 10]
+  source: artifacts/current/camera_ready_progressive_tail_particle_scaling/across_budget/pooled_reference_figures/pooled_crude_reference.json
+  source_sha256: 6c14e4551515238b6d651427de52fb86a17cf5d4e212eb2defb16c9c3ba26597
+configurations:
+  - &terminal
+    id: N32_L65
+    N: 32
+    seed_start: 2800000000
+    schedule: [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5]
+    moves_per_level: 4
+  - {<<: *terminal, id: N64_L65, N: 64, seed_start: 2800010000}
+  - {<<: *terminal, id: N98_L65, N: 98, seed_start: 2800020000}
+  - {<<: *terminal, id: N128_L65, N: 128, seed_start: 2000000000}
+  - {<<: *terminal, id: N160_L65, N: 160, seed_start: 2800030000}
+  - {<<: *terminal, id: N192_L65, N: 192, seed_start: 2800040000}
+  - {<<: *terminal, id: N224_L65, N: 224, seed_start: 2800050000}
+  - {<<: *terminal, id: N256_L65, N: 256, seed_start: 2500000000}
+  - {<<: *terminal, id: N320_L65, N: 320, seed_start: 2700000000}
+  - {<<: *terminal, id: N384_L65, N: 384, seed_start: 2700010000}
+  - {<<: *terminal, id: N448_L65, N: 448, seed_start: 2700020000}
+  - {<<: *terminal, id: N512_L65, N: 512, seed_start: 2700030000}
+resources:
+  SLURM_walltime: '18:00:00'

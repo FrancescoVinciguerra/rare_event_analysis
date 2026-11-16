@@ -13,7 +13,7 @@ from .pipeline import Context, audit_population
 
 
 BUNDLED_CONFIG = Path(__file__).with_name("estimator.json")
-CHECKOUT_CONFIG = Path(__file__).resolve().parents[2] / "configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
+CHECKOUT_CONFIG = Path(__file__).resolve().parents[2] / "configs/legacy/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
 
 
 def main() -> None:

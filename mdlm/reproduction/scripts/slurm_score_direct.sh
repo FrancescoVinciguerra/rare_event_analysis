@@ -19,7 +19,7 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 args=(
-  --config "${EVALUATOR_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct.yaml}"
+  --config "${EVALUATOR_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_common.yaml}"
   --output-root "${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}"
 )
 if [[ -n "${DIRECT_RUN:-}" ]]; then

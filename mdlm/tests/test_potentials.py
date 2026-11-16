@@ -12,7 +12,7 @@ import torch
 
 from diffusion_toxicity_smc_experiment.potentials import ToxicityPotential, potential_from_config
 from diffusion_toxicity_smc_experiment.run_smc import UnconditionalToxicityFunctions
-from diffusion_toxicity_smc_experiment.low_budget import estimates
+from diffusion_toxicity_smc_experiment.pipeline import audit_population, estimates
 
 BASE=Path(__file__).resolve().parents[1]
 
@@ -113,7 +113,6 @@ class LogitFunctions:
 def test_actual_recorder_uses_sigmoid_for_events_and_current_logit_for_correction(monkeypatch):
     from test_exploratory import NativeBinaryPaths,component
     from diffusion_toxicity_smc_experiment import exploratory_population as recorder
-    from diffusion_toxicity_smc_experiment.exploratory import audit_population
     monkeypatch.setattr(recorder,'component_config',lambda *_:component())
     context=SimpleNamespace(functions=LogitFunctions(),sampler=NativeBinaryPaths(),
                             device=torch.device('cpu'),synchronize=lambda:None)
@@ -140,8 +139,8 @@ def test_actual_recorder_uses_sigmoid_for_events_and_current_logit_for_correctio
 def test_logit_study_changes_only_phi_and_preserves_seeds_and_native_reference():
     from diffusion_toxicity_smc_experiment.accuracy_budget import study_configs,assigned_runs
     from diffusion_toxicity_smc_experiment.configuration import decoder_id,evaluator_id
-    old,old_configs=study_configs(BASE/'configs/mdlm_owt_same_run_ladder.yaml')
-    new,new_configs=study_configs(BASE/'configs/mdlm_owt_same_run_logit.yaml')
+    old,old_configs=study_configs(BASE/'configs/legacy/mdlm_owt_same_run_ladder.yaml')
+    new,new_configs=study_configs(BASE/'configs/legacy/mdlm_owt_same_run_logit.yaml')
     assert new['reuse_only_MC'] and new['independent_runs']==12
     assert [s for _,s in assigned_runs(old,old_configs,0,1)]==[s for _,s in assigned_runs(new,new_configs,0,1)]
     assert decoder_id(old_configs[0])==decoder_id(new_configs[0])
@@ -153,10 +152,11 @@ def test_logit_study_changes_only_phi_and_preserves_seeds_and_native_reference()
 
 
 def test_fresh_driver_saves_each_seed_resumes_and_never_calls_crude(tmp_path,monkeypatch):
+    from diffusion_toxicity_smc_experiment import pipeline
     from test_exploratory import NativeBinaryPaths
     from diffusion_toxicity_smc_experiment import same_run_reuse as runner
     from diffusion_toxicity_smc_experiment import camera_ready_gpu as gpu
-    study,configs=runner.study_configs(BASE/'configs/mdlm_owt_same_run_logit.yaml')
+    study,configs=runner.study_configs(BASE/'configs/legacy/mdlm_owt_same_run_logit.yaml')
     study=copy.deepcopy(study);study['independent_runs']=1
     monkeypatch.setattr(runner,'study_configs',lambda _: (study,configs))
     for key in ['SLURM_JOB_ID','SLURM_STEP_GPUS','CUDA_VISIBLE_DEVICES','SLURM_CPUS_PER_TASK']:
@@ -173,7 +173,7 @@ def test_fresh_driver_saves_each_seed_resumes_and_never_calls_crude(tmp_path,mon
         loads.append(config)
         return SimpleNamespace(functions=LogitFunctions(),sampler=NativeBinaryPaths(),
             device=torch.device('cpu'),synchronize=lambda:None,config=config)
-    monkeypatch.setattr(gpu,'Context',context)
+    monkeypatch.setattr(pipeline,'Context',context)
     def forbidden(*args,**kwargs):raise AssertionError('No new crude MC permitted')
     monkeypatch.setattr(gpu,'crude',forbidden)
     for _ in range(2):

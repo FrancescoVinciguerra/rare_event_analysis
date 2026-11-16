@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 import torch
 
@@ -167,7 +167,6 @@ class SMCComponentConfig:
     mutation_policy: str = "after_resampling"
     rollback_steps: tuple[int, ...] = ()
     rollback_probabilities: tuple[float, ...] = ()
-    waste_free_chain_length: int = 1
     num_x0_samples: int = 4
     intermediate_reward_aggregation: str = "logmeanexp"
 
@@ -188,11 +187,7 @@ class SMCComponentConfig:
             raise ValueError("microbatch_size must be positive when provided")
         if not 0.0 <= self.beta_start_fraction < 1.0:
             raise ValueError("beta_start_fraction must be in [0, 1)")
-        if self.tilted_sampler_type not in {
-            "fk_bootstrap",
-            "trajectory_resample_move",
-            "trajectory_waste_free",
-        }:
+        if self.tilted_sampler_type not in {"fk_bootstrap", "trajectory_resample_move"}:
             raise ValueError("invalid tilted_sampler_type")
         if self.num_tempering_levels <= 0:
             raise ValueError("num_tempering_levels must be positive")
@@ -200,15 +195,8 @@ class SMCComponentConfig:
             raise ValueError("mcmc_steps_per_level must be non-negative")
         if self.mutation_policy not in {"after_resampling", "every_level"}:
             raise ValueError("mutation_policy must be after_resampling or every_level")
-        trajectory_backend = self.tilted_sampler_type in {
-            "trajectory_resample_move",
-            "trajectory_waste_free",
-        }
-        if trajectory_backend:
-            if (
-                self.tilted_sampler_type == "trajectory_resample_move"
-                and self.mcmc_steps_per_level <= 0
-            ):
+        if self.tilted_sampler_type == "trajectory_resample_move":
+            if self.mcmc_steps_per_level <= 0:
                 raise ValueError("trajectory resample-move requires MCMC steps")
             if not self.rollback_steps:
                 raise ValueError("trajectory backends require rollback_steps")
@@ -225,22 +213,6 @@ class SMCComponentConfig:
                     sum(self.rollback_probabilities), 1.0, abs_tol=1e-9
                 ):
                     raise ValueError("rollback probabilities must sum to one")
-        if self.tilted_sampler_type == "trajectory_waste_free":
-            if self.waste_free_chain_length < 2:
-                raise ValueError("trajectory waste-free requires chain_length >= 2")
-            if self.num_particles % self.waste_free_chain_length != 0:
-                raise ValueError(
-                    "num_particles must be divisible by waste-free chain_length"
-                )
-            if self.mutation_policy != "every_level":
-                raise ValueError(
-                    "trajectory waste-free requires mutation_policy='every_level'"
-                )
-            if self.final_resampling:
-                raise ValueError(
-                    "trajectory waste-free requires final_resampling=false; the "
-                    "terminal weighted chain population is part of Algorithm 2"
-                )
 
 
 @dataclass
@@ -261,9 +233,6 @@ class SMCComponentResult:
     tilted_sampler_type: str = "fk_bootstrap"
     mutation_diagnostics: list[dict[str, Any]] | None = None
     trajectory_storage_bytes: int = 0
-    waste_free_diagnostics: list[dict[str, Any]] | None = None
-    waste_free_chain_ids: torch.Tensor | None = None
-    waste_free_chain_positions: torch.Tensor | None = None
 
 
 def _apply_potential(
@@ -698,6 +667,35 @@ def run_trajectory_resample_move_component(
     config: SMCComponentConfig,
     device: torch.device | str,
 ) -> SMCComponentResult:
+    """Run RollBack–MH with the benchmark's generated linear schedule."""
+
+    schedule = (
+        float(config.lambda_final) * level / config.num_tempering_levels
+        for level in range(1, config.num_tempering_levels + 1)
+    )
+    return _run_trajectory_tempering(
+        sampler=sampler,
+        fixed_prefix_token_ids=fixed_prefix_token_ids,
+        reward_fn=reward_fn,
+        event_fn=event_fn,
+        config=config,
+        device=device,
+        schedule=schedule,
+    )
+
+
+def _run_trajectory_tempering(
+    *,
+    sampler: NativeMDLMSampler,
+    fixed_prefix_token_ids: torch.Tensor | None,
+    reward_fn: RewardFunction,
+    event_fn: EventFunction,
+    config: SMCComponentConfig,
+    device: torch.device | str,
+    schedule: Iterable[float],
+    record_weight_updates: bool = False,
+    population_observer: Callable[..., None] | None = None,
+) -> SMCComponentResult:
     """Annealed path-space SMC with exact native-decoder rollback MH moves.
 
     The state is the full MDLM trajectory.  Adjacent SMC targets are
@@ -742,10 +740,29 @@ def run_trajectory_resample_move_component(
     mutation_diagnostics: list[dict[str, Any]] = []
     log_z = 0.0
     pre_final_log_weights = log_weights.clone()
+    native_transitions = count * (config.num_steps + 1)
+    if population_observer is not None:
+        population_observer(
+            level=0,
+            sweep=0,
+            target_lambda=0.0,
+            terminal_tokens=trajectories[:, -1],
+            rewards=rewards,
+            normalized_log_weights=log_weights,
+            log_normalizer_estimate=log_z,
+            native_transitions=native_transitions,
+            resampled=False,
+            level_is_final=False,
+            mutation_row=None,
+        )
 
     previous_eta = 0.0
-    for level in range(1, config.num_tempering_levels + 1):
-        eta = float(config.lambda_final) * level / config.num_tempering_levels
+    weight_diagnostics: dict[str, Any] = {}
+    for level, eta in enumerate(schedule, 1):
+        if record_weight_updates:
+            trace_old_log_weights = log_weights.detach().cpu().tolist()
+            trace_rewards = rewards.detach().cpu().tolist()
+            trace_log_z_before = log_z
         unnormalized = log_weights + (eta - previous_eta) * rewards
         log_increment = torch.logsumexp(unnormalized, dim=0)
         if not bool(torch.isfinite(log_increment).item()):
@@ -798,12 +815,39 @@ def run_trajectory_resample_move_component(
                     sweep=sweep,
                 )
                 mutation_diagnostics.append(mutation_row)
+                if population_observer is not None:
+                    native_transitions += (
+                        int(mutation_row["rollback_particle_steps"]) + int(mutation_row["proposals"])
+                    )
+                    population_observer(
+                        level=level,
+                        sweep=sweep + 1,
+                        target_lambda=eta,
+                        terminal_tokens=trajectories[:, -1],
+                        rewards=rewards,
+                        normalized_log_weights=log_weights,
+                        log_normalizer_estimate=log_z,
+                        native_transitions=native_transitions,
+                        resampled=should_resample,
+                        level_is_final=is_final,
+                        mutation_row=mutation_row,
+                    )
 
+        if record_weight_updates:
+            weight_diagnostics = {
+                "log_normalizer_increment": float(log_increment.item()),
+                "log_normalizer_estimate": log_z,
+                "log_z_before_weight": trace_log_z_before,
+                "previous_normalized_log_weights": trace_old_log_weights,
+                "rewards_before_mutation": trace_rewards,
+                "delta_lambda": eta - previous_eta,
+            }
         level_diagnostics.append(
             {
                 "level": int(level),
                 "checkpoint": True,
                 "eta": eta,
+                **weight_diagnostics,
                 "ess": ess_before,
                 "ess_before_resampling": ess_before,
                 "ess_after_resampling": ess_from_log_weights(log_weights),
@@ -870,275 +914,6 @@ def run_trajectory_resample_move_component(
     )
 
 
-@torch.inference_mode()
-def run_trajectory_waste_free_component(
-    *,
-    sampler: NativeMDLMSampler,
-    fixed_prefix_token_ids: torch.Tensor | None,
-    reward_fn: RewardFunction,
-    event_fn: EventFunction,
-    config: SMCComponentConfig,
-    device: torch.device | str,
-) -> SMCComponentResult:
-    """Waste-free annealed path SMC using the exact rollback-MH kernel.
-
-    At every tempering level, ``M = N / P`` seed paths are resampled from the
-    current weighted population.  Each seed starts a length-``P`` Markov chain
-    invariant for that current target.  The seed and every subsequent MH state
-    are retained, yielding exactly ``M * P = N`` states, which are then
-    reweighted by the next incremental potential.  Rejected proposals appear
-    as repeated *current* states; the rejected proposal itself is not promoted
-    to a particle.
-    """
-
-    if config.tilted_sampler_type != "trajectory_waste_free":
-        raise ValueError("waste-free backend requires its matching sampler type")
-    if getattr(sampler, "predictor", "ddpm") != "ddpm":
-        raise ValueError("trajectory waste-free currently requires predictor='ddpm'")
-
-    device = torch.device(device)
-    generator = torch.Generator(device=device.type).manual_seed(config.seed)
-    count = config.num_particles
-    chain_length = config.waste_free_chain_length
-    seed_count = count // chain_length
-    sampler.reset_nfe()
-    started = time.perf_counter()
-
-    trajectories, prefix = sampler.sample_trajectory(
-        batch_size=count,
-        sequence_length=config.sequence_length,
-        num_steps=config.num_steps,
-        fixed_prefix_token_ids=fixed_prefix_token_ids,
-        device=device,
-        generator=generator,
-        microbatch_size=config.microbatch_size,
-    )
-    expected_shape = (count, config.num_steps + 2, config.sequence_length)
-    if tuple(trajectories.shape) != expected_shape:
-        raise RuntimeError(
-            f"complete trajectory shape {tuple(trajectories.shape)} != {expected_shape}"
-        )
-    rewards = reward_fn(trajectories[:, -1]).to(device=device, dtype=torch.float64)
-    if not bool(torch.isfinite(rewards).all().item()):
-        raise FloatingPointError("initial trajectory rewards contain NaN or Inf")
-
-    log_weights = torch.full(
-        (count,), -math.log(count), dtype=torch.float64, device=device
-    )
-    root_ancestors = torch.arange(count, device=device)
-    genealogy: list[dict[str, Any]] = []
-    level_diagnostics: list[dict[str, Any]] = []
-    mutation_diagnostics: list[dict[str, Any]] = []
-    waste_free_diagnostics: list[dict[str, Any]] = []
-    log_z = 0.0
-    pre_final_log_weights = log_weights.clone()
-    final_chain_ids = torch.empty(0, dtype=torch.long, device=device)
-    final_chain_positions = torch.empty(0, dtype=torch.long, device=device)
-
-    previous_eta = 0.0
-    for level in range(1, config.num_tempering_levels + 1):
-        eta = float(config.lambda_final) * level / config.num_tempering_levels
-        is_final = level == config.num_tempering_levels
-        seed_resampling_ess = ess_from_log_weights(log_weights)
-        seed_resampling_max_weight = float(log_weights.max().exp().item())
-
-        # Algorithm 2 of Dau--Chopin: select M ancestors from the weighted
-        # population representing Pi_{r-1}, then retain all P states of M
-        # rollback-MH chains invariant for Pi_{r-1}.
-        parents = resample_indices(
-            log_weights,
-            method=config.resampling_method,
-            generator=generator,
-            num_samples=seed_count,
-        )
-        current_trajectories = trajectories.index_select(0, parents)
-        current_rewards = rewards.index_select(0, parents)
-        seed_roots = root_ancestors.index_select(0, parents)
-
-        chain_trajectories = torch.empty(
-            (seed_count, chain_length, *current_trajectories.shape[1:]),
-            dtype=current_trajectories.dtype,
-            device=device,
-        )
-        chain_rewards = torch.empty(
-            (seed_count, chain_length), dtype=torch.float64, device=device
-        )
-        chain_trajectories[:, 0].copy_(current_trajectories)
-        chain_rewards[:, 0].copy_(current_rewards)
-
-        level_rows: list[dict[str, Any]] = []
-        for position in range(1, chain_length):
-            current_trajectories, current_rewards, mutation_row = (
-                _trajectory_mutation_sweep(
-                    trajectories=current_trajectories,
-                    rewards=current_rewards,
-                    sampler=sampler,
-                    reward_fn=reward_fn,
-                    target_lambda=previous_eta,
-                    config=config,
-                    generator=generator,
-                    level=level,
-                    sweep=position - 1,
-                )
-            )
-            mutation_row.update(
-                {
-                    "waste_free": True,
-                    "chain_position": int(position),
-                    "chain_length": int(chain_length),
-                    "seed_count": int(seed_count),
-                }
-            )
-            mutation_diagnostics.append(mutation_row)
-            level_rows.append(mutation_row)
-            chain_trajectories[:, position].copy_(current_trajectories)
-            chain_rewards[:, position].copy_(current_rewards)
-
-        trajectories = chain_trajectories.reshape(
-            count, config.num_steps + 2, config.sequence_length
-        )
-        rewards = chain_rewards.reshape(count)
-        root_ancestors = seed_roots.repeat_interleave(chain_length)
-        final_chain_ids = torch.arange(seed_count, device=device).repeat_interleave(
-            chain_length
-        )
-        final_chain_positions = torch.arange(
-            chain_length, device=device
-        ).repeat(seed_count)
-        log_weights = torch.full(
-            (count,), -math.log(count), dtype=torch.float64, device=device
-        )
-
-        # The retained, unweighted chain population targets Pi_{r-1}.  Apply
-        # the next Feynman--Kac potential to obtain the weighted Pi_r sample.
-        unnormalized = log_weights + (eta - previous_eta) * rewards
-        log_increment = torch.logsumexp(unnormalized, dim=0)
-        if not bool(torch.isfinite(log_increment).item()):
-            raise FloatingPointError("tempering weights have no finite normalizer")
-        log_weights = unnormalized - log_increment
-        log_z += float(log_increment.item())
-        output_ess = ess_from_log_weights(log_weights)
-        output_max_weight = float(log_weights.max().exp().item())
-        if is_final:
-            pre_final_log_weights = log_weights.clone()
-
-        expanded_parents = parents.repeat_interleave(chain_length)
-        distinct_roots = len(
-            set(int(value) for value in root_ancestors.cpu().tolist())
-        )
-        genealogy.append(
-            {
-                "level": int(level),
-                "seed_target_lambda": previous_eta,
-                "output_target_lambda": eta,
-                "waste_free": True,
-                "seed_count": int(seed_count),
-                "chain_length": int(chain_length),
-                "parents": [int(value) for value in parents.cpu().tolist()],
-                "expanded_seed_parents": [
-                    int(value) for value in expanded_parents.cpu().tolist()
-                ],
-                "final_resampling": False,
-                "distinct_root_ancestors": distinct_roots,
-            }
-        )
-        proposals = sum(int(row["proposals"]) for row in level_rows)
-        accepted = sum(int(row["accepted"]) for row in level_rows)
-        waste_free_row = {
-            "level": int(level),
-            "mh_target_lambda": previous_eta,
-            "output_target_lambda": eta,
-            "population_size": int(count),
-            "seed_count": int(seed_count),
-            "chain_length": int(chain_length),
-            "mh_transitions_per_chain": int(chain_length - 1),
-            "proposals": proposals,
-            "accepted": accepted,
-            "rejected_self_transitions": proposals - accepted,
-            "acceptance_rate": accepted / proposals if proposals else None,
-            "log_normalizer_increment": float(log_increment.item()),
-            "distinct_seed_particles": len(
-                set(int(value) for value in parents.cpu().tolist())
-            ),
-            "distinct_root_ancestors": distinct_roots,
-        }
-        waste_free_diagnostics.append(waste_free_row)
-        level_diagnostics.append(
-            {
-                "level": int(level),
-                "checkpoint": True,
-                "eta": eta,
-                "mh_target_lambda": previous_eta,
-                "log_normalizer_increment": float(log_increment.item()),
-                "ess": output_ess,
-                "ess_before_resampling": seed_resampling_ess,
-                "ess_after_resampling": float(count),
-                "ess_after_incremental_weighting": output_ess,
-                "max_normalized_weight_before_resampling": (
-                    seed_resampling_max_weight
-                ),
-                "max_normalized_weight_after_resampling": 1.0 / count,
-                "max_normalized_weight_after_incremental_weighting": (
-                    output_max_weight
-                ),
-                "resampled": True,
-                "resampling_reason": "waste_free_population_refresh",
-                "mutated": True,
-                "mutation_sweeps": int(chain_length - 1),
-                "waste_free_seed_count": int(seed_count),
-                "waste_free_chain_length": int(chain_length),
-                "terminal": is_final,
-                "distinct_root_ancestors": distinct_roots,
-            }
-        )
-        previous_eta = eta
-
-    terminal_tokens = trajectories[:, -1]
-    if bool((terminal_tokens == sampler.mask_token_id).any().item()):
-        raise RuntimeError("terminal trajectory particles still contain masks")
-    terminal_rewards = reward_fn(terminal_tokens).to(device=device, dtype=torch.float64)
-    _validate_terminal_reward_recheck(
-        rewards,
-        terminal_rewards,
-        backend="trajectory_waste_free",
-    )
-    rewards = terminal_rewards
-    events = event_fn(terminal_tokens).to(device=device, dtype=torch.bool)
-    if prefix.numel() and not torch.equal(
-        terminal_tokens[:, : prefix.numel()], prefix.expand(count, -1)
-    ):
-        raise RuntimeError("fixed prefix changed during trajectory waste-free SMC")
-
-    post_final_log_weights = log_weights.clone()
-    reverse = reverse_snis_component(
-        final_log_weights=log_weights,
-        rewards=rewards,
-        events=events,
-        lambda_final=config.lambda_final,
-    )
-    return SMCComponentResult(
-        terminal_tokens=terminal_tokens,
-        rewards=rewards,
-        events=events,
-        final_log_weights=log_weights,
-        pre_final_resampling_log_weights=pre_final_log_weights,
-        post_final_resampling_log_weights=post_final_log_weights,
-        root_ancestors=root_ancestors,
-        genealogy=genealogy,
-        level_diagnostics=level_diagnostics,
-        reverse_snis=reverse,
-        log_normalizer_estimate=log_z,
-        nfe=sampler.nfe,
-        runtime_seconds=time.perf_counter() - started,
-        tilted_sampler_type="trajectory_waste_free",
-        mutation_diagnostics=mutation_diagnostics,
-        trajectory_storage_bytes=trajectories.numel() * trajectories.element_size(),
-        waste_free_diagnostics=waste_free_diagnostics,
-        waste_free_chain_ids=final_chain_ids,
-        waste_free_chain_positions=final_chain_positions,
-    )
-
-
 def run_smc_component(
     *,
     sampler: NativeMDLMSampler,
@@ -1161,15 +936,6 @@ def run_smc_component(
         )
     if config.tilted_sampler_type == "trajectory_resample_move":
         return run_trajectory_resample_move_component(
-            sampler=sampler,
-            fixed_prefix_token_ids=fixed_prefix_token_ids,
-            reward_fn=reward_fn,
-            event_fn=event_fn,
-            config=config,
-            device=device,
-        )
-    if config.tilted_sampler_type == "trajectory_waste_free":
-        return run_trajectory_waste_free_component(
             sampler=sampler,
             fixed_prefix_token_ids=fixed_prefix_token_ids,
             reward_fn=reward_fn,

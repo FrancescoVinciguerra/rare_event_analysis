@@ -46,6 +46,7 @@ from diffusion_toxicity_smc_experiment.run_smc import (
     UnconditionalToxicityFunctions,
     _aggregate,
     _component_seed,
+    run_benchmark_smc,
     smc_manifest,
     smc_run_directory,
 )
@@ -94,7 +95,7 @@ from diffusion_toxicity_smc_experiment.submission_probability import (
 
 
 EXPERIMENT_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_ROOT = EXPERIMENT_ROOT / "configs"
+CONFIG_ROOT = EXPERIMENT_ROOT / "configs/legacy"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -927,220 +928,6 @@ def test_trajectory_resample_move_lambda_zero_remains_the_base_path_measure() ->
     assert sum(row["accepted"] for row in result.mutation_diagnostics or []) == 64
 
 
-class DeterministicWasteFreeToySampler(TrajectoryToySampler):
-    def __init__(self) -> None:
-        super().__init__()
-        self.next_terminal_value = 3
-
-    def sample_trajectory(
-        self,
-        *,
-        batch_size,
-        sequence_length,
-        num_steps,
-        fixed_prefix_token_ids,
-        device,
-        generator,
-        microbatch_size=None,
-    ):
-        del generator, microbatch_size
-        assert fixed_prefix_token_ids is None or fixed_prefix_token_ids.numel() == 0
-        path = torch.zeros(
-            (batch_size, num_steps + 2, sequence_length),
-            dtype=torch.long,
-            device=device,
-        )
-        self.nfe += num_steps
-        return path, torch.empty(0, dtype=torch.long, device=device)
-
-    def rollout_trajectory_suffix(
-        self,
-        checkpoint_states,
-        *,
-        start_step,
-        num_steps,
-        generator,
-        microbatch_size=None,
-    ):
-        del generator, microbatch_size
-        batch_size, sequence_length = checkpoint_states.shape
-        depth = num_steps - start_step
-        self.rollout_batches.append((depth, batch_size))
-        suffix = checkpoint_states[:, None].expand(
-            batch_size, depth + 2, sequence_length
-        ).clone()
-        suffix[:, -1] = self.next_terminal_value
-        self.next_terminal_value += 1
-        self.nfe += depth
-        return suffix
-
-
-def test_trajectory_waste_free_retains_every_mh_chain_state() -> None:
-    sampler = DeterministicWasteFreeToySampler()
-    result = run_smc_component(
-        sampler=sampler,
-        fixed_prefix_token_ids=torch.empty(0, dtype=torch.long),
-        reward_fn=lambda tokens: tokens[:, -1].double(),
-        event_fn=lambda tokens: tokens[:, -1] >= 3,
-        config=SMCComponentConfig(
-            num_particles=12,
-            num_steps=2,
-            sequence_length=3,
-            lambda_final=0.0,
-            final_resampling=False,
-            seed=19,
-            tilted_sampler_type="trajectory_waste_free",
-            num_tempering_levels=1,
-            mutation_policy="every_level",
-            rollback_steps=(1,),
-            rollback_probabilities=(1.0,),
-            waste_free_chain_length=3,
-        ),
-        device="cpu",
-    )
-
-    assert result.tilted_sampler_type == "trajectory_waste_free"
-    assert result.terminal_tokens.shape == (12, 3)
-    assert result.waste_free_chain_ids is not None
-    assert result.waste_free_chain_positions is not None
-    assert result.waste_free_chain_ids.tolist() == [
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        2,
-        2,
-        2,
-        3,
-        3,
-        3,
-    ]
-    assert result.waste_free_chain_positions.tolist() == [0, 1, 2] * 4
-    terminals = result.terminal_tokens[:, -1].reshape(4, 3)
-    torch.testing.assert_close(
-        terminals,
-        torch.tensor([[0, 3, 4]] * 4, dtype=torch.long),
-    )
-    assert len(result.genealogy) == 1
-    assert len(result.genealogy[0]["parents"]) == 4
-    assert len(result.genealogy[0]["expanded_seed_parents"]) == 12
-    assert len(result.mutation_diagnostics or []) == 2
-    assert sum(row["proposals"] for row in result.mutation_diagnostics or []) == 8
-    assert sum(row["accepted"] for row in result.mutation_diagnostics or []) == 8
-    assert result.waste_free_diagnostics is not None
-    waste_free_row = result.waste_free_diagnostics[0]
-    assert waste_free_row["population_size"] == 12
-    assert waste_free_row["seed_count"] == 4
-    assert waste_free_row["chain_length"] == 3
-    assert waste_free_row["mh_transitions_per_chain"] == 2
-    assert waste_free_row["proposals"] == 8
-    assert waste_free_row["accepted"] == 8
-    assert waste_free_row["rejected_self_transitions"] == 0
-    torch.testing.assert_close(
-        result.final_log_weights,
-        torch.full((12,), -math.log(12), dtype=torch.float64),
-    )
-    assert result.log_normalizer_estimate == pytest.approx(0.0, abs=1e-12)
-    assert result.trajectory_storage_bytes == 12 * 4 * 3 * 8
-
-
-def test_trajectory_waste_free_requires_factorable_population() -> None:
-    with pytest.raises(ValueError, match="divisible"):
-        SMCComponentConfig(
-            num_particles=10,
-            num_steps=2,
-            sequence_length=3,
-            lambda_final=1.0,
-            final_resampling=False,
-            tilted_sampler_type="trajectory_waste_free",
-            num_tempering_levels=2,
-            mutation_policy="every_level",
-            rollback_steps=(1,),
-            waste_free_chain_length=3,
-        )
-
-
-def test_trajectory_waste_free_matches_algorithm2_move_then_weight_order() -> None:
-    result = run_smc_component(
-        sampler=DeterministicWasteFreeToySampler(),
-        fixed_prefix_token_ids=torch.empty(0, dtype=torch.long),
-        reward_fn=lambda tokens: tokens[:, -1].double(),
-        event_fn=lambda tokens: tokens[:, -1] >= 3,
-        config=SMCComponentConfig(
-            num_particles=12,
-            num_steps=2,
-            sequence_length=3,
-            lambda_final=1.0,
-            final_resampling=False,
-            seed=23,
-            tilted_sampler_type="trajectory_waste_free",
-            num_tempering_levels=2,
-            mutation_policy="every_level",
-            rollback_steps=(1,),
-            rollback_probabilities=(1.0,),
-            waste_free_chain_length=3,
-        ),
-        device="cpu",
-    )
-
-    mutation_targets = [
-        row["target_lambda"] for row in result.mutation_diagnostics or []
-    ]
-    assert mutation_targets == pytest.approx([0.0, 0.0, 0.5, 0.5])
-    expected_first_increment = math.log(
-        (1.0 + math.exp(0.5 * 3.0) + math.exp(0.5 * 4.0)) / 3.0
-    )
-    assert result.level_diagnostics[0]["log_normalizer_increment"] == pytest.approx(
-        expected_first_increment, abs=1e-12
-    )
-    assert result.level_diagnostics[0]["mh_target_lambda"] == 0.0
-    assert result.level_diagnostics[1]["mh_target_lambda"] == 0.5
-    assert result.waste_free_diagnostics is not None
-    assert result.waste_free_diagnostics[0]["output_target_lambda"] == 0.5
-    assert result.waste_free_diagnostics[1]["output_target_lambda"] == 1.0
-    assert ess_from_log_weights(result.final_log_weights) < 12.0
-    torch.testing.assert_close(
-        result.pre_final_resampling_log_weights,
-        result.post_final_resampling_log_weights,
-    )
-
-
-def test_one_level_waste_free_reverse_correction_cancels_the_tilt() -> None:
-    result = run_smc_component(
-        sampler=TrajectoryToySampler(),
-        fixed_prefix_token_ids=torch.empty(0, dtype=torch.long),
-        reward_fn=lambda tokens: tokens[:, -1].double(),
-        event_fn=lambda tokens: tokens[:, -1] == 1,
-        config=SMCComponentConfig(
-            num_particles=24,
-            num_steps=2,
-            sequence_length=3,
-            lambda_final=1.25,
-            final_resampling=False,
-            seed=29,
-            tilted_sampler_type="trajectory_waste_free",
-            num_tempering_levels=1,
-            mutation_policy="every_level",
-            rollback_steps=(1, 2),
-            rollback_probabilities=(0.5, 0.5),
-            waste_free_chain_length=3,
-        ),
-        device="cpu",
-    )
-
-    corrected = torch.tensor(
-        result.reverse_snis.corrected_log_weights, dtype=torch.float64
-    )
-    torch.testing.assert_close(
-        corrected,
-        torch.full((24,), -math.log(24), dtype=torch.float64),
-        atol=1e-12,
-        rtol=0.0,
-    )
-
-
 def test_lambda_zero_reduces_to_unconditional_base_sampler() -> None:
     result = run_smc_component(
         sampler=ToySampler(),
@@ -1499,55 +1286,6 @@ def test_tilted_sampler_is_interchangeable_without_changing_decoder_or_evaluator
         "num_particles",
     ):
         assert baseline["smc"][key] == resample_move["smc"][key]
-
-
-def test_waste_free_profile_is_an_interchangeable_smc_backend() -> None:
-    baseline = load_yaml(
-        experiment_config("mdlm_owt_unconditional_estimation_100tok.yaml")
-    )
-    waste_free = load_yaml(
-        experiment_config(
-            "mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml"
-        )
-    )
-    validate_benchmark_config(waste_free)
-    sampler = waste_free["smc"]["tilted_sampler"]
-    assert sampler == {
-        "type": "trajectory_waste_free",
-        "implementation_version": "waste_free_trajectory_rollback_mh_v1",
-        "num_tempering_levels": 8,
-        "mutation_policy": "every_level",
-        "chain_length": 4,
-        "rollback_steps": [4, 8, 16, 24, 32],
-        "rollback_probabilities": [0.2] * 5,
-    }
-    assert waste_free["smc"]["final_resampling"] is False
-    assert waste_free["smc"]["num_particles"] == 512
-    assert decoder_id(waste_free) == decoder_id(baseline)
-    assert evaluator_id(waste_free) == evaluator_id(baseline)
-    assert fingerprint(smc_manifest(waste_free)) != fingerprint(smc_manifest(baseline))
-
-
-def test_waste_free_config_rejects_nonfactorable_chain_length() -> None:
-    config = load_yaml(
-        experiment_config(
-            "mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml"
-        )
-    )
-    config["smc"]["tilted_sampler"]["chain_length"] = 3
-    with pytest.raises(ValueError, match="divisible"):
-        validate_benchmark_config(config)
-
-
-def test_waste_free_config_rejects_terminal_resampling() -> None:
-    config = load_yaml(
-        experiment_config(
-            "mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml"
-        )
-    )
-    config["smc"]["final_resampling"] = True
-    with pytest.raises(ValueError, match="final_resampling: false"):
-        validate_benchmark_config(config)
 
 
 def test_matched_fk_profile_changes_only_sampler_and_keeps_512_particles() -> None:
@@ -1933,16 +1671,13 @@ def test_final_confirmatory_suite_uses_disjoint_multi_budget_seeds() -> None:
     assert not seeds.intersection(prior_seeds)
 
 
-def test_all_serious_configs_survive_child_process_json_round_trip(
+def test_runnable_suite_configs_survive_child_process_json_round_trip(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     suite_path = experiment_config(
-        "mdlm_owt_unconditional_serious_comparison.yaml"
+        "mdlm_owt_unconditional_final_confirmatory.yaml"
     ).resolve()
-    with suite_path.open(encoding="utf-8") as handle:
-        import yaml
-
-        suite = yaml.safe_load(handle)
+    suite = load_suite(suite_path)
     invocations: list[Path] = []
 
     def fake_subprocess_run(command, check):
@@ -1975,12 +1710,12 @@ def test_all_serious_configs_survive_child_process_json_round_trip(
         suite, suite_path=suite_path, output_root=output_root
     )
 
-    assert len(invocations) == 12
+    assert len(invocations) == 4
     completion = json.loads((suite_dir / "completion.json").read_text(encoding="utf-8"))
-    assert completion["completed_grid_items"] == 12
+    assert completion["completed_grid_items"] == 4
 
 
-def test_real_gpu_validation_suite_covers_every_method_and_two_budgets() -> None:
+def test_historical_gpu_validation_suite_metadata_covers_all_methods() -> None:
     suite_path = experiment_config(
         "mdlm_owt_unconditional_three_smc_gpu_validation.yaml"
     ).resolve()
@@ -2179,7 +1914,7 @@ def test_serious_report_builds_csv_json_and_boxplots(tmp_path: Path) -> None:
 def test_optional_real_unconditional_model_smoke_is_explicitly_opt_in() -> None:
     if os.environ.get("RUN_MDLM_GPU_INTEGRATION") != "1":
         pytest.skip("set RUN_MDLM_GPU_INTEGRATION=1 with pinned artifacts to run")
-    config = load_yaml(experiment_config("mdlm_owt_unconditional_smoke.yaml"))
+    config = load_yaml(experiment_config("mdlm_owt_unconditional_smoke_technical.yaml"))
     runtime = load_generator_runtime(config, local_files_only=True)
     decoder = config["decoder"]
     sampler = NativeMDLMSampler(
@@ -2320,3 +2055,16 @@ def test_legacy_serious_suite_keeps_its_avon_artifact_identity() -> None:
     assert fingerprint(manifest) == (
         "cfc61727355e356a4a961dbabf0fee7b5395b8992da506e40a42fdc6a307095d"
     )
+
+
+def test_waste_free_execution_is_rejected_before_output(tmp_path: Path) -> None:
+    config = load_yaml(
+        experiment_config("mdlm_owt_unconditional_estimation_100tok_trajectory_waste_free.yaml")
+    )
+    suite_path = experiment_config("mdlm_owt_unconditional_serious_comparison.yaml")
+    output_root = tmp_path / "outputs"
+    with pytest.raises(ValueError, match="retired and read-only"):
+        run_benchmark_smc(config, output_root=output_root, allow_network=False)
+    with pytest.raises(ValueError, match="retired and read-only"):
+        run_comparison_suite(load_suite(suite_path), suite_path=suite_path, output_root=output_root)
+    assert not output_root.exists()

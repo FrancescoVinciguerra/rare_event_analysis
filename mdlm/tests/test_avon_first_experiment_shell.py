@@ -208,10 +208,8 @@ def test_matched_fk_trajectory_dry_run_uses_only_one_smc_job() -> None:
 @pytest.mark.parametrize(
     ("stage", "partition", "gres", "memory", "walltime", "script"),
     [
-        ("method-validation", "gpu-devel", "gpu:quadro_rtx_6000:1", "20G", "01:00:00", "slurm_avon_serious_smc.sh"),
         ("direct-reference", "gpu", "gpu:quadro_rtx_6000:1", "16G", "12:00:00", "slurm_generate_direct.sh"),
         ("score-reference", "gpu", "gpu:quadro_rtx_6000:1", "16G", "04:00:00", "slurm_score_direct.sh"),
-        ("smc-grid", "gpu", "gpu:quadro_rtx_6000:1", "20G", "2-00:00:00", "slurm_avon_serious_smc.sh"),
         ("report", "devel", "none", "4G", "00:30:00", "slurm_avon_serious_report.sh"),
     ],
 )
@@ -235,10 +233,22 @@ def test_serious_comparison_submits_one_stage_at_a_time(
     if stage == "direct-reference":
         assert "--array=0" in command
         assert "mdlm-direct32-200000" in output
-    if stage == "method-validation":
-        assert "mdlm_owt_unconditional_three_smc_gpu_validation.yaml" in output
     if stage == "report":
         assert "--gres" not in command
+
+
+@pytest.mark.parametrize("stage", ["method-validation", "smc-grid"])
+def test_serious_comparison_rejects_retired_sampling_stages(stage: str) -> None:
+    script = EXPERIMENT_ROOT / "reproduction/scripts/submit_avon_serious_comparison.sh"
+    result = subprocess.run(
+        [_bash_executable(), str(script), stage],
+        cwd=REPOSITORY_ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 2
+    assert "Waste-Free execution is retired" in result.stderr
+    assert "command=" not in result.stdout
 
 
 @pytest.mark.parametrize(

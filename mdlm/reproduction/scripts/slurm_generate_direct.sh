@@ -21,7 +21,7 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 python -m diffusion_toxicity_smc_experiment.generate_direct \
-  --config "${DIRECT_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct.yaml}" \
+  --config "${DIRECT_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_common.yaml}" \
   --target-samples "${TARGET_SAMPLES}" \
   --output-root "${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}" \
   --task-index "${SLURM_ARRAY_TASK_ID}" \

@@ -11,7 +11,8 @@ from pathlib import Path
 import numpy as np
 
 from .accuracy_budget import assigned_runs, study_configs
-from .exploratory import audit_population
+from .pipeline import audit_population
+from .paper_analysis import checkpoint_log_estimates, select_populations, terminal_log_estimates
 from .same_run_reuse import calibration_for, fixed_mc_block, mc_pool, native_clock_count, write_csv
 from .storage import atomic_write_json
 
@@ -41,73 +42,9 @@ def log_relative_error(delta):
     return math.log1p(-math.expm1(delta)) / math.log(10)
 
 
-def terminal_log_estimates(population, threshold):
-    particles = population["particles"]
-    summary = population["summary"]
-    reverse = np.array([p["final_log_weight"] - summary["lambda"] * p["reward"] for p in particles])
-    event = np.array([p["event_toxic_probability"] >= threshold for p in particles])
-    numerator = float(np.logaddexp.reduce(reverse[event], initial=-np.inf))
-    return (summary["log_normalizer_estimate"] + numerator,
-            numerator - float(np.logaddexp.reduce(reverse)), int(event.sum()))
-
-
-def checkpoint_log_estimates(checkpoint, threshold):
-    reverse = np.asarray(checkpoint["normalized_log_weights"]) - checkpoint["lambda"] * np.asarray(checkpoint["rewards"])
-    event = np.asarray(checkpoint["scores"]) >= threshold
-    numerator = float(np.logaddexp.reduce(reverse[event], initial=-np.inf))
-    return (checkpoint["log_z_hat"] + numerator,
-            numerator - float(np.logaddexp.reduce(reverse)), int(event.sum()))
-
-
-def selected_populations(population, study, refs):
-    """Use the actual post-MH checkpoints, with the measured cumulative cost."""
-    summary = population["summary"]
-    final_tilt = summary["lambda"]
-    targets = study.get("checkpoint_tilts")
-    native = summary["total_decoder_particle_steps"] + summary["num_particles"] + summary["mcmc_proposals"]
-    terminal = dict(
-        tilt=final_tilt, seconds=summary["runtime_seconds"], native=native,
-        acceptance=summary["mcmc_acceptance_rate"], ess=summary["final_smc_ess"],
-        roots=summary["distinct_root_ancestors"], checkpoint=None,
-    )
-    if not targets:
-        yield terminal, refs
-        return
-
-    n = summary["num_particles"]
-    moves = population["mutation_diagnostics"]
-    counts = [(0, 0, 33 * n)]
-    for move in moves:
-        cumulative = counts[-1][2] + move["rollback_particle_steps"] + move["proposals"]
-        counts.append((move["level"], move["sweep"] + 1, cumulative))
-    checkpoints = population["population_checkpoints"]
-    previous_seconds = -1.0
-    for cp, (level, sweep, transitions) in zip(checkpoints, counts, strict=True):
-        seconds = cp["runtime_seconds_cumulative"]
-        if ((cp["level"], cp["sweep"], cp["native_transitions_cumulative"]) != (level, sweep, transitions)
-                or cp["num_particles"] != n or seconds <= previous_seconds):
-            raise ValueError("Invalid checkpoint time or transition ledger")
-        previous_seconds = seconds
-    if previous_seconds != terminal["seconds"] or counts[-1][2] != native:
-        raise ValueError("Final checkpoint cost differs from the measured terminal cost")
-
-    selected = {(cp["lambda"]): cp for cp in checkpoints if cp["sweep"] == 4}
-    levels = {row["eta"]: row for row in population["level_diagnostics"]}
-    for tilt in sorted({tilt for tilts in targets.values() for tilt in tilts}):
-        events = {threshold: ref for threshold, ref in refs.items() if tilt in targets[threshold]}
-        if tilt == final_tilt:
-            yield terminal, events
-            continue
-        cp = selected[tilt]
-        level = levels[tilt]
-        used_moves = [move for move in moves if move["level"] <= cp["level"]]
-        if cp["log_z_hat"] != level["log_normalizer_estimate"]:
-            raise ValueError("Checkpoint and level normalizers disagree")
-        yield dict(
-            tilt=tilt, seconds=cp["runtime_seconds_cumulative"], native=cp["native_transitions_cumulative"],
-            acceptance=sum(m["accepted"] for m in used_moves) / sum(m["proposals"] for m in used_moves),
-            ess=cp["smc_ess_fraction"] * n, roots=level["distinct_root_ancestors"], checkpoint=cp,
-        ), events
+def selected_populations(population, study, refs, *, sweeps_per_level=4, denoising_steps=32):
+    return select_populations(population, study.get("checkpoint_tilts"), refs,
+                              sweeps_per_level=sweeps_per_level, denoising_steps=denoising_steps)
 
 
 def summarize(rows):
@@ -164,16 +101,23 @@ def comparison_rows(study, configs, root, pool):
             for threshold, ref in events.items():
                 if cp is None:
                     smc, snis, event_particles = terminal_log_estimates(population, threshold)
-                    saved = population["corrections"][str(threshold)]
+                    corrections = population["corrections"]
                 else:
                     smc, snis, event_particles = checkpoint_log_estimates(cp, threshold)
-                    saved = cp["corrections"][str(threshold)]
+                    corrections = cp["corrections"]
+                if study.get("paper_final_scaling") and threshold not in study["recorded_thresholds"]:
+                    # Reverse ESS depends on weights and rewards, independent of the event threshold.
+                    reverse_ess = corrections[str(study["recorded_thresholds"][0])]["reverse_ess_fraction"]
+                    saved = None
+                else:
+                    saved = corrections[str(threshold)]
+                    reverse_ess = saved["reverse_ess_fraction"]
                 crude_hits = int((prefix >= threshold).sum())
                 crude = math.log(crude_hits / crude_n) if crude_hits else -math.inf
-                if saved["event_particles"] != event_particles or any(
+                if saved is not None and (saved["event_particles"] != event_particles or any(
                     not math.isclose(math.exp(v), saved[m], rel_tol=1e-12)
                     for m, v in (("smc", smc), ("snis", snis))
-                ):
+                )):
                     raise ValueError("Log-space reconstruction differs from the saved estimators")
                 row = dict(configuration=case["id"], seed=seed, replicate=replicate, N=n,
                            **{"lambda": tilt}, threshold=threshold, p_reference=ref,
@@ -182,7 +126,7 @@ def comparison_rows(study, configs, root, pool):
                            crude_pool_start=start, smc_seconds=seconds,
                            crude_calibration_seconds_per_path=calibration["seconds_per_path"],
                            smc_native_transitions=state["native"], smc_acceptance=state["acceptance"],
-                           smc_ess=state["ess"], reverse_ess_fraction=saved["reverse_ess_fraction"],
+                           smc_ess=state["ess"], reverse_ess_fraction=reverse_ess,
                            distinct_root_ancestors=state["roots"])
                 if study.get("checkpoint_tilts"):
                     exact_n = state["native"] // 33

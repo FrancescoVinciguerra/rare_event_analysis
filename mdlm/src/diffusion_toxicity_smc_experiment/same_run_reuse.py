@@ -8,11 +8,9 @@ prefixes within a seed are correlated across checkpoints, as intended.
 from __future__ import annotations
 import argparse
 import copy
-import csv
 import hashlib
 from html import escape
 import json
-import math
 import os
 from pathlib import Path
 import socket
@@ -21,44 +19,12 @@ import time
 import numpy as np
 
 from .accuracy_budget import assigned_runs, study_configs
-from .exploratory import audit_population
-from .storage import atomic_write_json, initialize_manifest
+from .crude import fixed_mc_block, native_clock_count
+from .paper_reuse import calibration_for
+from .pipeline import audit_population
+from .storage import atomic_write_json, initialize_manifest, write_csv
 from .configuration import fingerprint
 from .potentials import potential_from_config
-
-
-def native_clock_count(seconds, seconds_per_path):
-    if seconds<=0 or seconds_per_path<=0:raise ValueError('Invalid measured cost')
-    return max(1,math.floor(seconds/seconds_per_path))
-
-
-def fixed_mc_block(scores, *, seed_rank, total_seeds, required):
-    """Blocks fixed by planned seed rank, never by successes or available SMC runs."""
-    size=len(scores)//total_seeds
-    if not 0<=seed_rank<total_seeds or not 1<=required<=size:
-        raise ValueError('Saved independent MC pool does not cover the fixed seed block')
-    start=seed_rank*size
-    return scores[start:start+required],start,size
-
-
-def write_csv(path,rows):
-    if not rows:return
-    with path.open('w',encoding='utf-8',newline='') as handle:
-        writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
-
-
-def calibration_for(root,population):
-    device=population['timing_device']
-    matches=[]
-    for path in sorted(root.glob('workers/worker_*/calibration_*.json')):
-        data=json.loads(path.read_text(encoding='utf-8'))
-        physical=('hostname','SLURM_STEP_GPUS','CUDA_VISIBLE_DEVICES','SLURM_CPUS_PER_TASK')
-        if all(data['timing_device'].get(k)==device.get(k) for k in physical):
-            if not data['excluded_from_estimates_and_measured_run_times']:
-                raise ValueError('Timing calibration was not independent')
-            matches.append((path,data))
-    if not matches:raise ValueError('No independent calibration for this GPU and CPU allocation')
-    return matches[0]
 
 
 def mc_pool(pool_root,study):
@@ -182,8 +148,8 @@ def report(study_path,output_root,pool_root):
 
 
 def run(study_path,output_root,worker_id,workers,max_seconds):
-    from .camera_ready_gpu import Context
     from .exploratory_population import population
+    from .pipeline import Context
     import torch
     study,configs=study_configs(study_path)
     root=Path(output_root)/study['output_subdirectory'];worker=root/'workers'/f'worker_{worker_id}'
@@ -229,8 +195,8 @@ def run_fresh(study_path,output_root,worker_id,workers,max_seconds,calibration_r
     Reuse an independent calibration only on the SAME physical GPU and CPU
     allocation. Worker manifests protect seed/config/source identity on resume.
     """
-    from .camera_ready_gpu import Context
     from .exploratory_population import population
+    from .pipeline import Context
     import torch
 
     study,configs=study_configs(study_path)
@@ -281,10 +247,12 @@ def run_fresh(study_path,output_root,worker_id,workers,max_seconds,calibration_r
     if not pending:
         print('All assigned SMC ladders already saved; no computation repeated',flush=True)
         return
+    # Keep score evaluation and timed corrections identical to the original terminal runs.
+    simulation_study = {**study, 'thresholds': study.get('recorded_thresholds', study['thresholds'])}
     started=time.monotonic();context=Context(configs[0])
     warm=copy.deepcopy(configs[0]);warm['smc']['num_particles']=study['warmup_paths']
     context.config=warm
-    warmed=population(context,warm,{**study,'record_population_checkpoints':False},study['warmup_base_seed']+worker_id*100)
+    warmed=population(context,warm,{**simulation_study,'record_population_checkpoints':False},study['warmup_base_seed']+worker_id*100)
     atomic_write_json(worker/f"warmup_{os.environ.get('SLURM_JOB_ID','local')}.json",dict(
         summary=warmed['summary'],phi=potential_from_config(warm).manifest(),
         excluded_from_estimates_and_measured_run_times=True,new_MC_generation=False))
@@ -293,7 +261,7 @@ def run_fresh(study_path,output_root,worker_id,workers,max_seconds,calibration_r
             print('Soft deadline: complete saved ladders retained for resume',flush=True)
             return
         context.config=config
-        result=population(context,config,study,seed);result['timing_device']=device
+        result=population(context,config,simulation_study,seed);result['timing_device']=device
         audit_population(result,config)
         atomic_write_json(destination(config,seed),result)
         summary = result['summary']

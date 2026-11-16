@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import os
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
+from hashlib import sha256
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -78,6 +81,39 @@ def initialize_manifest(run_dir: Path, manifest: dict[str, Any]) -> None:
         return
     run_dir.mkdir(parents=True, exist_ok=True)
     atomic_write_json(path, manifest)
+
+
+def write_csv(path, rows):
+    if rows:
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+
+
+def read_json(path):
+    return json.loads(path.read_bytes())
+
+
+def file_hash(path):
+    return sha256(path.read_bytes()).hexdigest()
+
+
+@contextmanager
+def output_lock(root):
+    """Serialize writers, including when a previous process was interrupted."""
+    root.mkdir(parents=True, exist_ok=True)
+    with (root / ".lock").open("a+b") as handle:
+        try:
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as exc:
+            raise RuntimeError(f"An experiment is already writing to {root}") from exc
+        yield
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:

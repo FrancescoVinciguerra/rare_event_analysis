@@ -7,7 +7,7 @@ import torch
 
 from test_exploratory import kernel_args
 from diffusion_toxicity_smc_experiment.exploratory_kernel import run_scheduled_trajectory_component
-from diffusion_toxicity_smc_experiment.low_budget import estimates
+from diffusion_toxicity_smc_experiment.pipeline import estimates
 from diffusion_toxicity_smc_experiment.population_checkpoints import first_event_checkpoint
 
 
@@ -100,7 +100,7 @@ def test_measured_MC_uses_each_saved_checkpoint_time_and_distinct_streams(tmp_pa
 def test_prepared_same_run_study_has_no_independent_endpoint_chains():
     from pathlib import Path
     from diffusion_toxicity_smc_experiment.accuracy_budget import study_configs,assigned_runs
-    path=Path(__file__).resolve().parents[1]/'configs/mdlm_owt_same_run_ladder.yaml'
+    path=Path(__file__).resolve().parents[1]/'configs/legacy/mdlm_owt_same_run_ladder.yaml'
     study,configs=study_configs(path)
     assert [c['smc']['num_particles'] for c in configs]==[128]
     assert study['record_population_checkpoints'] and study['same_run_ladder']

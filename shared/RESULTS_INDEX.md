@@ -31,6 +31,13 @@ verification records describe which notebook versions were actually run.
 
 ## MDLM toxicity experiments
 
+The [paper experiment](../mdlm/reproduction/README.md#paper-experiment-with-terminal-tilt-65)
+defines 384 ladders at terminal tilt 6.5. The earlier Avon campaign planned
+288 ladders in job `2149818`, including 96 populations from job `2134669`.
+Its [pooled crude reference](../mdlm/artifacts/current/camera_ready_progressive_tail_particle_scaling/across_budget/pooled_reference_figures/pooled_crude_reference.json)
+uses 975,775 trajectories. See the [historical campaign notes](../mdlm/reproduction/docs/HISTORICAL_CAMPAIGNS.md#earlier-288-run-avon-experiment)
+for the archived experiment and source bundle.
+
 The toxicity threshold q is a classifier score. The estimated event
 probabilities are 444/200,000 for q ≥ 0.99, 334/298,800 for q ≥ 0.995,
 and 26/200,000 for q ≥ 0.999.
@@ -68,8 +75,9 @@ Phi, and normalizers, and all MC prefix estimates and source hashes were
 verified. Cross-platform float64 differences were below 4e-15 relative.
 The earlier [3-run partial snapshot](../mdlm/artifacts/current/camera_ready_same_run_logit/PARTIAL_STATUS.json)
 is retained as historical provenance; it is superseded by the completion record.
-See also the [configuration](../mdlm/configs/mdlm_owt_same_run_logit.yaml)
-and [methods](../mdlm/reproduction/docs/SAME_RUN_LOGIT.md).
+See also the [configuration](../mdlm/configs/legacy/mdlm_owt_same_run_logit.yaml)
+and the archived offline verifier, `verify_same_run_ladder_results.py`, in the
+[historical sources](../mdlm/reproduction/docs/HISTORICAL_CAMPAIGNS.md#retired-checkout-files).
 
 For the completed same-run ladder, MC reuses a frozen pool of independent
 native trajectories in fixed disjoint blocks across seeds, with nested prefixes
@@ -97,10 +105,8 @@ potential. [Logit checkpoints](../mdlm/artifacts/current/camera_ready_same_run_l
 
 Relative standard deviation is the sample standard deviation across the
 12 independent runs at each fixed tilt, divided by the event's reference
-probability. All zero estimates contribute to this calculation. Run
-`python mdlm/reproduction/analysis/add_threshold_0995.py`
-from the repository root to regenerate the tables and figures from saved
-populations and crude scores.
+probability. All zero estimates contribute to this calculation. The [historical recipe](../mdlm/reproduction/docs/HISTORICAL_CAMPAIGNS.md#retired-checkout-files)
+regenerates the tables and figures from saved populations and crude scores.
 
 ## Paper analysis bundle
 

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import csv
 import hashlib
 from html import escape
 import json
@@ -22,9 +21,9 @@ import time
 import numpy as np
 
 from .configuration import decoder_id, evaluator_id, fingerprint, load_yaml
-from .exploratory import audit_population
 from .low_budget import crude_seed
-from .storage import atomic_write_json, initialize_manifest
+from .pipeline import audit_population
+from .storage import atomic_write_json, initialize_manifest, write_csv
 from .potentials import ToxicityPotential
 
 
@@ -36,7 +35,10 @@ def study_configs(path):
     ultra_low = study.get('ultra_low_particle_budget', False)
     deeper_tilt = study.get('deeper_tilt_budget', False)
     extreme_tail = study.get('extreme_tail_scaling', False)
-    if scaling:
+    paper_final = study.get('paper_final_scaling', False)
+    if paper_final:
+        expected_thresholds = [.99, .995, .999, .9995]
+    elif scaling:
         if extreme_tail:
             expected_thresholds = [.9995]
         else:
@@ -49,7 +51,12 @@ def study_configs(path):
         raise ValueError('Every threshold needs its own independent reference count')
     if scaling:
         checkpoint_tilts = study.get('checkpoint_tilts')
-        if extreme_tail:
+        if paper_final:
+            expected_cases = {(n, 6.5) for n in (32, 64, 98, 128, 160, 192, 224, 256, 320, 384, 448, 512)}
+            expected_checkpoints = {.99: [.5], .995: [1.], .999: [2.5], .9995: [6.5]}
+            if study['independent_runs'] != 24 or study['recorded_thresholds'] != [.9995]:
+                raise ValueError('The paper campaign must use 24 seeds and the original score recording policy')
+        elif extreme_tail:
             if study.get('terminal_particle_scaling', False):
                 expected_cases = {(n, 6.5) for n in (320, 384, 448, 512)}
                 expected_checkpoints = {.9995: [6.5]}
@@ -110,7 +117,7 @@ def study_configs(path):
         s.update(num_particles=int(case['N']),independent_runs=int(study['independent_runs']),
             num_independent_runs=int(study['independent_runs']),tilted_lambdas=[grid[-1]],
             tilted_component_weights_a=[1.],diagnostic_lambdas=[],final_resampling=False,
-            base_seed=int(study['base_seed'])+i*10000)
+            base_seed=int(case['seed_start']) if paper_final else int(study['base_seed'])+i*10000)
         m.update(num_tempering_levels=len(grid),mcmc_steps_per_level=case['moves_per_level'],mutation_policy='every_level')
         if s['resampling_method']!='systematic' or s['ess_threshold']!=.5:
             raise ValueError('The ESS/systematic policy changed')
@@ -120,6 +127,10 @@ def study_configs(path):
             s['phi'] = ToxicityPotential(study['phi']).name
         c['_exploration']={**case,'schedule':grid,'label':f"{case['id']}, tilt={grid[-1]:g}, MH={case['moves_per_level']}"}
         configs.append(c)
+    if paper_final:
+        seeds = [seed for _, seed in assigned_runs(study, configs, 0, 1)]
+        if len(set(seeds)) != len(seeds):
+            raise ValueError('A seed is repeated across paper configurations')
     return study,configs
 
 
@@ -180,11 +191,6 @@ def summarize(rows,study):
                     positive_99999_runs=sum(r[f'{method}_event_99999'] for r in group),
                 )
     return out
-
-
-def write_csv(path,rows):
-    with path.open('w',encoding='utf-8',newline='') as f:
-        w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
 
 
 def checkpoint_comparisons(context,c,study,seed,p,terminal_baseline,*,root,seconds_per_path,timing_device,deadline=None):
@@ -295,7 +301,8 @@ def report(path,output_root):
 
 
 def run(path,output_root,worker_id=0,workers=3,max_seconds=20700):
-    from .camera_ready_gpu import Context, crude, rows_for, wall_clock_count
+    from .camera_ready_gpu import crude, rows_for, wall_clock_count
+    from .pipeline import Context
     from .exploratory_population import population
     study,configs=study_configs(path);tasks=assigned_runs(study,configs,worker_id,workers)
     root=Path(output_root)/study['output_subdirectory']/'workers'/f'worker_{worker_id}'

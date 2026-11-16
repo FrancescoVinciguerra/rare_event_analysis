@@ -17,7 +17,14 @@ from typing import Any, Iterable, Sequence
 
 import yaml
 
-from .configuration import canonical_json, decoder_id, evaluator_id, fingerprint, load_yaml
+from .configuration import (
+    canonical_json,
+    decoder_id,
+    evaluator_id,
+    fingerprint,
+    load_yaml,
+    validate_benchmark_config,
+)
 from .evaluation import direct_unconditional_summary
 from .generate_direct import direct_run_directory
 from .run_smc import smc_manifest, smc_run_directory
@@ -130,8 +137,6 @@ def resolved_comparison_entries(
             config["smc"]["base_seed"] = (
                 base_seed + seed_offset + budget_seed_stride * budget_index
             )
-            # smc_manifest performs the full benchmark validation, including
-            # the N=M*P divisibility constraint for waste-free SMC.
             manifest = smc_manifest(config)
             entries.append(
                 {
@@ -281,10 +286,12 @@ def _csv_text(rows: Sequence[dict[str, Any]]) -> str:
 def run_comparison_suite(
     suite: dict[str, Any], *, suite_path: Path, output_root: Path
 ) -> Path:
+    entries = resolved_comparison_entries(suite, suite_path)
+    for entry in entries:
+        validate_benchmark_config(entry["config"], for_execution=True)
     manifest = comparison_manifest(suite, suite_path)
     suite_dir = comparison_run_directory(suite, suite_path, output_root)
     initialize_manifest(suite_dir, {"suite_id": fingerprint(manifest), **manifest})
-    entries = resolved_comparison_entries(suite, suite_path)
     completed: list[dict[str, Any]] = []
     for position, entry in enumerate(entries, start=1):
         config = entry["config"]

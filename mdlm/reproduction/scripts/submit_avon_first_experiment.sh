@@ -59,7 +59,7 @@ case "$stage" in
   direct-256)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
     export TARGET_SAMPLES=256
-    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct_32.yaml"
+    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_direct_32.yaml"
     job_name=mdlm-direct32-256
     walltime=00:45:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_generate_direct.sh"
@@ -72,7 +72,7 @@ case "$stage" in
     ;;
   score-direct)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export EVALUATOR_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct_32.yaml"
+    export EVALUATOR_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_direct_32.yaml"
     job_name=mdlm-score-direct32
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_score_direct.sh"
@@ -85,7 +85,7 @@ case "$stage" in
     ;;
   lambda-calibration)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_lambda_calibration.yaml"
+    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_lambda_calibration.yaml"
     job_name=mdlm-lambda-calibration
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_run_smc.sh"
@@ -98,7 +98,7 @@ case "$stage" in
     ;;
   progressive-calibration)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_lambda_progressive.yaml"
+    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_lambda_progressive.yaml"
     job_name=mdlm-lambda-progressive
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_run_smc.sh"
@@ -111,7 +111,7 @@ case "$stage" in
     ;;
   estimation-100tok)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_estimation_100tok.yaml"
+    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_estimation_100tok.yaml"
     job_name=mdlm-estimation-100tok
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_run_smc.sh"
@@ -124,7 +124,7 @@ case "$stage" in
     ;;
   estimation-100tok-trajectory-mh)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
+    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
     job_name=mdlm-estimation-100tok-trajectory-mh
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_run_smc.sh"
@@ -137,7 +137,7 @@ case "$stage" in
     ;;
   estimation-100tok-trajectory-mh-matched-fk)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh_matched_fk.yaml"
+    export SMC_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_estimation_100tok_trajectory_mh_matched_fk.yaml"
     job_name=mdlm-estimation-100tok-trajectory-mh-matched-fk
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_run_smc.sh"
@@ -149,7 +149,7 @@ case "$stage" in
     log_pattern="${LOG_DIR}/${job_name}-%j.{out,err}"
     ;;
   calibration-report)
-    export CALIBRATION_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_lambda_calibration.yaml"
+    export CALIBRATION_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_lambda_calibration.yaml"
     job_name=mdlm-calibration-report
     walltime=00:10:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_avon_calibration_report.sh"
@@ -163,7 +163,7 @@ case "$stage" in
   direct-1000)
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
     export TARGET_SAMPLES=1000
-    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct_32.yaml"
+    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_direct_32.yaml"
     job_name=mdlm-direct32-1000
     walltime=01:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_generate_direct.sh"

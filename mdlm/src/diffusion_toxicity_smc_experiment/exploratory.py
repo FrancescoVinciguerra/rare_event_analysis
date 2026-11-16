@@ -7,7 +7,6 @@ All new files live in a new study directory, preserving the previous pilot.
 from __future__ import annotations
 import argparse
 import copy
-import csv
 import hashlib
 from html import escape
 import json
@@ -19,8 +18,7 @@ import numpy as np
 
 from .configuration import decoder_id, evaluator_id, fingerprint, load_yaml
 from .low_budget import crude_seed, transition_budget
-from .pipeline import audit_population as audit_population
-from .storage import atomic_write_json, initialize_manifest
+from .storage import atomic_write_json, initialize_manifest, write_csv
 
 
 def study_configs(path):
@@ -60,11 +58,6 @@ def plan(path):
     return {'status':'prepared_not_submitted','study':study,'configurations':cases,
         'comparison':'Each run receives floor(actual native transitions / 33) complete crude paths',
         'selection':'Exploratory results only; any final choice requires independent validation runs'}
-
-
-def write_csv(path,rows):
-    with path.open('w',encoding='utf-8',newline='') as f:
-        writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
 
 
 def assigned_runs(study,configs,worker_id=0,workers=1):
@@ -125,8 +118,9 @@ def report(path,output_root,*,root_override=None):
 
 
 def run(path,output_root,*,max_seconds=19800,worker_id=0,workers=1):
-    from .camera_ready_gpu import Context, crude, rows_for
+    from .camera_ready_gpu import crude, rows_for
     from .exploratory_population import population
+    from .pipeline import Context, audit_population
     study,configs=study_configs(path);root=Path(output_root)/study['output_subdirectory']
     schedule=assigned_runs(study,configs,worker_id,workers)
     if workers>1:root=root/'workers'/f'worker_{worker_id}'

@@ -8,11 +8,12 @@ import torch
 import importlib.util
 
 from diffusion_toxicity_smc_experiment.low_budget import (
-    estimates, transition_budget, plan, study_configs, crude_seed, report,
+    transition_budget, plan, study_configs, crude_seed, report,
 )
 from diffusion_toxicity_smc_experiment.configuration import validate_benchmark_config
+from diffusion_toxicity_smc_experiment.pipeline import component_config, estimates
 
-STUDY=Path(__file__).resolve().parents[1]/'configs/mdlm_owt_camera_ready_low_budget.yaml'
+STUDY=Path(__file__).resolve().parents[1]/'configs/legacy/mdlm_owt_camera_ready_low_budget.yaml'
 
 
 @pytest.mark.parametrize('threshold,expected',[(.9,.2),(.99,.05),(1.,0.)])
@@ -146,7 +147,6 @@ def test_clock_and_transition_rows_are_not_pooled_in_report(tmp_path):
 
 
 def test_gpu_driver_uses_agreed_existing_kernel_configuration():
-    from diffusion_toxicity_smc_experiment.camera_ready_gpu import component_config
     _,configs=study_configs(STUDY)
     for config in configs:
         c=component_config(config,123)
@@ -187,6 +187,7 @@ def test_timed_crude_produces_complete_native_paths_and_keeps_zeros(monkeypatch)
 
 def test_paired_driver_checkpoints_and_resumes_without_regeneration(tmp_path,monkeypatch):
     from types import SimpleNamespace
+    from diffusion_toxicity_smc_experiment import pipeline
     import diffusion_toxicity_smc_experiment.camera_ready_gpu as gpu
     counts={'population':0,'crude':0,'context':0}
     def context(config):
@@ -207,7 +208,7 @@ def test_paired_driver_checkpoints_and_resumes_without_regeneration(tmp_path,mon
         return {'seed':seed,'n':count,'scores':[.1]*count,'native_transitions':33*count,
             'runtime_seconds':.1*count,'policy':policy,'overshoot_seconds':0.,
             'estimates':{str(a):0. for a in thresholds}}
-    monkeypatch.setattr(gpu,'Context',context)
+    monkeypatch.setattr(pipeline,'Context',context)
     monkeypatch.setattr(gpu,'population',fake_population)
     monkeypatch.setattr(gpu,'crude',fake_crude)
     gpu.run(STUDY,tmp_path)

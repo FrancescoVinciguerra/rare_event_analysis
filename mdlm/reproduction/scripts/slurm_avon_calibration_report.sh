@@ -15,5 +15,5 @@ avon_print_cpu_diagnostics
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 python -m diffusion_toxicity_smc_experiment.calibration_report \
-  --config "${CALIBRATION_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_lambda_calibration.yaml}" \
+  --config "${CALIBRATION_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_lambda_calibration.yaml}" \
   --output-root "${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}"

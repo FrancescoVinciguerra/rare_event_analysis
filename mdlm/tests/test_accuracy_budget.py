@@ -9,10 +9,11 @@ import numpy as np
 import pytest
 
 from diffusion_toxicity_smc_experiment import accuracy_budget as module
-from diffusion_toxicity_smc_experiment.low_budget import crude_seed,estimates
+from diffusion_toxicity_smc_experiment.low_budget import crude_seed
+from diffusion_toxicity_smc_experiment.pipeline import estimates
 
 
-STUDY=Path(__file__).resolve().parents[1]/'configs/mdlm_owt_accuracy_budget_pilot.yaml'
+STUDY=Path(__file__).resolve().parents[1]/'configs/legacy/mdlm_owt_accuracy_budget_pilot.yaml'
 
 
 def test_frozen_model_terminal_schedules_and_all_independent_streams():
@@ -47,12 +48,13 @@ def test_means_medians_and_zero_counts_include_all_runs_without_accuracy_cutoffs
 
 
 def test_driver_measures_real_terminal_runs_uses_independent_calibration_and_resumes(tmp_path,monkeypatch):
+    from diffusion_toxicity_smc_experiment import pipeline
     import diffusion_toxicity_smc_experiment.camera_ready_gpu as gpu
     import diffusion_toxicity_smc_experiment.exploratory_population as recorder
     study,configs=module.study_configs(STUDY);study=copy.deepcopy(study);study['independent_runs']=1
     monkeypatch.setattr(module,'study_configs',lambda _: (study,configs))
     monkeypatch.delenv('SLURM_JOB_ID',raising=False)
-    monkeypatch.setattr(gpu,'Context',lambda config:SimpleNamespace(config=config))
+    monkeypatch.setattr(pipeline,'Context',lambda config:SimpleNamespace(config=config))
     calls=[]
     def population(context,config,study,seed):
         s=config['smc'];n=s['num_particles'];lam=s['tilted_lambdas'][0]

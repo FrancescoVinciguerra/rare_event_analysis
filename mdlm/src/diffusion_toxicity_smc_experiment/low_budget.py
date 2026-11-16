@@ -17,7 +17,6 @@ from pathlib import Path
 import numpy as np
 
 from .configuration import decoder_id, evaluator_id, fingerprint, load_yaml
-from .pipeline import estimates as estimates
 from .storage import atomic_write_json, initialize_manifest
 
 

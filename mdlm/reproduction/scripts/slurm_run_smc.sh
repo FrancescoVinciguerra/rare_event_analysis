@@ -19,6 +19,6 @@ export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 
 python -m diffusion_toxicity_smc_experiment.run_smc \
-  --config "${SMC_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_smc.yaml}" \
+  --config "${SMC_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_common.yaml}" \
   --output-root "${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}"
 nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv

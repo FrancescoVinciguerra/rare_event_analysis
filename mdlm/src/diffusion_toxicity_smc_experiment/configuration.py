@@ -68,7 +68,9 @@ def _require(mapping: dict[str, Any], key: str, expected_type: type) -> Any:
     return value
 
 
-def validate_benchmark_config(config: dict[str, Any]) -> None:
+def validate_benchmark_config(
+    config: dict[str, Any], *, for_execution: bool = False
+) -> None:
     decoder = _require(config, "decoder", dict)
     generation_mode = decoder.get("generation_mode")
     if generation_mode not in {"unconditional", "fixed_prefix"}:
@@ -214,14 +216,13 @@ def validate_benchmark_config(config: dict[str, Any]) -> None:
         if not isinstance(tilted_sampler, dict):
             raise ValueError("smc.tilted_sampler must be a mapping")
         tilted_sampler_type = tilted_sampler.get("type")
-        if tilted_sampler_type not in {
-            "fk_bootstrap",
-            "trajectory_resample_move",
-            "trajectory_waste_free",
-        }:
+        if tilted_sampler_type == "trajectory_waste_free":
+            # Keep the original method identity for historical manifests.
+            if for_execution:
+                raise ValueError("Waste-Free Trajectory SMC is retired and read-only")
+        elif tilted_sampler_type not in {"fk_bootstrap", "trajectory_resample_move"}:
             raise ValueError(
-                "smc.tilted_sampler.type must be fk_bootstrap, "
-                "trajectory_resample_move, or trajectory_waste_free"
+                "smc.tilted_sampler.type must be fk_bootstrap or trajectory_resample_move"
             )
         if tilted_sampler_type == "fk_bootstrap":
             x0_sampling = tilted_sampler.get(
@@ -241,10 +242,7 @@ def validate_benchmark_config(config: dict[str, Any]) -> None:
                 raise ValueError(
                     "FK intermediate_reward_aggregation must be logmeanexp"
                 )
-        if tilted_sampler_type in {
-            "trajectory_resample_move",
-            "trajectory_waste_free",
-        }:
+        if tilted_sampler_type == "trajectory_resample_move":
             implementation_version = tilted_sampler.get("implementation_version")
             if not isinstance(implementation_version, str) or not implementation_version:
                 raise ValueError(
@@ -299,30 +297,9 @@ def validate_benchmark_config(config: dict[str, Any]) -> None:
                     raise ValueError(
                         "rollback_probabilities must be a non-negative simplex"
                     )
-        if tilted_sampler_type == "trajectory_resample_move":
             mcmc_steps = tilted_sampler.get("mcmc_steps_per_level")
             if not isinstance(mcmc_steps, int) or mcmc_steps <= 0:
                 raise ValueError("mcmc_steps_per_level must be a positive integer")
-        if tilted_sampler_type == "trajectory_waste_free":
-            chain_length = tilted_sampler.get("chain_length")
-            if not isinstance(chain_length, int) or chain_length < 2:
-                raise ValueError(
-                    "trajectory_waste_free chain_length must be an integer >= 2"
-                )
-            particle_count = int(smc["num_particles"])
-            if particle_count % chain_length != 0:
-                raise ValueError(
-                    "smc.num_particles must be divisible by trajectory_waste_free "
-                    "chain_length"
-                )
-            if tilted_sampler.get("mutation_policy") != "every_level":
-                raise ValueError(
-                    "trajectory_waste_free requires mutation_policy: every_level"
-                )
-            if smc.get("final_resampling") is not False:
-                raise ValueError(
-                    "trajectory_waste_free requires smc.final_resampling: false"
-                )
 
 
 def decoder_manifest(config: dict[str, Any]) -> dict[str, Any]:

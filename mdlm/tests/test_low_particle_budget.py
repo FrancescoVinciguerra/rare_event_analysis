@@ -6,7 +6,7 @@ from diffusion_toxicity_smc_experiment.accuracy_budget import assigned_runs, stu
 from diffusion_toxicity_smc_experiment.particle_scaling import selected_populations
 
 
-STUDY = Path(__file__).resolve().parents[1] / "configs/mdlm_owt_low_particle_budget.yaml"
+STUDY = Path(__file__).resolve().parents[1] / "configs/legacy/mdlm_owt_low_particle_budget.yaml"
 
 
 def test_one_ladder_per_seed_and_size():

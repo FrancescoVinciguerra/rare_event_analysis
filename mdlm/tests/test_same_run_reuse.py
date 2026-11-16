@@ -28,7 +28,7 @@ def test_clock_budget_and_disjoint_blocks_are_fixed_before_MC_outcomes():
 def test_report_reuses_MC_for_every_MH_population_and_retains_zero_estimates(tmp_path):
     from test_exploratory import NativeBinaryPaths
     from diffusion_toxicity_smc_experiment.exploratory_population import population
-    study_path=Path(__file__).resolve().parents[1]/'configs/mdlm_owt_same_run_ladder.yaml'
+    study_path=Path(__file__).resolve().parents[1]/'configs/legacy/mdlm_owt_same_run_ladder.yaml'
     study,configs=reuse.study_configs(study_path)
     config=copy.deepcopy(configs[0]);config['decoder']['sequence_length']=3
     seed=2006000000

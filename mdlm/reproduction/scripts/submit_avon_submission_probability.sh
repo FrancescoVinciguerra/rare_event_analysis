@@ -38,8 +38,8 @@ export HF_HOME="${HF_HOME:-/gpfs/home/stats/stuhvh/hf-cache}"
 export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${PROJECT_DIR}/mdlm}"
 export OUTPUT_ROOT="${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}"
 export LOG_DIR="${LOG_DIR:-${EXPERIMENT_DIR}/artifacts/logs}"
-export SUBMISSION_STUDY_CONFIG="${SUBMISSION_STUDY_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_submission_probability.yaml}"
-export SUBMISSION_LONG_SUITE_CONFIG="${SUBMISSION_LONG_SUITE_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_submission_long.yaml}"
+export SUBMISSION_STUDY_CONFIG="${SUBMISSION_STUDY_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_submission_probability.yaml}"
+export SUBMISSION_LONG_SUITE_CONFIG="${SUBMISSION_LONG_SUITE_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_submission_long.yaml}"
 
 case "$stage" in
   pilot)

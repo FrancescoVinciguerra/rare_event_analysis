@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 EXPERIMENT = ROOT / "mdlm"
 PACKAGE = "diffusion_toxicity_smc_experiment"
 SOURCE = EXPERIMENT / "src"
-CONFIG = EXPERIMENT / "configs/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
+CONFIG = EXPERIMENT / "configs/legacy/mdlm_owt_unconditional_estimation_100tok_trajectory_mh.yaml"
 MODULES = (
     "__init__", "ancestral", "configuration", "estimate", "evaluation", "exploratory_kernel",
     "exploratory_population", "pipeline", "population_checkpoints", "potentials", "runtime", "smc",
@@ -42,7 +42,9 @@ def export(output: Path) -> None:
     sys.path.insert(0, str(SOURCE))
     from diffusion_toxicity_smc_experiment.configuration import load_yaml
 
-    readme = (EXPERIMENT / "README.md").read_text(encoding="utf-8").split("## Repository layout", 1)[0].rstrip()
+    readme = (EXPERIMENT / "README.md").read_text(encoding="utf-8")
+    single_estimate = readme.split("## Single estimate\n", 1)[1].split("\n## ", 1)[0].strip()
+    readme = "# MDLM RollBack estimator\n\nInstall the package with `python -m pip install -e .`.\n\n" + single_estimate
     readme += """
 
 ## Layout

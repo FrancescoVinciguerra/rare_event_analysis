@@ -8,10 +8,8 @@ Usage:
   submit_avon_serious_comparison.sh STAGE [--submit]
 
 STAGE is exactly one of:
-  method-validation Validate all three real GPU kernels at N=16 and N=64.
   direct-reference  Generate/resume IID direct samples through N=200000.
   score-reference   Score every persisted direct sample; never regenerate.
-  smc-grid          Run/resume 3 methods x 4 budgets x 8 independent runs.
   report            Read completed artifacts and create CSV/JSON/SVG reports.
 
 The default is a dry-run. Each --submit invocation submits at most one job.
@@ -30,6 +28,11 @@ if [[ $# -eq 2 ]]; then
   submit=true
 fi
 
+if [[ "$stage" == "method-validation" || "$stage" == "smc-grid" ]]; then
+  echo "The three-method SMC suite is historical. Waste-Free execution is retired." >&2
+  exit 2
+fi
+
 : "${AVON_ACCOUNT:?Set AVON_ACCOUNT from verified preflight output}"
 : "${AVON_QOS:?Set AVON_QOS from verified preflight output}"
 : "${AVON_MODULES:?Set AVON_MODULES from verified module metadata}"
@@ -40,28 +43,14 @@ export HF_HOME="${HF_HOME:-/gpfs/home/stats/stuhvh/hf-cache}"
 export EXPERIMENT_DIR="${EXPERIMENT_DIR:-${PROJECT_DIR}/mdlm}"
 export OUTPUT_ROOT="${OUTPUT_ROOT:-${EXPERIMENT_DIR}/artifacts/current}"
 export LOG_DIR="${LOG_DIR:-${EXPERIMENT_DIR}/artifacts/logs}"
-export SERIOUS_SUITE_CONFIG="${SERIOUS_SUITE_CONFIG:-${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_serious_comparison.yaml}"
+export SERIOUS_SUITE_CONFIG="${SERIOUS_SUITE_CONFIG:-${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_serious_comparison.yaml}"
 
 case "$stage" in
-  method-validation)
-    : "${AVON_GPU_DEVEL_PARTITION:?Set AVON_GPU_DEVEL_PARTITION from verified preflight output}"
-    : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export SERIOUS_SUITE_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_three_smc_gpu_validation.yaml"
-    job_name=mdlm-three-smc-validation
-    partition="${AVON_GPU_DEVEL_PARTITION}"
-    gres="${AVON_GPU_GRES}"
-    cpus=4
-    memory=20G
-    walltime=01:00:00
-    job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_avon_serious_smc.sh"
-    extra_sbatch=()
-    log_pattern="${LOG_DIR}/${job_name}-%j.{out,err}"
-    ;;
   direct-reference)
     : "${AVON_GPU_PARTITION:?Set AVON_GPU_PARTITION from verified preflight output}"
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
     export TARGET_SAMPLES=200000
-    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_direct_32.yaml"
+    export DIRECT_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_direct_32.yaml"
     job_name=mdlm-direct32-200000
     partition="${AVON_GPU_PARTITION}"
     gres="${AVON_GPU_GRES}"
@@ -75,7 +64,7 @@ case "$stage" in
   score-reference)
     : "${AVON_GPU_PARTITION:?Set AVON_GPU_PARTITION from verified preflight output}"
     : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    export EVALUATOR_CONFIG="${EXPERIMENT_DIR}/configs/mdlm_owt_unconditional_estimation_100tok.yaml"
+    export EVALUATOR_CONFIG="${EXPERIMENT_DIR}/configs/legacy/mdlm_owt_unconditional_estimation_100tok.yaml"
     job_name=mdlm-score-direct32-200000
     partition="${AVON_GPU_PARTITION}"
     gres="${AVON_GPU_GRES}"
@@ -83,19 +72,6 @@ case "$stage" in
     memory=16G
     walltime=04:00:00
     job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_score_direct.sh"
-    extra_sbatch=()
-    log_pattern="${LOG_DIR}/${job_name}-%j.{out,err}"
-    ;;
-  smc-grid)
-    : "${AVON_GPU_PARTITION:?Set AVON_GPU_PARTITION from verified preflight output}"
-    : "${AVON_GPU_GRES:?Set AVON_GPU_GRES from verified preflight output}"
-    job_name=mdlm-three-smc-serious
-    partition="${AVON_GPU_PARTITION}"
-    gres="${AVON_GPU_GRES}"
-    cpus=4
-    memory=20G
-    walltime=2-00:00:00
-    job_script="${EXPERIMENT_DIR}/reproduction/scripts/slurm_avon_serious_smc.sh"
     extra_sbatch=()
     log_pattern="${LOG_DIR}/${job_name}-%j.{out,err}"
     ;;
