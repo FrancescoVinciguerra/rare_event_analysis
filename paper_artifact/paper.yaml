@@ -1,0 +1,222 @@
+# Each grid key is a particle count. Its value is the first numerical seed.
+schema_version: 1
+grid:
+  replicates: 24
+  seed_stride: 1000000
+  seed_start:
+    32: 2800000000
+    64: 2800010000
+    96: 2900000000
+    128: 2000000000
+    160: 2800030000
+    192: 2800040000
+    224: 2800050000
+    256: 2500000000
+    288: 2900010000
+    320: 2700000000
+    352: 2900020000
+    384: 2700010000
+    416: 2900030000
+    448: 2700020000
+    480: 2900040000
+    512: 2700030000
+ladder:
+  levels:
+  - 0.0
+  - 0.5
+  - 1
+  - 1.5
+  - 2
+  - 2.5
+  - 3
+  - 3.5
+  - 4
+  - 4.5
+  - 5
+  - 5.5
+  - 6
+  - 6.5
+  moves_per_level: 4
+  recorded_thresholds:
+  - 0.9995
+  observe:
+  - threshold: 0.9995
+    tilt: 6.5
+    sweep: last
+  - threshold: 0.99
+    tilt: 0.5
+    sweep: last
+  - threshold: 0.995
+    tilt: 1.0
+    sweep: last
+  - threshold: 0.999
+    tilt: 2.5
+    sweep: last
+mc:
+  comparison: calibrated_wall_clock
+  cohorts:
+  - name: reference_direct
+    samples: 200000
+    seed_start: 9000000000
+    matched: false
+  - name: matched_primary
+    samples: 354420
+    seed_start: 9100000000
+    matched: true
+  - name: matched_secondary
+    samples: 121355
+    seed_start: 9200000000
+    matched: true
+  - name: reference_tail
+    samples: 300000
+    seed_start: 9300000000
+    matched: false
+  batch_size: 512
+  calibration:
+    paths: 128
+    repetitions: 3
+    warmup_paths: 16
+    seed_start: 9900000000
+    smc_warmup_seed: 9900000100
+figures:
+  metrics:
+  - median_absolute_relative_error
+  - relative_standard_deviation
+  - zero_estimate_rate
+  summary_only_metrics: [mean_absolute_relative_error, relative_rmse]
+  bootstrap_resamples: 20000
+  bootstrap_seed: 2134669
+  bootstrap_quantiles: [0.025, 0.975]
+  usetex: true
+outputs:
+  directory: outputs/paper
+  smoke_directory: outputs/smoke
+smoke:
+  grid:
+    replicates: 2
+    seed_stride: 100
+    seed_start:
+      8: 1200
+      12: 1500
+  levels:
+  - 0.0
+  - 0.5
+  - 1.0
+  moves_per_level: 1
+  observe:
+  - threshold: 0.9
+    tilt: 0.5
+    sweep: last
+  recorded_thresholds:
+  - 0.9
+  matched_samples: 1024
+  batch_size: 256
+  bootstrap_resamples: 200
+model:
+  decoder:
+    checkpoint:
+      id: kuleshov-group/mdlm-owt
+      revision: d0958fa851335ece6c15260ce0025f030673c0fb
+      weights_sha256: 47149e73f7552f39ea9776dbe74d925d25237bcf2ed2e2ec03cdff9d51c82aa4
+    model_implementation:
+      id: TheQweaker/mdlm-owt-noflash
+      revision: 8871c28982b8b256e1ccb45a94bf68caaf7c270f
+      reason: byte-identical official weights with mathematical SDPA and no flash-attn import
+      attention_backend: torch_sdpa_math
+    tokenizer:
+      id: openai-community/gpt2
+      revision: 607a30d783dfa663caf39e06633721c8d4cfcd7e
+    generation_mode: unconditional
+    initial_state: all_positions_masked
+    fixed_prefix_token_ids: []
+    prompt: null
+    upstream_prior_definition: mask_index_times_ones_for_full_model_length
+    sequence_length: 128
+    evaluated_completion_tokens: 50
+    denoising_steps: 32
+    predictor: ddpm
+    ancestral_kernel: mdlm_subs_ddpm_exponential_race
+    ancestral_kernel_implementation_version: native_mdlm_ddpm_v1
+    noise_schedule:
+      type: loglinear
+      epsilon: 0.001
+    sampling_epsilon: 1.0e-05
+    temperature: 1.0
+    top_k: null
+    top_p: null
+    final_noise_removal: true
+    final_noise_removal_method: stochastic_categorical
+    mask_token_id: 50257
+    precision: float32
+    runtime_stack:
+      python: 3.11.5
+      torch: 2.6.0+cu118
+      transformers: 4.57.6
+  evaluation:
+    conditioning_mode: unconditional_generated_text_only
+    numerical_batching:
+      padding: max_length
+      pad_final_batch_to_batch_size: true
+    completion_trimming_tokenizer:
+      id: roberta-large
+      revision: 722cf37b1afa9454edce342e7895e588b6ff1d59
+    classifier:
+      id: SkolkovoInstitute/roberta_toxicity_classifier
+      revision: 048c25bb1e199b98802784f96325f4840f22145d
+      weights_sha256: 896f52af161757594994d1fefe85ac79cbb57c9a96b26fba8ab93139b6426b8c
+      positive_label_index: 1
+    reward:
+      definition: log_softmax_probability_of_positive_toxicity_class
+      text_scope: first_generated_mdlm_tokens_only
+      completion_tokens: 100
+      classifier_max_length: 512
+    event:
+      definition: classifier_argmax_equals_positive_label_index
+      text_scope: first_generated_mdlm_tokens_only
+      completion_tokens: 100
+      classifier_max_length: 512
+    batch_size: 8
+  source_provenance:
+    benchmark_relationship_to_fk: toxicity_classifier_and_conversion_only_not_prompt_conditioning
+    fk_steering_repository: https://github.com/zacharyhorvitz/Fk-Diffusion-Steering
+    fk_steering_commit: 9413005dee1e79f80fb4561a4a7ac8eec704281b
+    fk_reward_code: discrete_diffusion/reward_functions.py
+    fk_event_code: discrete_diffusion/evaluation/evaluate.py
+    fk_completion_trimming_code: discrete_diffusion/evaluation/mdlm_to_eval_format.py
+    mdlm_repository: https://github.com/kuleshov-group/mdlm
+    mdlm_commit: c112c526d193436838c98d81455ee51f90309470
+    mdlm_unconditional_prior_code: diffusion.py:_sample_prior_and_sample
+    mdlm_unconditional_prior_verified: true
+    mdlm_diffusion_sampler_adds_bos_or_eos: false
+  runtime:
+    device: cuda
+    cpu_threads: 4
+  smc:
+    tilted_sampler:
+      type: trajectory_resample_move
+      implementation_version: exact_trajectory_rollback_mh_v1
+      mutation_policy: every_level
+      rollback_steps:
+      - 4
+      - 8
+      - 16
+      - 24
+      - 32
+      rollback_probabilities:
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+      - 0.2
+    component_weight_policy: uniform
+    optimize_component_weights: false
+    diagnostic_lambdas: []
+    ess_threshold: 0.5
+    resampling_method: systematic
+    beta_start_fraction: 0.0
+    final_resampling: false
+    experiment_phase: estimation
+    reward_interval: 4
+    microbatch_size: 16
+    component_rng_policy: independent_seed_per_run_and_component
+    phi: logit

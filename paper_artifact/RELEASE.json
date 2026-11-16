@@ -1,0 +1,91 @@
+{
+  "version": "0.1.0rc1",
+  "status": "prerelease",
+  "source_git_commit": "4abb257affd09052ad814c2c3119c3bb88544afa",
+  "snapshot_changes": {
+    "src/diffusion_toxicity_smc_experiment/evaluation.py": {
+      "origin": "Validated standalone evaluator from the working tree",
+      "base_git_sha256": "47e31a63909d90c24a54bbb48129730cb2a4da4c483ce35118465f1039e577d9",
+      "change": "Local Wilson interval with the original formula and default z score."
+    },
+    "paper.yaml": "Canonical configuration with archive settings removed and output directories relocated.",
+    "reproduce.py": "Standalone driver with historical recovery removed and read-only analysis input added.",
+    "tests/test_reproduction.py": "Standalone tests adapted from the paper reproduction and estimator regressions."
+  },
+  "configuration": "paper.yaml",
+  "files_sha256": {
+    "paper.yaml": "6d090635e444715c1ac951e8d1890a9248146a0bcf373c22595d739cfe69e387",
+    "pyproject.toml": "08ef4737b24e229c580fa8ce841f6f49d07a17da411bcabb0ee1803abaed290a",
+    "README.md": "1403975c06e8168f5610789e193d24147482d6f0870a97258cc6021392ff986c",
+    "reproduce.py": "2076b73a32754c61ae2d17827044ab2f5753fab7ea70bc702978fa3f95216b89",
+    "src/diffusion_toxicity_smc_experiment/__init__.py": "01beb5e08ebab3364eadb4cbad8a928dd80d35cc8bf5f7682b340d2521afe787",
+    "src/diffusion_toxicity_smc_experiment/ancestral.py": "33648a61510776eb96cf3ce0cf37ceb5397ab7b1900e57893901e540355d1b20",
+    "src/diffusion_toxicity_smc_experiment/configuration.py": "eb0e927f508811e52be93f2d6e29b4eb15947539225071fd0b565ff71b511b5b",
+    "src/diffusion_toxicity_smc_experiment/crude.py": "fea485dada6fc01c65e937c4463d8debe212a01432cbec3aefa48b1d9005417e",
+    "src/diffusion_toxicity_smc_experiment/evaluation.py": "aab13bc1c998f4ac545ef003d1509b217f50acc2faaeeb6fcd9f20abbfd9358e",
+    "src/diffusion_toxicity_smc_experiment/exploratory_kernel.py": "1e5be1fea35969f77972986ae60b913c8760542e054a5a2b41b83b282f094e24",
+    "src/diffusion_toxicity_smc_experiment/exploratory_population.py": "c31a9f39d235a65e1122f95ac9072da2132a05da37735a864ae5bc940bbd3ab8",
+    "src/diffusion_toxicity_smc_experiment/paper_analysis.py": "8424282a5c558ac6cb155e6eb444f3ad15004622e024d955d591eb467b92d637",
+    "src/diffusion_toxicity_smc_experiment/paper_experiment.py": "2a5919c71dc3f4b739ab8c5e29f3162dea2767919cb5b6ca16ad945eb5b6d846",
+    "src/diffusion_toxicity_smc_experiment/pipeline.py": "1dda3a619e26ea9a538f3070ab7787bda65af91b9f3275eef9cdc84d38f2ce13",
+    "src/diffusion_toxicity_smc_experiment/population_checkpoints.py": "d422a8635ff7bc4a5328177fa4b532f593086af4cbd8582354b8fd92ab1b7ee6",
+    "src/diffusion_toxicity_smc_experiment/potentials.py": "f9178eb5831a8e57ea95299d8ca7bc9e86e61abce77d2efbbb1e8337d63ac80a",
+    "src/diffusion_toxicity_smc_experiment/runtime.py": "0f40874cd3bb498a3b5fb0f4578f812fcb8b209355e77ad44a796f787710b3bb",
+    "src/diffusion_toxicity_smc_experiment/smc.py": "71e9ccf772b2b923d0973dbaa22e306e2759c143cdd1343dfa8663902a0fda33",
+    "src/diffusion_toxicity_smc_experiment/storage.py": "64c878c58eb2cea204337808d57c6fa66346eb3a7bd17f7a6b7ec43834367ef3",
+    "tests/test_reproduction.py": "f50d5d8d0f588546c44d57d54c470d76ed26a8134518f57e2a461cc214b6e77d"
+  },
+  "environments": {
+    "cpu_validation": {
+      "platform": "Windows x86-64",
+      "python": "3.14.2",
+      "dependencies": {
+        "certifi": "2026.10.23",
+        "charset-normalizer": "3.5.2",
+        "colorama": "0.4.6",
+        "contourpy": "1.4.0",
+        "cycler": "0.12.1",
+        "filelock": "4.2.4",
+        "fonttools": "4.68.0",
+        "fsspec": "2026.9.0",
+        "huggingface_hub": "0.36.2",
+        "idna": "3.20",
+        "iniconfig": "2.3.1",
+        "Jinja2": "3.1.6",
+        "kiwisolver": "1.5.1",
+        "MarkupSafe": "3.0.3",
+        "matplotlib": "3.11.2",
+        "mpmath": "1.3.0",
+        "networkx": "3.7",
+        "numpy": "2.5.5",
+        "packaging": "26.3",
+        "pillow": "13.0.0",
+        "pip": "25.3",
+        "pluggy": "1.7.0",
+        "Pygments": "2.21.0",
+        "pyparsing": "3.3.3",
+        "pytest": "9.2.0",
+        "python-dateutil": "4.0.0",
+        "PyYAML": "6.0.3",
+        "regex": "2026.11.15",
+        "requests": "2.34.2",
+        "safetensors": "0.8.0",
+        "setuptools": "78.1.0",
+        "sympy": "1.14.0",
+        "tokenizers": "0.22.2",
+        "torch": "2.11.0+cpu",
+        "tqdm": "4.70.1",
+        "transformers": "4.57.6",
+        "typing_extensions": "4.16.0",
+        "tzdata": "2026.6",
+        "urllib3": "2.8.0"
+      }
+    },
+    "reference_gpu_configuration": {
+      "python": "3.11.5",
+      "torch": "2.6.0+cu118",
+      "transformers": "4.57.6"
+    }
+  },
+  "released_data": null
+}
